@@ -274,14 +274,8 @@ async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
   const fileName = `${Date.now()}_${tgMsg.message_id}.${file.detectedExt}`;
   const meta = await extractPhotoMeta(file.path);
 
-  if (config.PHOTOS_KEEP_LOCAL) {
-    const tripDir = path.join(config.PHOTOS_DIR, String(trip.id));
-    fs.mkdirSync(tripDir, { recursive: true });
-    fs.renameSync(file.path, path.join(tripDir, fileName));
-  } else {
-    fs.unlinkSync(file.path);
-  }
-
+  // Salva in DB prima di toccare il file temp: se unlink/rename fallisce (es. EBUSY
+  // su Windows) la foto resta comunque in archivio e visibile in webapp.
   const photo = await db.addPhoto({
     tripId: trip.id,
     fileName,
@@ -295,6 +289,18 @@ async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
     size: file.size || null,
     uploadedByUserId: uploadedByUserId ?? trip.userId,
   });
+
+  try {
+    if (config.PHOTOS_KEEP_LOCAL) {
+      const tripDir = path.join(config.PHOTOS_DIR, String(trip.id));
+      fs.mkdirSync(tripDir, { recursive: true });
+      fs.renameSync(file.path, path.join(tripDir, fileName));
+    } else {
+      fs.unlinkSync(file.path);
+    }
+  } catch (err) {
+    console.warn(`⚠️  Cleanup file upload web (${fileName}):`, err.message);
+  }
 
   console.log(`🌐  [${trip.name}] foto caricata dal web → Telegram msg ${tgMsg.message_id}`);
   return photo;

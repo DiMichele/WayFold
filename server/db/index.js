@@ -360,12 +360,25 @@ function getPhotoByFile(tripId, fileName) {
   return load().photos.find(p => p.tripId === tid && p.fileName === name) || null;
 }
 
+function getPhotoByMsgId(tripId, msgId) {
+  if (msgId == null) return null;
+  const tid = Number(tripId);
+  const mid = Number(msgId);
+  return load().photos.find(p => p.tripId === tid && p.msgId === mid) || null;
+}
+
 async function addPhoto({
   tripId, fileName, fileId, caption, note, msgId, date, takenAt, lat, lon, size,
   uploadedByUserId = null,
 }) {
   return withLock(() => {
     const data = load();
+    if (msgId != null) {
+      const dup = data.photos.find(
+        p => p.tripId === Number(tripId) && p.msgId === Number(msgId)
+      );
+      if (dup) return dup;
+    }
     const trip = data.trips.find(t => t.id === Number(tripId));
     const uploader = uploadedByUserId != null
       ? Number(uploadedByUserId)
@@ -553,6 +566,7 @@ module.exports = {
   getPhotos,
   getPhotoById,
   getPhotoByFile,
+  getPhotoByMsgId,
   addPhoto,
   updatePhoto,
   deletePhoto,

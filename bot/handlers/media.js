@@ -41,6 +41,9 @@ async function handleMedia(bot, msg, type) {
       console.log(`⚠️  Topic ${topicId} non registrato — creato come "${trip.name}"`);
     }
 
+    const existing = db.getPhotoByMsgId(trip.id, msg.message_id);
+    if (existing) return;
+
     const fileId = type === 'photo'
       ? msg.photo[msg.photo.length - 1].file_id
       : msg.document.file_id;

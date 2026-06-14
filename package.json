@@ -9,7 +9,9 @@
     "dev": "concurrently -n bot,server,tunnel -c yellow,cyan,magenta \"npm run bot\" \"npm run server\" \"npm run tunnel\"",
     "start": "npm run dev",
     "tunnel": "node scripts/tunnel.js",
-    "generate-pwa-icons": "node scripts/generate-pwa-icons.js"
+    "generate-pwa-icons": "node scripts/generate-pwa-icons.js",
+    "test:upload": "node scripts/upload-test.js",
+    "test:security": "node scripts/security-test.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

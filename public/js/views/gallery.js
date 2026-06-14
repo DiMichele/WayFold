@@ -123,9 +123,19 @@ function uploadLabel(total, done, processing) {
     : t('gal.uploadingBatch', { done: d, total });
 }
 
+/** iOS/PWA spesso non imposta file.type: accetta anche per estensione. */
+function isImageFile(f) {
+  if (f.type?.startsWith('image/')) return true;
+  const ext = (f.name || '').split('.').pop()?.toLowerCase();
+  return ['jpg', 'jpeg', 'png', 'webp', 'heic', 'heif'].includes(ext);
+}
+
 async function runGalleryUpload(tripId, files) {
-  const images = [...files].filter(f => f.type.startsWith('image/'));
-  if (!images.length) return;
+  const images = [...files].filter(isImageFile);
+  if (!images.length) {
+    showToast(t('gal.uploadFail'), 'error');
+    return;
+  }
 
   showUploadUi(true);
   setUploadUi({ text: uploadLabel(images.length, 1, false), pct: 0, indeterminate: true });
@@ -158,6 +168,9 @@ async function runGalleryUpload(tripId, files) {
   } catch (e) {
     showToast(e.message || t('gal.uploadFail'), 'error');
     showUploadUi(false);
+    api.invalidatePhotoCache(tripId);
+    await reloadTrips({ silent: true, render: false });
+    renderGallery();
   }
 }
 
@@ -503,7 +516,7 @@ async function buildPhotos(c, trip) {
 
   let photos;
   try {
-    photos = await api.fetchPhotos(trip.id);
+    photos = await api.fetchPhotos(trip.id, { fresh: true });
   } catch {
     if (state.galTripId === trip.id && grid.isConnected) {
       grid.innerHTML = `<div class="gal-fetch-err">${esc(t('gal.uploadFail'))}</div>`;

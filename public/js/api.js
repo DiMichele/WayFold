@@ -170,6 +170,7 @@ function uploadPhotosBatch(tripId, files, { caption = '', onProgress } = {}) {
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', `/api/trips/${tripId}/photos`);
+    xhr.withCredentials = true;
     xhr.upload.addEventListener('progress', e => {
       if (!onProgress) return;
       const frac = e.lengthComputable && e.total > 0 ? e.loaded / e.total : 0;
