@@ -3,7 +3,7 @@
 set -eu
 
 APP_DIR="/home/wayfold/apps/wayfold"
-REPO_URL="${WAYFOLD_REPO_URL:-https://github.com/DiMichele/WayFold.git}"
+REPO_URL="${WAYFOLD_REPO_URL:-git@github.com:DiMichele/WayFold.git}"
 BRANCH="${WAYFOLD_BRANCH:-main}"
 
 cd "$APP_DIR"
