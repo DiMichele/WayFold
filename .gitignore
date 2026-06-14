@@ -1,0 +1,18 @@
+# Dipendenze
+node_modules/
+
+# Configurazione locale (contiene il token del bot!)
+.env
+
+# Dati runtime
+db.json
+db.json.tmp
+photos/
+sessions/
+
+# Strumenti scaricati (cloudflared ecc.)
+tools/
+
+# Sistema
+.DS_Store
+Thumbs.db

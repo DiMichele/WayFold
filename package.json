@@ -1,0 +1,32 @@
+{
+  "name": "wayfold",
+  "version": "3.0.0",
+  "description": "Diario di viaggio multi-utente: foto ordinate per destinazione, cronologia e mappa",
+  "private": true,
+  "scripts": {
+    "bot": "node bot/index.js",
+    "server": "node server/index.js",
+    "dev": "concurrently -n bot,server,tunnel -c yellow,cyan,magenta \"npm run bot\" \"npm run server\" \"npm run tunnel\"",
+    "start": "npm run dev",
+    "tunnel": "node scripts/tunnel.js",
+    "generate-pwa-icons": "node scripts/generate-pwa-icons.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^16.4.5",
+    "exifr": "^7.1.3",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.5.2",
+    "express-session": "^1.19.0",
+    "helmet": "^8.2.0",
+    "multer": "^2.1.1",
+    "nodemailer": "^8.0.11"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3",
+    "sharp": "^0.34.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -1,0 +1,18 @@
+[Unit]
+Description=WayFold Telegram bot
+After=network-online.target wayfold-server.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/wayfold/apps/wayfold
+Environment=NODE_ENV=production
+EnvironmentFile=/home/wayfold/apps/wayfold/.env
+ExecStart=/home/wayfold/.nvm/versions/node/v22.22.3/bin/node bot/index.js
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

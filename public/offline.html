@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>wayfold — offline</title>
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    min-height: 100dvh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: #F7F6F3;
+    color: #1A242B;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+  }
+  .card { max-width: 360px; }
+  .logo {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 22px;
+    border-radius: 16px;
+    background: #1A242B;
+    color: #D97B5C;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    font-weight: 700;
+  }
+  h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; margin-bottom: 10px; }
+  p { font-size: 14.5px; line-height: 1.6; color: #5C6662; }
+  @media (prefers-color-scheme: dark) {
+    body { background: #141A1F; color: #F0EDE8; }
+    .logo { background: #1F2830; color: #E08B70; }
+    p { color: #A8B8B1; }
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">W</div>
+    <h1>Sei offline</h1>
+    <p>WayFold richiede una connessione a internet per caricare viaggi e foto. Controlla la rete e riprova.</p>
+  </div>
+</body>
+</html>

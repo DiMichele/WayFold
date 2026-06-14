@@ -1,0 +1,18 @@
+[Unit]
+Description=WayFold web server (Express)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/wayfold/apps/wayfold
+Environment=NODE_ENV=production
+EnvironmentFile=/home/wayfold/apps/wayfold/.env
+ExecStart=/home/wayfold/.nvm/versions/node/v22.22.3/bin/node server/index.js
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

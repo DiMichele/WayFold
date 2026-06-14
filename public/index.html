@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F7F6F3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141A1F" media="(prefers-color-scheme: dark)">
+<meta name="description" content="wayfold — Your Journeys. Organized.">
+<title>wayfold</title>
+<link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="wayfold">
+<link rel="apple-touch-icon" href="/img/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;450;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/leaflet/leaflet.css"/>
+<link rel="stylesheet" href="/css/styles.css?v=22">
+<script src="/js/install-capture.js"></script>
+</head>
+<body>
+
+<!-- Sfondo animato -->
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+<div class="grain" aria-hidden="true"></div>
+
+<div class="ld" id="ld">
+  <div class="brand brand--load" aria-hidden="true">
+    <div class="brand-name">wayfold</div>
+    <div class="brand-tagline" data-i18n="auth.tagline">Your Journeys. Organized.</div>
+  </div>
+  <div class="ld-rule"><div class="ld-seg"></div><div class="ld-seg"></div><div class="ld-seg"></div><div class="ld-seg"></div></div>
+</div>
+
+<!-- AUTH -->
+<div class="auth" id="auth">
+  <div class="auth-chrome">
+    <div class="lang-wrap">
+      <button class="tb-btn lang-btn" id="authLangToggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Lingua">
+        <span id="authLangFlag">IT</span>
+      </button>
+      <div class="lang-menu" id="authLangMenu" role="listbox">
+        <button class="lang-opt" type="button" data-lang="it" role="option"><span class="lang-flag">IT</span><span data-i18n="lang.it">Italiano</span></button>
+        <button class="lang-opt" type="button" data-lang="en" role="option"><span class="lang-flag">GB</span><span data-i18n="lang.en">English</span></button>
+        <button class="lang-opt" type="button" data-lang="fr" role="option"><span class="lang-flag">FR</span><span data-i18n="lang.fr">Français</span></button>
+        <button class="lang-opt" type="button" data-lang="es" role="option"><span class="lang-flag">ES</span><span data-i18n="lang.es">Español</span></button>
+        <button class="lang-opt" type="button" data-lang="de" role="option"><span class="lang-flag">DE</span><span data-i18n="lang.de">Deutsch</span></button>
+      </div>
+    </div>
+    <button class="tb-btn tb-theme" id="authThemeToggle" type="button" data-i18n-aria="theme" aria-label="Cambia tema">
+      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
+  </div>
+  <div class="auth-panel">
+    <header class="auth-panel-head">
+      <h1 class="auth-panel-logo">wayfold</h1>
+      <p class="auth-panel-tagline" data-i18n="auth.tagline">Your Journeys. Organized.</p>
+    </header>
+    <div class="auth-card">
+    <div class="auth-tabs" id="authTabs">
+      <button type="button" id="authTabLogin" class="on" data-i18n="auth.login">Accedi</button>
+      <button type="button" id="authTabRegister" data-i18n="auth.register">Registrati</button>
+    </div>
+    <form id="authForm" autocomplete="on">
+      <div class="field">
+        <label for="authUser">Username</label>
+        <input id="authUser" type="text" autocomplete="username" maxlength="20" spellcheck="false">
+      </div>
+      <div class="field auth-email-field" id="authEmailField" style="display:none">
+        <label for="authEmail" data-i18n="auth.email">Email</label>
+        <input id="authEmail" type="email" autocomplete="email" maxlength="254" spellcheck="false">
+      </div>
+      <div class="field">
+        <label for="authPass">Password</label>
+        <input id="authPass" type="password" autocomplete="current-password" maxlength="128">
+      </div>
+      <div class="field-err" id="authErr"></div>
+      <div class="auth-hint" id="authHint"></div>
+      <div class="auth-forgot-wrap" id="authForgotWrap">
+        <button type="button" class="auth-link" id="authForgot" data-i18n="auth.forgot">Password dimenticata?</button>
+      </div>
+      <button class="auth-submit" id="authSubmit" type="submit" data-i18n="auth.enter">Entra</button>
+    </form>
+    <div class="auth-forgot-panel" id="authForgotPanel" style="display:none">
+      <div class="auth-forgot-title" data-i18n="auth.forgotTitle">Recupera password</div>
+      <p class="auth-forgot-desc" data-i18n="auth.forgotDesc">Inserisci il tuo username: ti invieremo un codice all'email usata in registrazione.</p>
+      <form id="authForgotForm" class="auth-forgot-form">
+        <div class="field">
+          <label for="authForgotUser">Username</label>
+          <input id="authForgotUser" type="text" autocomplete="username" maxlength="20" spellcheck="false">
+        </div>
+        <div class="field-err" id="authForgotErr"></div>
+        <button class="auth-submit" id="authForgotSubmit" type="submit" data-i18n="auth.sendCode">Invia codice</button>
+        <button type="button" class="auth-link auth-back" id="authBackLogin" data-i18n="auth.backLogin">Torna al login</button>
+      </form>
+    </div>
+    <div class="auth-forgot-panel" id="authResetPanel" style="display:none">
+      <div class="auth-forgot-title" data-i18n="auth.resetTitle">Reimposta password</div>
+      <p class="auth-forgot-desc"><span data-i18n="auth.resetDesc">Abbiamo inviato un codice a</span> <b id="authResetUser"></b></p>
+      <form id="authResetForm" class="auth-forgot-form">
+        <div class="field">
+          <label for="authCode" data-i18n="auth.code">Codice</label>
+          <input id="authCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" spellcheck="false">
+        </div>
+        <div class="field">
+          <label for="authNewPass" data-i18n="auth.newPass">Nuova password</label>
+          <input id="authNewPass" type="password" autocomplete="new-password" maxlength="128">
+        </div>
+        <div class="field-err" id="authResetErr"></div>
+        <button class="auth-submit" id="authResetSubmit" type="submit" data-i18n="auth.resetPass">Reimposta password</button>
+        <button type="button" class="auth-link auth-back" id="authBackCode" data-i18n="auth.resend">Richiedi un nuovo codice</button>
+      </form>
+    </div>
+    <div class="auth-forgot-panel" id="authVerifyPanel" style="display:none">
+      <div class="auth-forgot-title" data-i18n="auth.verifyTitle">Verifica email</div>
+      <p class="auth-forgot-desc"><span data-i18n="auth.verifyDesc">Abbiamo inviato un codice a</span> <b id="authVerifyEmail"></b></p>
+      <form id="authVerifyForm" class="auth-forgot-form">
+        <div class="field">
+          <label for="authVerifyCode" data-i18n="auth.code">Codice</label>
+          <input id="authVerifyCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" spellcheck="false">
+        </div>
+        <div class="field-err" id="authVerifyErr"></div>
+        <button class="auth-submit" id="authVerifySubmit" type="submit" data-i18n="auth.verifySubmit">Verifica email</button>
+        <button type="button" class="auth-link auth-back" id="authResendVerify" data-i18n="auth.resendVerify">Invia un nuovo codice</button>
+      </form>
+    </div>
+    </div>
+  </div>
+</div>
+
+<!-- SYNC BLOCKER -->
+<div class="sync-gate" id="syncGate" aria-hidden="true">
+  <div class="sync-gate-card">
+    <div class="sync-gate-icon">
+      <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div class="sync-gate-title" data-i18n="sync.blockedTitle">Sincronizzazione interrotta</div>
+    <p class="sync-gate-msg" id="syncGateMsg"></p>
+    <button type="button" class="sync-gate-btn" id="syncRetry" data-i18n="sync.retry">Riprova</button>
+  </div>
+</div>
+
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastTxt"></span>
+</div>
+
+<!-- PWA: installazione (solo quando il browser lo consente) -->
+<div class="pwa-install" id="pwaInstall" hidden>
+  <img class="pwa-install-icon" src="/img/icon-192.png" width="32" height="32" alt="">
+  <span class="pwa-install-label">wayfold</span>
+  <button class="pwa-install-btn" id="pwaInstallBtn" type="button" data-i18n="pwa.install">Installa</button>
+  <button class="pwa-install-close" id="pwaInstallClose" type="button" data-i18n-aria="pwa.dismiss" aria-label="Non ora">
+    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</div>
+
+<!-- PWA: aggiornamento (gestito in automatico, nessun banner) -->
+<div class="pwa-update" id="pwaUpdate" hidden aria-hidden="true"></div>
+
+<!-- COMMAND PALETTE -->
+<div class="palette" id="palette">
+  <div class="pal-card">
+    <div class="pal-head">
+      <p class="pal-eyebrow" aria-hidden="true">wayfold</p>
+      <form class="pal-input-row" id="paletteForm" role="search" autocomplete="off">
+        <svg class="pal-search-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="search" name="wf-palette-q" id="paletteInput" data-i18n-ph="palette.search" placeholder="Cerca viaggi, paesi, anni, tag…" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+        <button type="button" class="pal-x" id="paletteClose" data-i18n-aria="close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+      </form>
+    </div>
+    <div class="pal-results" id="paletteResults"></div>
+  </div>
+</div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <div class="lb-top">
+    <div class="lb-nav lb-nav--top">
+      <button class="lb-btn" type="button" data-lb-prev data-i18n-aria="prev" aria-label="Precedente"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <span class="lb-count" id="lbCount"></span>
+      <button class="lb-btn" type="button" data-lb-next data-i18n-aria="next" aria-label="Successiva"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+    <button class="lb-x" id="lbX" data-i18n-aria="close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+  </div>
+  <div class="lb-inner">
+    <div class="lb-stage" id="lbStage">
+      <div class="lb-cv" id="lbBox">
+        <canvas id="lbCv"></canvas>
+        <img id="lbImg" alt="" style="display:none">
+        <button class="lb-btn lb-side lb-side--prev" type="button" data-lb-prev data-i18n-aria="prev" aria-label="Precedente"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
+        <button class="lb-btn lb-side lb-side--next" type="button" data-lb-next data-i18n-aria="next" aria-label="Successiva"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
+        <div class="lb-toolbar" id="lbActions">
+          <button class="lb-tool" id="lbCover" type="button" data-i18n-title="lb.coverSet">
+            <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          </button>
+          <button class="lb-tool lb-tool--danger" id="lbDelete" type="button" data-i18n-title="lb.delete">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="lb-meta">
+      <div class="lb-title" id="lbTitle"></div>
+      <div class="lb-sub" id="lbSub"></div>
+      <div class="lb-caption" id="lbCaption"></div>
+    </div>
+    <div class="lb-note-wrap" id="lbNoteWrap">
+      <textarea id="lbNote" data-i18n-ph="lb.notePh" placeholder="Aggiungi una nota a questa foto…" rows="2" maxlength="500"></textarea>
+      <button class="lb-note-save" id="lbNoteSave" type="button" data-i18n="lb.saveNote">Salva nota</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="modal">
+  <div class="modal-card">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle"></div>
+      <button class="modal-x" id="modalX" data-i18n-aria="close" aria-label="Chiudi"><svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+  </div>
+</div>
+
+<!-- SIDEBAR (desktop) -->
+<nav class="side" id="side">
+  <div class="side-brand">
+    <div class="brand brand--side">
+      <div class="brand-name">wayfold</div>
+      <div class="brand-tagline" data-i18n="auth.tagline">Your Journeys. Organized.</div>
+    </div>
+  </div>
+  <div class="side-nav">
+    <button class="side-link on" data-v="road">
+      <svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span data-i18n="nav.road">Diario</span>
+    </button>
+    <button class="side-link" data-v="gallery">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      <span data-i18n="nav.gallery">Galleria</span>
+    </button>
+    <button type="button" class="side-create nav-new-trip" data-i18n-aria="trip.new" aria-label="Nuovo viaggio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span data-i18n="trip.new">Nuovo viaggio</span>
+    </button>
+    <button class="side-link" data-v="map">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span data-i18n="nav.map">Mappa</span>
+    </button>
+    <button class="side-link" data-v="account">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span data-i18n="account.open">Account</span>
+    </button>
+  </div>
+  <div class="side-foot">
+    <div class="side-user">
+      <button type="button" class="side-user-name" id="sideUser" data-i18n-title="account.open">—</button>
+      <button type="button" class="side-logout ui-tip ui-tip--top" id="sideLogout" data-i18n-aria="logout" aria-label="Esci">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="ui-tip-label" data-i18n="logout" role="tooltip">Esci</span>
+      </button>
+    </div>
+  </div>
+</nav>
+
+<div class="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-actions">
+      <button class="tb-btn" id="searchToggle" data-i18n-aria="search" aria-label="Cerca">
+        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      </button>
+      <div class="lang-wrap" id="langWrap">
+        <button class="tb-btn lang-btn" id="langToggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Lingua">
+          <span id="langFlag">IT</span>
+        </button>
+        <div class="lang-menu" id="langMenu" role="listbox">
+          <button class="lang-opt" type="button" data-lang="it" role="option"><span class="lang-flag">IT</span><span data-i18n="lang.it">Italiano</span></button>
+          <button class="lang-opt" type="button" data-lang="en" role="option"><span class="lang-flag">GB</span><span data-i18n="lang.en">English</span></button>
+          <button class="lang-opt" type="button" data-lang="fr" role="option"><span class="lang-flag">FR</span><span data-i18n="lang.fr">Français</span></button>
+          <button class="lang-opt" type="button" data-lang="es" role="option"><span class="lang-flag">ES</span><span data-i18n="lang.es">Español</span></button>
+          <button class="lang-opt" type="button" data-lang="de" role="option"><span class="lang-flag">DE</span><span data-i18n="lang.de">Deutsch</span></button>
+        </div>
+      </div>
+      <button class="tb-btn tb-theme" id="themeToggle" data-i18n-aria="theme" aria-label="Cambia tema">
+        <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      </button>
+      <button class="tb-btn tb-logout ui-tip ui-tip--bottom" id="tbLogout" data-i18n-aria="logout" aria-label="Esci">
+        <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <span class="ui-tip-label" data-i18n="logout" role="tooltip">Esci</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- TABS (mobile) -->
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-v="road">
+      <svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+      <span class="tab-lbl" data-i18n="nav.road">Diario</span>
+    </button>
+    <button class="tab" data-v="gallery">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      <span class="tab-lbl" data-i18n="nav.gallery">Galleria</span>
+    </button>
+    <button type="button" class="tab tab-create nav-new-trip" data-i18n-aria="trip.new" aria-label="Nuovo viaggio">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+    </button>
+    <button class="tab" data-v="map">
+      <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+      <span class="tab-lbl" data-i18n="nav.map">Mappa</span>
+    </button>
+    <button class="tab" data-v="account">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="tab-lbl" data-i18n="account.open">Account</span>
+    </button>
+  </div>
+
+  <!-- ══ ROAD VIEW ══ -->
+  <div class="view active" id="view-road">
+
+    <div id="roadContent">
+      <div class="road-grid view-shell">
+        <div class="road-main">
+
+          <div class="hero" id="heroEl">
+            <canvas id="heroCv" hidden></canvas>
+            <img class="hero-photo" id="heroPhoto" alt="">
+            <div class="cover-empty cover-empty--hero" id="heroEmpty" hidden aria-hidden="true"></div>
+            <button type="button" class="hero-nav prev" id="heroPrev" hidden data-i18n-aria="hero.prev" aria-label="Viaggio precedente">
+              <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <button type="button" class="hero-nav next" id="heroNext" hidden data-i18n-aria="hero.next" aria-label="Viaggio successivo">
+              <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+            </button>
+            <div class="hero-veil"></div>
+            <div class="hero-body">
+              <div class="hero-eyebrow" id="heroEyebrow"></div>
+              <div class="hero-title" id="heroTitle"></div>
+              <div class="hero-detail" id="heroDetail"></div>
+            </div>
+            <div class="hero-pip-row" id="heroPips"></div>
+            <div class="hero-hint">
+              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+              <span data-i18n="hero.openGallery">Apri galleria</span>
+            </div>
+          </div>
+
+          <div class="kpi-strip rv">
+            <div class="kpi"><div class="kpi-v" id="kpiT">—</div><div class="kpi-l" data-i18n="kpi.trips">Viaggi</div><div class="kpi-n" id="kpiTSub">—</div></div>
+            <div class="kpi"><div class="kpi-v" id="kpiC">—</div><div class="kpi-l" data-i18n="kpi.countries">Paesi</div><div class="kpi-n" id="kpiCSub">—</div></div>
+            <div class="kpi"><div class="kpi-v" id="kpiCont">—</div><div class="kpi-l" data-i18n="kpi.continents">Continenti</div><div class="kpi-n" id="kpiContSub">—</div></div>
+            <div class="kpi"><div class="kpi-v" id="kpiP">—</div><div class="kpi-l" data-i18n="kpi.photos">Foto</div><div class="kpi-n" id="kpiPSub">—</div></div>
+          </div>
+
+          <div class="road-section rv">
+            <div>
+              <div class="road-section-label" data-i18n="section.timeline">Percorso</div>
+              <div class="road-section-title" data-i18n="section.memory">Nel tempo</div>
+            </div>
+          </div>
+          <div class="tl-outer rv"><div class="tl-scroll" id="tlScroll"><div class="tl-axis"></div></div></div>
+
+          <div class="road-section rv" style="padding-bottom:0">
+            <div>
+              <div class="road-section-label" data-i18n="section.archive">Viaggi</div>
+              <div class="road-section-title" data-i18n="section.destinations">Tutte le tappe</div>
+            </div>
+          </div>
+
+          <div class="journey-scroll" id="journeyScroll">
+            <div class="journey-scroll-edge journey-scroll-edge--top" aria-hidden="true"></div>
+            <div class="journey-scroll-track">
+              <div class="journey-list" id="journeyList"></div>
+            </div>
+            <div class="journey-scroll-edge journey-scroll-edge--bottom" aria-hidden="true"></div>
+            <div class="journey-scroll-affordance" aria-hidden="true">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+              <span data-i18n="journey.scrollMore">Altre tappe sotto</span>
+            </div>
+          </div>
+
+        </div><!-- /road-main -->
+
+        <aside class="road-aside">
+          <div class="detail-rail">
+            <div class="detail-box" id="detailBox">
+              <div class="dbox-img">
+                <canvas id="dboxCv" hidden></canvas>
+                <img id="dboxPhoto" alt="" style="display:none">
+                <div class="cover-empty cover-empty--dbox" id="dboxEmpty" hidden>
+                  <div class="cover-empty-cta">
+                    <div class="cover-empty-frame" aria-hidden="true">
+                      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    </div>
+                    <p class="cover-empty-cta-title" data-i18n="cover.addFirst">Aggiungi la prima foto</p>
+                  </div>
+                </div>
+                <div class="dbox-img-fade"></div>
+                <div class="dbox-img-row">
+                  <div class="dbox-title" id="dboxTitle"></div>
+                  <button class="dbox-x" id="dboxClose" data-i18n-aria="close" aria-label="Chiudi">
+                    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+                  </button>
+                </div>
+              </div>
+              <div class="dbox-body">
+                <div class="dbox-where" id="dboxWhere"></div>
+                <div class="dbox-stats">
+                  <div class="dbox-stat"><div class="dbox-stat-v" id="dboxD"></div><div class="dbox-stat-l" data-i18n="trip.days">Giorni</div></div>
+                  <div class="dbox-stat"><div class="dbox-stat-v" id="dboxP"></div><div class="dbox-stat-l" data-i18n="trip.photos">Foto</div></div>
+                  <div class="dbox-stat"><div class="dbox-stat-v" id="dboxType"></div><div class="dbox-stat-l" data-i18n="trip.type">Tipo</div></div>
+                </div>
+                <div class="dbox-actions">
+                  <button class="dbox-btn p" id="dboxGal">
+                    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span data-i18n="trip.openGallery">Apri galleria</span>
+                  </button>
+                  <button class="dbox-btn s" id="dboxMap">
+                    <svg viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/></svg>
+                    <span data-i18n="trip.viewMap">Vedi in mappa</span>
+                  </button>
+                </div>
+                <div class="dbox-actions">
+                  <button class="dbox-btn s" id="dboxEdit">
+                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                    <span data-i18n="trip.edit">Modifica</span>
+                  </button>
+                  <button class="dbox-btn d" id="dboxDelete">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                    <span data-i18n="trip.delete">Elimina</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </div><!-- /road-grid -->
+    </div><!-- /roadContent -->
+
+    <div id="roadEmpty" class="road-empty" hidden>
+      <div class="empty-state empty-state--road">
+        <div class="empty-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"/><path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        </div>
+        <p class="empty-eyebrow" data-i18n="nav.road">Diario</p>
+        <h2 class="empty-title" data-i18n="empty.roadTitle">Il diario è ancora vuoto</h2>
+        <p class="empty-sub" data-i18n="empty.roadSub">
+          Crea il primo viaggio e inizia a caricare le tue foto:
+          resteranno ordinate per destinazione, data e mappa.
+        </p>
+        <div class="empty-actions">
+          <button type="button" class="empty-btn p nav-new-trip">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span data-i18n="trip.new">Nuovo viaggio</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+  </div><!-- /road -->
+
+  <!-- ══ GALLERY VIEW ══ -->
+  <div class="view" id="view-gallery">
+    <div id="galContent"></div>
+    <div class="drop-hint" id="galDropHint" aria-hidden="true">
+      <div class="drop-hint-frame">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        <span class="drop-hint-title" data-i18n="gal.drop">Rilascia qui per caricare</span>
+        <span class="drop-hint-sub" data-i18n="gal.dropSub">Puoi rilasciare le immagini in qualsiasi punto di quest'area</span>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ══ MAP VIEW ══ -->
+  <div class="view" id="view-map">
+    <div class="map-grid view-shell">
+      <div class="map-panel">
+        <p class="map-hint" id="mapLegendTxt">
+          <span class="map-hint-pin" aria-hidden="true"></span>
+          <span class="map-hint-txt" data-i18n="map.legend">Tocca un pin per aprire il viaggio</span>
+        </p>
+        <div class="map-board" id="mapBoard">
+          <div id="leafletMap"></div>
+        </div>
+      </div>
+      <aside class="map-side">
+        <div class="road-section" style="padding-bottom:0">
+          <div>
+            <div class="road-section-label" data-i18n="section.archive">Viaggi</div>
+            <div class="road-section-title" data-i18n="section.destinations">Tutte le tappe</div>
+          </div>
+        </div>
+        <div class="journey-scroll" id="routeScroll">
+          <div class="journey-scroll-edge journey-scroll-edge--top" aria-hidden="true"></div>
+          <div class="journey-scroll-track">
+            <div class="journey-list" id="routeList"></div>
+          </div>
+          <div class="journey-scroll-edge journey-scroll-edge--bottom" aria-hidden="true"></div>
+          <div class="journey-scroll-affordance" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            <span data-i18n="journey.scrollMore">Altre tappe sotto</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ══ ACCOUNT VIEW ══ -->
+  <div class="view" id="view-account">
+    <div class="account-grid view-shell">
+      <div class="account-body">
+        <div class="account-layout">
+          <aside class="account-aside">
+            <div class="account-profile-card">
+              <p class="account-hero-label" data-i18n="account.sectionLabel">Profilo</p>
+              <h1 class="account-hero-name" id="accountUsername">—</h1>
+              <div class="account-hero-meta" id="accountEmailMeta">
+                <span class="account-email-pill" id="accountEmailDisplay">—</span>
+                <span class="account-badge" id="accountEmailBadge" hidden></span>
+              </div>
+            </div>
+          </aside>
+
+          <div class="account-main">
+            <div class="account-card account-email-add" id="accountEmailAdd">
+              <header class="account-card-head">
+                <span class="account-card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                </span>
+                <div>
+                  <p class="account-block-label" data-i18n="account.emailSection">Email</p>
+                  <h2 class="account-block-title" data-i18n="account.emailAdd">Aggiungi email</h2>
+                </div>
+              </header>
+              <div class="account-card-body">
+                <p class="account-hint" id="accountEmailHint" data-i18n="account.emailHint">Aggiungi un'email per poter recuperare la password se la dimentichi.</p>
+                <form id="accountEmailForm" class="account-form">
+                  <div class="field">
+                    <label for="accountEmailInput" data-i18n="account.emailAdd">Aggiungi email</label>
+                    <input id="accountEmailInput" type="email" autocomplete="email" maxlength="254">
+                  </div>
+                  <div class="field-err" id="accountEmailErr"></div>
+                  <div class="account-form-actions">
+                    <button type="submit" class="account-btn p" id="accountEmailSubmit" data-i18n="account.saveEmail">Salva email</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            <section class="account-card account-block account-block--settings">
+              <header class="account-card-head">
+                <span class="account-card-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                </span>
+                <div>
+                  <p class="account-block-label" data-i18n="account.security">Sicurezza</p>
+                  <h2 class="account-block-title" data-i18n="account.changePass">Cambia password</h2>
+                </div>
+              </header>
+              <div class="account-card-body">
+                <form id="accountPassForm" class="account-form">
+                  <div class="field">
+                    <label for="accountCurPass" data-i18n="account.curPass">Password attuale</label>
+                    <input id="accountCurPass" type="password" autocomplete="current-password" maxlength="128">
+                  </div>
+                  <div class="account-field-row">
+                    <div class="field">
+                      <label for="accountNewPass" data-i18n="account.newPass">Nuova password</label>
+                      <input id="accountNewPass" type="password" autocomplete="new-password" maxlength="128">
+                    </div>
+                    <div class="field">
+                      <label for="accountConfPass" data-i18n="account.confPass">Conferma password</label>
+                      <input id="accountConfPass" type="password" autocomplete="new-password" maxlength="128">
+                    </div>
+                  </div>
+                  <div class="field-err" id="accountPassErr"></div>
+                  <div class="account-form-actions">
+                    <button type="submit" class="account-btn p account-btn--submit" id="accountPassSubmit" data-i18n="account.savePass">Aggiorna password</button>
+                  </div>
+                </form>
+              </div>
+            </section>
+
+            <section class="account-card account-block account-block--danger" id="accountDangerCard">
+              <header class="account-card-head">
+                <span class="account-card-icon account-card-icon--danger" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </span>
+                <div>
+                  <h2 class="account-block-title danger" data-i18n="account.dangerTitle">Elimina account</h2>
+                </div>
+              </header>
+              <div class="account-card-body">
+                <p class="account-hint account-hint-pre" data-i18n="account.deleteHint">Elimina definitivamente il tuo account, tutti i viaggi e tutte le foto. Inserisci la password per confermare.</p>
+                <div class="account-danger-row">
+                  <div class="field account-danger-field">
+                    <label for="accountDeletePass" data-i18n="account.deletePass">Password per confermare</label>
+                    <input id="accountDeletePass" type="password" autocomplete="current-password" maxlength="128">
+                  </div>
+                  <div class="account-danger-end">
+                    <div class="field-err" id="accountDeleteErr"></div>
+                    <button type="button" class="account-btn danger" id="accountDeleteBtn" data-i18n="account.deleteBtn">Elimina account</button>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+</div><!-- /app -->
+
+<script src="/vendor/leaflet/leaflet.js"></script>
+<script type="module" src="/js/main.js?v=7"></script>
+</body>
+</html>
