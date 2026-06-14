@@ -1,38 +1,87 @@
 # Deploy WayFold su Hetzner (da Windows, nella root del progetto)
-# Uso: powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1
+#
+# Uso normale (git push + aggiornamento server):
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1 -Message "Fix UI road empty state"
+#
+# Solo aggiornamento remoto (codice già pushato):
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1 -SkipPush
+#
+# Deploy completo via archivio (primo setup o emergenza):
+#   powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1 -Full
+
+param(
+    [string]$Message = "",
+    [switch]$SkipPush,
+    [switch]$Full
+)
 
 $ErrorActionPreference = "Stop"
 $Remote = "wayfold@167.233.121.159"
 $RemoteDir = "/home/wayfold/apps/wayfold"
 $ProjectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 
-$Archive = Join-Path $env:TEMP "wayfold-deploy.tgz"
+function Deploy-Git {
+    Set-Location $ProjectRoot
 
-Write-Host "-> Archivio da $ProjectRoot"
-if (Test-Path $Archive) { Remove-Item $Archive -Force }
+    if (-not (Test-Path (Join-Path $ProjectRoot ".git"))) {
+        throw "Repository git non trovato. Esegui 'git init' nella root del progetto."
+    }
 
-& tar -czf $Archive `
-    --exclude=node_modules `
-    --exclude=sessions `
-    --exclude=photos `
-    --exclude=.git `
-    --exclude=tools `
-    --exclude=db.json `
-    --exclude=db.json.tmp `
-    -C $ProjectRoot .
+    $status = git status --porcelain
+    if ($status -and -not $Message) {
+        throw @"
+Modifiche locali non committate. Committa prima oppure passa -Message:
+  powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1 -Message "descrizione"
+"@
+    }
 
-Write-Host "-> Upload archivio..."
-ssh $Remote "mkdir -p $RemoteDir"
-scp $Archive "${Remote}:${RemoteDir}/wayfold-deploy.tgz"
+    if ($Message) {
+        Write-Host "-> Commit locale..."
+        git add -A
+        git commit -m $Message
+    }
 
-$EnvFile = Join-Path $ProjectRoot ".env"
-if (Test-Path $EnvFile) {
-    Write-Host "-> Upload .env..."
-    scp $EnvFile "${Remote}:${RemoteDir}/.env"
+    if (-not $SkipPush) {
+        Write-Host "-> Push su GitHub..."
+        git push origin main
+    }
+
+    Write-Host "-> Aggiornamento server (git pull + restart)..."
+    ssh $Remote "sed -i 's/\r$//' $RemoteDir/deploy/update-from-git.sh 2>/dev/null; bash $RemoteDir/deploy/update-from-git.sh"
+
+    Write-Host ""
+    Write-Host "Deploy completato: https://wayfold.xyz"
 }
 
-Write-Host "-> Estrazione e installazione remota..."
-ssh $Remote @"
+function Deploy-Full {
+    $Archive = Join-Path $env:TEMP "wayfold-deploy.tgz"
+
+    Write-Host "-> Archivio da $ProjectRoot"
+    if (Test-Path $Archive) { Remove-Item $Archive -Force }
+
+    & tar -czf $Archive `
+        --exclude=node_modules `
+        --exclude=sessions `
+        --exclude=photos `
+        --exclude=.git `
+        --exclude=tools `
+        --exclude=db.json `
+        --exclude=db.json.tmp `
+        -C $ProjectRoot .
+
+    Write-Host "-> Upload archivio..."
+    ssh $Remote "mkdir -p $RemoteDir"
+    scp $Archive "${Remote}:${RemoteDir}/wayfold-deploy.tgz"
+
+    $EnvFile = Join-Path $ProjectRoot ".env"
+    if (Test-Path $EnvFile) {
+        Write-Host "-> Upload .env..."
+        scp $EnvFile "${Remote}:${RemoteDir}/.env"
+    }
+
+    Write-Host "-> Estrazione e installazione remota..."
+    ssh $Remote @"
 set -e
 APP_DIR=$RemoteDir
 cd `"`$APP_DIR`"
@@ -48,8 +97,15 @@ chmod +x deploy/*.sh
 bash deploy/install-on-server.sh
 "@
 
-Write-Host ""
-Write-Host "Deploy app completato."
-Write-Host "Configura Nginx (richiede password sudo sul server):"
-Write-Host "  ssh $Remote"
-Write-Host "  sudo bash $RemoteDir/deploy/setup-nginx-root.sh"
+    Write-Host ""
+    Write-Host "Deploy completo via archivio terminato."
+    Write-Host "Configura Nginx (solo prima volta):"
+    Write-Host "  ssh $Remote"
+    Write-Host "  sudo bash $RemoteDir/deploy/setup-nginx-root.sh"
+}
+
+if ($Full) {
+    Deploy-Full
+} else {
+    Deploy-Git
+}
