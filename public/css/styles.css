@@ -357,6 +357,51 @@ img{display:block}
 .pwa-install-close svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
 .pwa-install-close:hover{background:color-mix(in srgb,var(--btn-charcoal-txt) 10%,transparent);color:var(--btn-charcoal-txt)}
 
+.pwa-install-guide{
+  display:none;
+}
+.pwa-install-guide.is-visible{
+  position:fixed;left:50%;transform:translateX(-50%);
+  bottom:max(20px,calc(env(safe-area-inset-bottom) + 12px));
+  z-index:950;width:min(360px,calc(100vw - 28px));
+  padding:16px 16px 14px;border-radius:20px;
+  background:var(--btn-charcoal);color:var(--btn-charcoal-txt);
+  box-shadow:var(--sh-l);
+  animation:pwaIn .35s var(--eout);
+}
+.pwa-install-guide-close{
+  position:absolute;top:10px;right:10px;
+  width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  color:color-mix(in srgb,var(--btn-charcoal-txt) 55%,transparent);
+  transition:background .15s,color .15s;
+}
+.pwa-install-guide-close svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round}
+.pwa-install-guide-close:hover{background:color-mix(in srgb,var(--btn-charcoal-txt) 10%,transparent);color:var(--btn-charcoal-txt)}
+.pwa-install-guide-head{
+  display:flex;align-items:center;gap:12px;padding-right:28px;margin-bottom:12px;
+}
+.pwa-install-guide-icon{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  border:1px solid color-mix(in srgb,var(--btn-charcoal-txt) 12%,transparent);
+}
+.pwa-install-guide-eyebrow{
+  margin:0 0 2px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;
+  color:color-mix(in srgb,var(--btn-charcoal-txt) 62%,transparent);
+}
+.pwa-install-guide-title{
+  margin:0;font-family:var(--display);font-size:16px;font-weight:500;letter-spacing:-.2px;
+}
+.pwa-install-guide-steps{
+  margin:0;padding:0 0 0 18px;font-size:13px;line-height:1.45;
+  color:color-mix(in srgb,var(--btn-charcoal-txt) 88%,transparent);
+}
+.pwa-install-guide-steps li+li{margin-top:6px}
+.pwa-install-guide-fallback{
+  margin:0;font-size:13px;line-height:1.45;
+  color:color-mix(in srgb,var(--btn-charcoal-txt) 88%,transparent);
+}
+
 /* ─── PWA: aggiornamento disponibile ─── */
 .pwa-update.is-visible{
   position:fixed;left:50%;transform:translateX(-50%);

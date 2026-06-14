@@ -18,7 +18,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;450;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css"/>
-<link rel="stylesheet" href="/css/styles.css?v=22">
+<link rel="stylesheet" href="/css/styles.css?v=23">
 <script src="/js/install-capture.js"></script>
 </head>
 <body>
@@ -149,7 +149,7 @@
   <span id="toastTxt"></span>
 </div>
 
-<!-- PWA: installazione (solo quando il browser lo consente) -->
+<!-- PWA: installazione nativa (beforeinstallprompt, es. Android Chrome) -->
 <div class="pwa-install" id="pwaInstall" hidden>
   <img class="pwa-install-icon" src="/img/icon-192.png" width="32" height="32" alt="">
   <span class="pwa-install-label">wayfold</span>
@@ -157,6 +157,26 @@
   <button class="pwa-install-close" id="pwaInstallClose" type="button" data-i18n-aria="pwa.dismiss" aria-label="Non ora">
     <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
   </button>
+</div>
+
+<!-- PWA: guida installazione (iOS Safari e browser senza prompt nativo) -->
+<div class="pwa-install-guide" id="pwaInstallGuide" hidden>
+  <button class="pwa-install-guide-close" id="pwaInstallGuideClose" type="button" data-i18n-aria="pwa.dismiss" aria-label="Non ora">
+    <svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+  <div class="pwa-install-guide-head">
+    <img class="pwa-install-guide-icon" src="/img/icon-192.png" width="40" height="40" alt="">
+    <div>
+      <p class="pwa-install-guide-eyebrow" data-i18n="pwa.installEyebrow">App disponibile</p>
+      <p class="pwa-install-guide-title" data-i18n="pwa.installTitle">wayfold sul dispositivo</p>
+    </div>
+  </div>
+  <ol class="pwa-install-guide-steps" id="pwaInstallIosSteps" hidden>
+    <li data-i18n="pwa.iosStep1">Apri questa pagina in Safari</li>
+    <li data-i18n="pwa.iosStep2">Tocca Condividi nella barra in basso</li>
+    <li data-i18n="pwa.iosStep3">Seleziona «Aggiungi a Home»</li>
+  </ol>
+  <p class="pwa-install-guide-fallback" id="pwaInstallFallback" hidden data-i18n="pwa.installFallback">Dal menu ⋮ del browser, seleziona «Installa app» o «Aggiungi a Home».</p>
 </div>
 
 <!-- PWA: aggiornamento (gestito in automatico, nessun banner) -->
