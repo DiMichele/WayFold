@@ -86,6 +86,13 @@ function canProgrammaticDownload() {
   return !ios;
 }
 
+/** Web Share con file ha senso solo su mobile; su desktop Windows spesso dà NotAllowedError. */
+function isMobileShareDevice() {
+  const ua = navigator.userAgent || '';
+  return /Android|iPhone|iPad|iPod/i.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
 async function fetchPhotoBlobUrl(url) {
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -186,12 +193,16 @@ async function prepareShareBundle(files, trip) {
 
   if (files.length === 1) {
     const file = files[0];
-    const shareFiles = (file.size <= MAX_SINGLE_SHARE_BYTES && canShareFiles([file])) ? [file] : [];
+    const shareFiles = (isMobileShareDevice()
+      && file.size <= MAX_SINGLE_SHARE_BYTES
+      && canShareFiles([file])) ? [file] : [];
     return { shareFiles, downloadFiles: [file], mode: 'single' };
   }
 
   const zipFile = await buildZipFile(files, trip);
-  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canShareFiles([zipFile]);
+  const zipShareOk = isMobileShareDevice()
+    && zipFile.size <= MAX_ZIP_SHARE_BYTES
+    && canShareFiles([zipFile]);
 
   if (zipShareOk) {
     return { shareFiles: [zipFile], downloadFiles: [zipFile], mode: 'zip' };
@@ -221,14 +232,25 @@ function shareErrorMessage(err) {
 }
 
 /**
- * Condivisione nativa. Deve essere invocata in modo sincrono dal click (user gesture).
+ * Condivisione nativa (solo mobile). Su errore prova il download.
  */
-function shareNatively(shareFiles) {
+function shareNatively(shareFiles, downloadFallback) {
   if (!navigator.share) {
+    if (downloadFallback?.length && canProgrammaticDownload()) {
+      closeModal();
+      downloadFiles(downloadFallback);
+      return;
+    }
     showToast(t('sharePhotos.noWebShare'), 'error');
     return;
   }
   if (navigator.canShare && !navigator.canShare({ files: shareFiles })) {
+    if (downloadFallback?.length && canProgrammaticDownload()) {
+      closeModal();
+      downloadFiles(downloadFallback);
+      showToast(t('sharePhotos.downloadedZip'), 'neutral');
+      return;
+    }
     showToast(t('sharePhotos.cantShareFiles', { n: shareFiles.length }), 'error');
     return;
   }
@@ -237,6 +259,12 @@ function shareNatively(shareFiles) {
   try {
     result = navigator.share({ files: shareFiles });
   } catch (err) {
+    if (downloadFallback?.length && canProgrammaticDownload()) {
+      closeModal();
+      downloadFiles(downloadFallback);
+      showToast(t('sharePhotos.downloadedZip'), 'neutral');
+      return;
+    }
     showToast(shareErrorMessage(err), 'error');
     return;
   }
@@ -245,6 +273,12 @@ function shareNatively(shareFiles) {
     .then(() => closeModal())
     .catch(err => {
       if (err?.name === 'AbortError') return;
+      if (downloadFallback?.length && (err?.name === 'NotAllowedError' || err?.name === 'DataError')) {
+        closeModal();
+        downloadFiles(downloadFallback);
+        showToast(t('sharePhotos.downloadedZip'), 'neutral');
+        return;
+      }
       showToast(shareErrorMessage(err), 'error');
     });
 }
@@ -255,7 +289,7 @@ function handleShareClick(targetId, bundle) {
   if (targetId === 'download') {
     const filesToSave = dlFiles.length ? dlFiles : shareFiles;
     if (!canProgrammaticDownload() && filesToSave.length && navigator.share) {
-      shareNatively(filesToSave);
+      shareNatively(filesToSave, dlFiles);
       return;
     }
     closeModal();
@@ -273,39 +307,21 @@ function handleShareClick(targetId, bundle) {
     return;
   }
 
-  shareNatively(shareFiles);
+  shareNatively(shareFiles, dlFiles);
 }
 
 const TARGETS = [
   {
     id: 'download',
     labelKey: 'sharePhotos.save',
+    mobileOnly: false,
     icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   },
   {
     id: 'native',
     labelKey: 'sharePhotos.system',
+    mobileOnly: true,
     icon: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
-  },
-  {
-    id: 'instagram',
-    labelKey: 'sharePhotos.instagram',
-    icon: '<svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor" stroke="none"/></svg>',
-  },
-  {
-    id: 'whatsapp',
-    labelKey: 'sharePhotos.whatsapp',
-    icon: '<svg viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-12.9 7.1L3 21l2.6-5A8.4 8.4 0 1 1 21 11.5z"/></svg>',
-  },
-  {
-    id: 'telegram',
-    labelKey: 'sharePhotos.telegram',
-    icon: '<svg viewBox="0 0 24 24"><path d="M22 3 2 11l7 3 2 7 4-5 5 5 2-18z"/></svg>',
-  },
-  {
-    id: 'email',
-    labelKey: 'sharePhotos.email',
-    icon: '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>',
   },
 ];
 
@@ -313,14 +329,17 @@ function renderTargets(root, bundle) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
 
-  const nativeOk = bundle.shareFiles.length > 0 && canShareFiles(bundle.shareFiles);
+  const mobile = isMobileShareDevice();
+  const nativeOk = mobile && bundle.shareFiles.length > 0 && canShareFiles(bundle.shareFiles);
 
   TARGETS.forEach(target => {
     const isDownload = target.id === 'download';
+    if (target.mobileOnly && !nativeOk) return;
     if (!isDownload && !nativeOk) return;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = `share-photos-target share-photos-target--${target.id}${isDownload && bundle.mode === 'zip' ? ' share-photos-target--primary' : ''}`;
+    const primary = isDownload && (bundle.mode === 'zip' || !mobile);
+    btn.className = `share-photos-target share-photos-target--${target.id}${primary ? ' share-photos-target--primary' : ''}`;
     btn.innerHTML = `
       <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
       <span class="share-photos-target-lbl">${esc(t(target.labelKey))}</span>`;
@@ -335,17 +354,18 @@ function renderTargets(root, bundle) {
   const existingNote = root.querySelector('.share-photos-note');
   existingNote?.remove();
 
-  if (bundle.mode === 'zip') {
-    const note = document.createElement('p');
-    note.className = 'share-photos-note';
+  const note = document.createElement('p');
+  note.className = 'share-photos-note';
+  if (bundle.mode === 'zip' && !mobile) {
+    note.textContent = t('sharePhotos.desktopZipHint');
+  } else if (bundle.mode === 'zip') {
     note.textContent = t('sharePhotos.zipHint');
-    root.appendChild(note);
-  } else if (!nativeOk) {
-    const note = document.createElement('p');
-    note.className = 'share-photos-note';
+  } else if (!nativeOk && mobile) {
     note.textContent = t('sharePhotos.noWebShare');
-    root.appendChild(note);
+  } else if (!mobile) {
+    note.textContent = t('sharePhotos.desktopHint');
   }
+  if (note.textContent) root.appendChild(note);
 }
 
 /**
