@@ -11,6 +11,7 @@ import { reloadTrips, suppressNewPhotoToast, refreshPollBaseline } from '../data
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
 import { openTripForm } from '../ui/modal.js';
 import { openShareModal } from '../ui/shareModal.js';
+import { shareTripPhotos } from '../ui/sharePhotos.js';
 import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 import { t, formatPhotos } from '../i18n.js';
@@ -391,6 +392,15 @@ async function buildPhotos(c, trip) {
     upBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span>${t('gal.upload')}</span>`;
     upBtn.onclick = () => fileInput.click();
     toolbar.appendChild(upBtn);
+  }
+
+  if (trip.photoCount > 0) {
+    const exportBtn = document.createElement('button');
+    exportBtn.className = 'gal-export';
+    setTip(exportBtn, t('gal.sharePhotos'), { position: 'top' });
+    exportBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg><span>${t('gal.sharePhotos')}</span>`;
+    exportBtn.onclick = () => shareTripPhotos(trip);
+    toolbar.appendChild(exportBtn);
   }
 
   if (isOwner) {

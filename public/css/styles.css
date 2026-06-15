@@ -655,6 +655,7 @@ img{display:block}
 .lb-tool.active{background:var(--acc);color:#fff;box-shadow:0 4px 18px color-mix(in srgb,var(--acc) 45%,transparent)}
 .lb-tool.active svg{fill:currentColor;stroke:currentColor}
 .lb-tool--danger:hover{background:var(--danger);color:#fff;box-shadow:0 4px 18px color-mix(in srgb,var(--danger) 40%,transparent)}
+.lb-toolbar-write{display:contents}
 .lb-meta{text-align:center;color:#EFEAE0;max-width:560px}
 .lb-title{font-family:var(--display);font-size:19px;font-weight:500;letter-spacing:-.2px}
 .lb-sub{font-family:var(--mono);font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(239,234,224,.55);margin-top:5px}
@@ -675,6 +676,30 @@ img{display:block}
 }
 .lb-note-save:hover{transform:translateY(-1px)}
 .lb-note-save:disabled{opacity:.55}
+
+/* Condividi foto su app esterne */
+.share-photos-hint{font-size:13px;color:var(--mut);line-height:1.55;margin:0 0 14px}
+.share-photos-status{font-size:13px;color:var(--ink2);text-align:center;padding:18px 8px}
+.share-photos-status--err{color:var(--danger)}
+.share-photos-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.share-photos-target{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  padding:14px 8px;border-radius:var(--r-m);
+  background:var(--bg2);border:1px solid var(--line);
+  transition:transform .15s var(--spr),border-color .15s,background .15s;
+}
+.share-photos-target:hover{transform:translateY(-2px);border-color:var(--line2);background:var(--srf2)}
+.share-photos-target-ico{
+  width:42px;height:42px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--srf);border:1px solid var(--line);
+}
+.share-photos-target-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.share-photos-target--instagram .share-photos-target-ico{color:#e1306c}
+.share-photos-target--whatsapp .share-photos-target-ico{color:#25d366}
+.share-photos-target--telegram .share-photos-target-ico{color:#26a5e4}
+.share-photos-target-lbl{font-size:11.5px;font-weight:550;color:var(--ink2);text-align:center;line-height:1.25}
+.share-photos-note{font-size:12px;color:var(--mut);margin-top:14px;line-height:1.45}
 
 /* ─── Modale ─── */
 .modal{
@@ -1595,6 +1620,16 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 .gal-share:hover{transform:translateY(-1.5px);box-shadow:var(--sh-m);color:var(--ink)}
 .gal-share svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .gal-share span{display:none}
+.gal-export{
+  display:flex;align-items:center;gap:7px;flex-shrink:0;
+  height:38px;padding:0 14px;border-radius:12px;
+  background:var(--srf);border:1px solid var(--line);color:var(--ink2);
+  font-size:12.5px;font-weight:600;box-shadow:none;
+  transition:transform .15s var(--spr),box-shadow .2s,color .15s,background .15s;
+}
+.gal-export:hover{transform:translateY(-1.5px);box-shadow:var(--sh-m);color:var(--ink)}
+.gal-export svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gal-export span{display:none}
 
 /* redeem codice */
 .gal-redeem{
@@ -1888,6 +1923,7 @@ body[data-role="user"] .owner-only{display:none!important}
   .gal-grid{grid-template-columns:repeat(3,1fr);grid-auto-rows:150px;gap:10px}
   .gal-upload span{display:inline}
   .gal-share span{display:inline}
+  .gal-export span{display:inline}
   .gal-edit span{display:inline}
   .gal-delete span{display:inline}
   .empty-actions{flex-direction:row;max-width:420px}

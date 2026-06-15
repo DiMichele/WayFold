@@ -214,13 +214,18 @@
         <img id="lbImg" alt="" style="display:none">
         <button class="lb-btn lb-side lb-side--prev" type="button" data-lb-prev data-i18n-aria="prev" aria-label="Precedente"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></button>
         <button class="lb-btn lb-side lb-side--next" type="button" data-lb-next data-i18n-aria="next" aria-label="Successiva"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></button>
-        <div class="lb-toolbar" id="lbActions">
+        <div class="lb-toolbar" id="lbToolbar">
+          <button class="lb-tool" id="lbShare" type="button" data-i18n-title="lb.share" hidden>
+            <svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </button>
+          <div class="lb-toolbar-write" id="lbActions">
           <button class="lb-tool" id="lbCover" type="button" data-i18n-title="lb.coverSet">
             <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
           </button>
           <button class="lb-tool lb-tool--danger" id="lbDelete" type="button" data-i18n-title="lb.delete">
             <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
           </button>
+          </div>
         </div>
       </div>
     </div>
@@ -644,6 +649,6 @@
 </div><!-- /app -->
 
 <script src="/vendor/leaflet/leaflet.js"></script>
-<script type="module" src="/js/main.js?v=10"></script>
+<script type="module" src="/js/main.js?v=11"></script>
 </body>
 </html>

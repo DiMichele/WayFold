@@ -9,7 +9,7 @@ import { showToast } from './toast.js';
 import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
-import { t } from '../i18n.js';
+import { shareLightboxPhoto } from './sharePhotos.js';
 
 let _trip = null;
 let _photos = [];
@@ -66,6 +66,10 @@ export function initLightbox() {
   el('lbNoteSave').addEventListener('click', saveNote);
   el('lbCover').addEventListener('click', makeCover);
   el('lbDelete').addEventListener('click', removePhoto);
+  el('lbShare').addEventListener('click', () => {
+    const ph = currentPhoto();
+    if (ph?.url && _trip) shareLightboxPhoto(_trip, ph);
+  });
 
   el('lbNote').addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveNote();
@@ -170,31 +174,34 @@ function render() {
     cv.style.display = 'none';
     img.style.display = '';
     if (img.getAttribute('src') !== ph.url) img.src = ph.url;
+    el('lbShare').hidden = false;
+    if (ph.id && _canWrite) {
+      noteWrap.classList.add('show');
+      el('lbNote').value = ph.note || '';
+      el('lbCaption').textContent = ph.caption ? `${t('lb.caption')}: ${ph.caption}` : '';
+      el('lbCaption').style.display = ph.caption ? '' : 'none';
+
+      const isCover = _trip.coverPhotoId === ph.id;
+      const coverBtn = el('lbCover');
+      coverBtn.classList.toggle('active', isCover);
+      setTip(coverBtn, isCover ? t('lb.coverIs') : t('lb.coverSet'), { position: 'top' });
+      el('lbActions').style.display = '';
+      el('lbCover').style.display = '';
+      el('lbDelete').style.display = ph.canDelete !== false ? '' : 'none';
+    } else {
+      noteWrap.classList.remove('show');
+      el('lbActions').style.display = 'none';
+    }
   } else {
     img.style.display = 'none';
     img.removeAttribute('src');
     cv.style.display = '';
+    el('lbShare').hidden = true;
     const W = Math.min(window.innerWidth - 40, 900), H = Math.round(W * .62);
     dc(cv, W, H, (ctx, w, h) => {
       scene(ctx, w, h, _trip.scene);
       ctx.save(); ctx.globalAlpha = .04 + (_idx % 4) * .02; ctx.fillStyle = '#000'; ctx.fillRect(0, 0, w, h); ctx.restore();
     });
-  }
-
-  if (ph.id && _canWrite) {
-    noteWrap.classList.add('show');
-    el('lbNote').value = ph.note || '';
-    el('lbCaption').textContent = ph.caption ? `${t('lb.caption')}: ${ph.caption}` : '';
-    el('lbCaption').style.display = ph.caption ? '' : 'none';
-
-    const isCover = _trip.coverPhotoId === ph.id;
-    const coverBtn = el('lbCover');
-    coverBtn.classList.toggle('active', isCover);
-    setTip(coverBtn, isCover ? t('lb.coverIs') : t('lb.coverSet'), { position: 'top' });
-    el('lbActions').style.display = '';
-    el('lbCover').style.display = '';
-    el('lbDelete').style.display = ph.canDelete !== false ? '' : 'none';
-  } else {
     noteWrap.classList.remove('show');
     el('lbActions').style.display = 'none';
   }
