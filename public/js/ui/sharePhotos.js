@@ -2,12 +2,11 @@
  * sharePhotos.js — Condividi foto su app esterne (Web Share API + fallback download)
  */
 
-import { esc, tripDest } from '../utils.js';
-import { showToast } from './toast.js';
-import { closeModal } from './modal.js';
+import { tripDest } from '../utils.js';
 import { t } from '../i18n.js';
 import { zipSync } from '../vendor/fflate.esm.js';
 import { fetchMe } from '../api.js';
+import * as api from '../api.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -19,7 +18,6 @@ const MIME_BY_EXT = {
 
 /** Limite conservativo per share nativo di un singolo file (Chrome/Android). */
 const MAX_SINGLE_SHARE_BYTES = 15 * 1024 * 1024;
-const MAX_ZIP_SHARE_BYTES = 50 * 1024 * 1024;
 
 function extFromUrl(url) {
   const m = String(url || '').match(/\.([a-z0-9]+)(?:\?|$)/i);
@@ -200,32 +198,6 @@ function canNativeShareFiles(files) {
   return canShareFiles(files);
 }
 
-/**
- * Sceglie il formato migliore: singola immagine o ZIP (mai multi-immagine nativo).
- * canShare() su più file è inaffidabile: spesso accetta e poi share() fallisce con "too large".
- * @returns {Promise<{ shareFiles: File[], downloadFiles: File[], mode: 'single'|'zip'|'download-only' }>}
- */
-async function prepareShareBundle(files, trip) {
-  if (!files.length) {
-    return { shareFiles: [], downloadFiles: [], mode: 'download-only' };
-  }
-
-  if (files.length === 1) {
-    const file = files[0];
-    const shareFiles = canNativeShareFiles([file]) ? [file] : [];
-    return { shareFiles, downloadFiles: [file], mode: 'single' };
-  }
-
-  const zipFile = await buildZipFile(files, trip);
-  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canNativeShareFiles([zipFile]);
-
-  if (zipShareOk) {
-    return { shareFiles: [zipFile], downloadFiles: [zipFile], mode: 'zip' };
-  }
-
-  return { shareFiles: [], downloadFiles: [zipFile], mode: 'download-only' };
-}
-
 function downloadFiles(files) {
   const file = files[0];
   if (!file) return;
@@ -240,167 +212,55 @@ function downloadFiles(files) {
   URL.revokeObjectURL(url);
 }
 
-function shareErrorMessage(err) {
-  const raw = String(err?.message || err?.name || 'Error');
-  if (/too large/i.test(raw)) return t('sharePhotos.tooLarge');
-  if (err?.name === 'NotAllowedError' && !isMobileShareDevice()) {
-    return t('sharePhotos.desktopShareBlocked');
-  }
-  return `${t('sharePhotos.err')} (${err?.name || raw})`;
-}
-
-/**
- * Apre il foglio di condivisione nativo (Windows / iOS / Android).
- * Nessun fallback al download: per salvare si usa il pulsante «Salva».
- */
-function shareNatively(shareFiles) {
-  if (!navigator.share) {
-    showToast(t('sharePhotos.noWebShare'), 'error');
-    return;
-  }
-  if (navigator.canShare && !navigator.canShare({ files: shareFiles })) {
-    showToast(t('sharePhotos.cantShareFiles', { n: shareFiles.length }), 'error');
-    return;
-  }
-
-  let result;
-  try {
-    result = navigator.share({ files: shareFiles });
-  } catch (err) {
-    showToast(shareErrorMessage(err), 'error');
-    return;
-  }
-
-  Promise.resolve(result)
-    .then(() => closeModal())
-    .catch(err => {
-      if (err?.name === 'AbortError') return;
-      showToast(shareErrorMessage(err), 'error');
-    });
-}
-
-function handleShareClick(targetId, bundle) {
-  const { shareFiles, downloadFiles: dlFiles, mode } = bundle;
-
-  if (targetId === 'download') {
-    const filesToSave = dlFiles.length ? dlFiles : shareFiles;
-    if (!canProgrammaticDownload() && filesToSave.length && navigator.share) {
-      shareNatively(filesToSave);
-      return;
-    }
-    closeModal();
-    downloadFiles(dlFiles);
-    if (mode === 'zip' || dlFiles[0]?.name?.endsWith('.zip')) {
-      showToast(t('sharePhotos.downloadedZip'), 'neutral');
-    } else {
-      showToast(t('sharePhotos.downloaded', { n: dlFiles.length }), 'neutral');
-    }
-    return;
-  }
-
-  if (!shareFiles.length) {
-    showToast(t('sharePhotos.noWebShare'), 'error');
-    return;
-  }
-
-  shareNatively(shareFiles);
-}
-
-const TARGETS = [
-  {
-    id: 'download',
-    labelKey: 'sharePhotos.save',
-    icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-  },
-  {
-    id: 'native',
-    labelKey: 'sharePhotos.system',
-    icon: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
-  },
-];
-
-function renderTargets(root, bundle) {
-  const grid = root.querySelector('#sharePhotosGrid');
-  grid.innerHTML = '';
-
-  const shareOk = bundle.shareFiles.length > 0 && canNativeShareFiles(bundle.shareFiles);
-  const mobile = isMobileShareDevice();
-
-  TARGETS.forEach(target => {
-    const isDownload = target.id === 'download';
-    if (!isDownload && !shareOk) return;
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    const primary = isDownload && bundle.mode === 'zip';
-    btn.className = `share-photos-target share-photos-target--${target.id}${primary ? ' share-photos-target--primary' : ''}`;
-    btn.innerHTML = `
-      <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
-      <span class="share-photos-target-lbl">${esc(t(target.labelKey))}</span>`;
-    btn.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      handleShareClick(target.id, bundle);
-    });
-    grid.appendChild(btn);
-  });
-
-  const existingNote = root.querySelector('.share-photos-note');
-  existingNote?.remove();
-
-  const note = document.createElement('p');
-  note.className = 'share-photos-note';
-  if (bundle.mode === 'zip' && shareOk) {
-    note.textContent = t('sharePhotos.zipShareHint');
-  } else if (bundle.mode === 'zip') {
-    note.textContent = t('sharePhotos.desktopZipHint');
-  } else if (!shareOk && mobile) {
-    note.textContent = t('sharePhotos.noWebShare');
-  } else if (!shareOk) {
-    note.textContent = t('sharePhotos.desktopHint');
-  }
-  if (note.textContent) root.appendChild(note);
-}
-
-/**
- * Monta il pannello export foto dentro un contenitore esistente.
- * @param {HTMLElement} root
- * @param {{ trip: object, photos: object[] }} opts
- */
-export function mountSharePhotosPanel(root, { trip, photos }) {
-  const list = (photos || []).filter(p => p.url);
-  if (!list.length) {
-    root.innerHTML = `<p class="share-empty">${esc(t('gal.noPhotos'))}</p>`;
-    return;
-  }
-
-  root.className = 'share-photos';
-  root.innerHTML = `
-    <div class="share-photos-status" id="sharePhotosStatus">${esc(t('sharePhotos.preparing'))}</div>
-    <div class="share-photos-grid" id="sharePhotosGrid" hidden></div>`;
-
-  const status = root.querySelector('#sharePhotosStatus');
-  const grid = root.querySelector('#sharePhotosGrid');
-
-  (async () => {
+/** Scarica sul disco o apre il foglio di condivisione su iOS. */
+async function deliverFile(file) {
+  if (!canProgrammaticDownload() && navigator.share) {
     try {
-      status.textContent = t('sharePhotos.preparingN', { done: 0, total: list.length });
-      await ensureSession();
-      const files = await buildPhotoFiles(list, trip, (done, total) => {
-        status.textContent = t('sharePhotos.preparingN', { done, total });
-      });
-
-      if (files.length > 1) {
-        status.textContent = t('sharePhotos.packing');
-      }
-
-      const bundle = await prepareShareBundle(files, trip);
-
-      status.hidden = true;
-      grid.hidden = false;
-      renderTargets(root, bundle);
+      await navigator.share({ files: [file] });
+      return;
     } catch (err) {
-      status.textContent = err.message || t('sharePhotos.err');
-      status.classList.add('share-photos-status--err');
+      if (err?.name === 'AbortError') return;
+      throw err;
     }
-  })();
+  }
+  downloadFiles([file]);
+}
+
+/**
+ * Scarica l'album come ZIP (o condivide su iOS).
+ * @param {object} trip
+ * @param {{ onProgress?: (done: number, total: number) => void, photos?: object[] }} [opts]
+ */
+export async function downloadAlbumAsZip(trip, { onProgress, photos } = {}) {
+  await ensureSession();
+  const list = (photos || await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
+  if (!list.length) throw new Error(t('gal.noPhotos'));
+
+  onProgress?.(0, list.length);
+  const files = await buildPhotoFiles(list, trip, onProgress);
+
+  if (files.length === 1) {
+    await deliverFile(files[0]);
+    return;
+  }
+
+  onProgress?.(list.length, list.length);
+  const zip = await buildZipFile(files, trip);
+  await deliverFile(zip);
+}
+
+/** Scarica o condivide una singola foto (lightbox). */
+export async function downloadSinglePhoto(trip, photo) {
+  await ensureSession();
+  if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
+  const file = await photoToFile(photo, trip, 0);
+  if (canNativeShareFiles([file]) && isMobileShareDevice()) {
+    try {
+      await navigator.share({ files: [file] });
+      return;
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+    }
+  }
+  await deliverFile(file);
 }

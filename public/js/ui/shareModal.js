@@ -1,12 +1,11 @@
 /**
- * ui/shareModal.js — Condivisione album (invito Wayfold + export foto)
+ * ui/shareModal.js — Condivisione album tramite codice invito Wayfold
  */
 
 import * as api from '../api.js';
 import { esc } from '../utils.js';
 import { showToast } from './toast.js';
 import { openModal } from './modal.js';
-import { mountSharePhotosPanel } from './sharePhotos.js';
 import { t } from '../i18n.js';
 
 let _tripId = null;
@@ -14,10 +13,6 @@ let _trip = null;
 
 function canInvite(trip) {
   return !trip?.shared;
-}
-
-function canExportPhotos(trip) {
-  return (trip?.photoCount || 0) > 0;
 }
 
 function invitePanelHtml() {
@@ -51,106 +46,25 @@ function invitePanelHtml() {
     </div>`;
 }
 
-function setActiveTab(body, tab) {
-  body.querySelectorAll('.share-tab').forEach(btn => {
-    const on = btn.dataset.tab === tab;
-    btn.classList.toggle('active', on);
-    btn.setAttribute('aria-selected', on ? 'true' : 'false');
-  });
-  const invite = body.querySelector('#sharePanelInvite');
-  const photos = body.querySelector('#sharePanelPhotos');
-  if (invite) invite.hidden = tab !== 'invite';
-  if (photos) photos.hidden = tab !== 'photos';
-}
-
-async function ensurePhotosPanel(body, photos) {
-  const panel = body.querySelector('#sharePanelPhotos');
-  if (!panel || panel.dataset.ready === '1') return;
-
-  let list = photos;
-  if (!list) {
-    try {
-      list = await api.fetchPhotos(_trip.id, { fresh: true });
-    } catch {
-      panel.innerHTML = `<p class="share-empty share-photos-status--err">${esc(t('sharePhotos.err'))}</p>`;
-      panel.dataset.ready = '1';
-      return;
-    }
-  }
-
-  mountSharePhotosPanel(panel, { trip: _trip, photos: list });
-  panel.dataset.ready = '1';
-}
-
 function bindInvitePanel(body) {
   body.querySelector('#shareGenBtn')?.addEventListener('click', generateCode);
   body.querySelector('#shareCopyBtn')?.addEventListener('click', copyCode);
   loadLists(body);
 }
 
-/**
- * @param {object} trip
- * @param {{ tab?: 'invite'|'photos'|'auto', photos?: object[], photosOnly?: boolean }} [opts]
- */
-export function openShareModal(trip, opts = {}) {
+/** Apre il modale per generare/gestire codici invito (solo proprietario). */
+export function openShareModal(trip) {
+  if (!canInvite(trip)) return;
+
   _trip = trip;
   _tripId = trip.id;
 
-  const photosOnly = Boolean(opts.photosOnly);
-  const showInvite = canInvite(trip) && !photosOnly;
-  const showPhotos = photosOnly
-    ? Boolean(opts.photos?.length)
-    : canExportPhotos(trip);
-  if (!showInvite && !showPhotos) return;
-
-  let tab = opts.tab || 'auto';
-  if (tab === 'auto') tab = showInvite ? 'invite' : 'photos';
-  if (tab === 'invite' && !showInvite) tab = 'photos';
-  if (tab === 'photos' && !showPhotos) tab = 'invite';
-
-  const photoCount = opts.photos?.length ?? trip.photoCount ?? 0;
-  const title = photosOnly
-    ? (photoCount === 1 ? t('sharePhotos.titleSingle') : t('sharePhotos.titleAlbum', { n: photoCount }))
-    : t('gal.shareTitle');
-
   const body = document.createElement('div');
   body.className = 'share-modal';
+  body.innerHTML = `<div id="sharePanelInvite">${invitePanelHtml()}</div>`;
+  bindInvitePanel(body);
 
-  if (showInvite && showPhotos) {
-    body.innerHTML = `
-      <div class="share-tabs" role="tablist">
-        <button type="button" class="share-tab" role="tab" data-tab="invite">${esc(t('gal.shareTabInvite'))}</button>
-        <button type="button" class="share-tab" role="tab" data-tab="photos">${esc(t('gal.shareTabPhotos'))}</button>
-      </div>
-      <div id="sharePanelInvite" role="tabpanel"></div>
-      <div id="sharePanelPhotos" role="tabpanel" hidden></div>`;
-
-    body.querySelector('#sharePanelInvite').innerHTML = invitePanelHtml();
-    bindInvitePanel(body);
-
-    body.querySelectorAll('.share-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const next = btn.dataset.tab;
-        setActiveTab(body, next);
-        if (next === 'photos') ensurePhotosPanel(body, opts.photos);
-      });
-    });
-  } else if (showInvite) {
-    body.innerHTML = `<div id="sharePanelInvite">${invitePanelHtml()}</div>`;
-    bindInvitePanel(body);
-  } else {
-    body.innerHTML = `<div id="sharePanelPhotos"></div>`;
-  }
-
-  openModal({ title, body });
-
-  if (showInvite && showPhotos) {
-    setActiveTab(body, tab);
-  }
-
-  if (tab === 'photos' && showPhotos) {
-    ensurePhotosPanel(body, opts.photos);
-  }
+  openModal({ title: t('gal.shareTabInvite'), body });
 }
 
 async function generateCode() {
@@ -240,9 +154,4 @@ function renderMembers(list, members) {
       }
     });
   });
-}
-
-/** Condividi una singola foto dal lightbox. */
-export function shareLightboxPhoto(trip, photo) {
-  openShareModal(trip, { photosOnly: true, photos: [photo] });
 }

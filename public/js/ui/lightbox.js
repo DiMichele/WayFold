@@ -9,7 +9,7 @@ import { showToast } from './toast.js';
 import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
-import { shareLightboxPhoto } from './shareModal.js';
+import { downloadSinglePhoto } from './sharePhotos.js';
 import { t } from '../i18n.js';
 
 let _trip = null;
@@ -67,10 +67,16 @@ export function initLightbox() {
   el('lbNoteSave').addEventListener('click', saveNote);
   el('lbCover').addEventListener('click', e => { e.stopPropagation(); makeCover(); });
   el('lbDelete').addEventListener('click', e => { e.stopPropagation(); removePhoto(); });
-  el('lbShare')?.addEventListener('click', e => {
+  el('lbShare')?.addEventListener('click', async e => {
     e.stopPropagation();
     const ph = currentPhoto();
-    if (ph?.url && _trip) shareLightboxPhoto(_trip, ph);
+    if (!ph?.url || !_trip) return;
+    try {
+      await downloadSinglePhoto(_trip, ph);
+      showToast(t('sharePhotos.downloaded', { n: 1 }), 'neutral');
+    } catch (err) {
+      showToast(err.message || t('sharePhotos.err'), 'error');
+    }
   });
   el('lbToolbar')?.addEventListener('click', e => e.stopPropagation());
 

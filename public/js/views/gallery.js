@@ -11,6 +11,7 @@ import { reloadTrips, suppressNewPhotoToast, refreshPollBaseline } from '../data
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
 import { openTripForm } from '../ui/modal.js';
 import { openShareModal } from '../ui/shareModal.js';
+import { downloadAlbumAsZip } from '../ui/sharePhotos.js';
 import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 import { t, formatPhotos } from '../i18n.js';
@@ -64,6 +65,31 @@ function sharedBadgeHtml() {
 
 let galleryDragDepth = 0;
 let uploadUi = null;
+let albumDownloadBusy = false;
+
+async function runAlbumDownload(trip, btn) {
+  if (albumDownloadBusy) return;
+  albumDownloadBusy = true;
+  if (btn) btn.disabled = true;
+  const tip = t('gal.downloadAlbumProgress');
+  showToast(tip, 'neutral');
+  try {
+    await downloadAlbumAsZip(trip, {
+      onProgress: (done, total) => {
+        if (btn) btn.title = `${tip} ${done}/${total}`;
+      },
+    });
+    showToast(t('sharePhotos.downloadedZip'), 'neutral');
+  } catch (e) {
+    showToast(e.message || t('sharePhotos.err'), 'error');
+  } finally {
+    albumDownloadBusy = false;
+    if (btn) {
+      btn.disabled = false;
+      btn.removeAttribute('title');
+    }
+  }
+}
 
 function getUploadUi() {
   const view = el('view-gallery');
@@ -393,13 +419,22 @@ async function buildPhotos(c, trip) {
     toolbar.appendChild(upBtn);
   }
 
-  if (isOwner || trip.photoCount > 0) {
+  if (isOwner) {
     const shareBtn = document.createElement('button');
     shareBtn.className = 'gal-share';
-    setTip(shareBtn, t('gal.share'), { position: 'top' });
+    setTip(shareBtn, t('gal.shareTabInvite'), { position: 'top' });
     shareBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>${t('gal.share')}</span>`;
     shareBtn.onclick = () => openShareModal(trip);
     toolbar.appendChild(shareBtn);
+  }
+
+  if (trip.photoCount > 0) {
+    const dlBtn = document.createElement('button');
+    dlBtn.className = 'gal-download';
+    setTip(dlBtn, t('gal.downloadAlbum'), { position: 'top' });
+    dlBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>${t('gal.downloadAlbum')}</span>`;
+    dlBtn.onclick = () => runAlbumDownload(trip, dlBtn);
+    toolbar.appendChild(dlBtn);
   }
 
   if (canUpload) {
