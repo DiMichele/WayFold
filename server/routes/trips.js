@@ -52,7 +52,7 @@ const placesLimiter = rateLimit({
   handler: (req, res) => res.status(429).json({ error: 'Troppe ricerche: rallenta' }),
 });
 
-const { searchPlaces } = require('../services/geocode');
+const { searchPlaces, reverseGeocode, normalizeLang } = require('../services/geocode');
 
 const router = Router();
 
@@ -87,22 +87,36 @@ router.post('/', createTripLimiter, async (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+router.get('/places/reverse', placesLimiter, async (req, res, next) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lon = Number(req.query.lon);
+    const lang = normalizeLang(req.query.lang || req.get('accept-language'));
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return res.json({ dest: null, country: null });
+    }
+    const label = await reverseGeocode(lat, lon, { lang });
+    res.json(label);
+  } catch (err) { next(err); }
+});
+
 router.get('/places', placesLimiter, async (req, res, next) => {
   try {
     const q = String(req.query.q || '').trim();
     const dest = String(req.query.dest || '').trim();
     const country = String(req.query.country || '').trim();
     const field = req.query.field === 'country' ? 'country' : 'dest';
+    const lang = normalizeLang(req.query.lang || req.get('accept-language'));
     if (q.length < 2) return res.json([]);
 
     let results;
     if (field === 'country') {
       results = dest
-        ? await searchPlaces(`${dest}, ${q}`, { limit: 6, kind: 'place' })
-        : await searchPlaces(q, { limit: 6, kind: 'country' });
+        ? await searchPlaces(`${dest}, ${q}`, { limit: 6, kind: 'place', lang })
+        : await searchPlaces(q, { limit: 6, kind: 'country', lang });
     } else {
       const query = country ? `${q}, ${country}` : q;
-      results = await searchPlaces(query, { limit: 6, kind: 'place' });
+      results = await searchPlaces(query, { limit: 6, kind: 'place', lang });
     }
     res.json(results);
   } catch (err) { next(err); }

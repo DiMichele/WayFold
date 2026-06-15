@@ -14,9 +14,7 @@ import { showToast } from './toast.js';
 import { bindTripPlaceSuggest } from './placeSuggest.js';
 
 import {
-
-  t, getMonthValues, getMonthLabels, getTripTypeValues, displayTripType,
-
+  t, getLang, getMonthValues, getMonthLabels, getTripTypeValues, displayTripType,
 } from '../i18n.js';
 
 
@@ -219,21 +217,14 @@ export function openTripForm({ trip = null, onSaved }) {
 
 
     const payload = {
-
       dest,
-
       country: get('f-country').value.trim() || null,
-
       year: get('f-year').value ? Number(get('f-year').value) : null,
-
       month: get('f-month').value,
-
       days: get('f-days').value ? Number(get('f-days').value) : null,
-
       type: get('f-type').value || null,
-
       tags: get('f-tags').value,
-
+      lang: getLang(),
     };
 
 

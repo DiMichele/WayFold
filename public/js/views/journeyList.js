@@ -2,7 +2,7 @@
  * journeyList.js — Lista «Tutte le tappe» (home + mappa)
  */
 
-import { esc, joinParts, monthYear, tripDest, mountPhotoEmptyThumb } from '../utils.js';
+import { esc, joinParts, monthYear, tripDest, tripCountry, mountPhotoEmptyThumb } from '../utils.js';
 import { t } from '../i18n.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 
@@ -44,7 +44,7 @@ export function renderJourneyList(listEl, trips, { onTripClick, emptyHtml } = {}
       <div class="journey-num">${String(i + 1).padStart(2, '0')}</div>
       <div class="journey-info">
         <div class="journey-dest"><span class="journey-dest-txt">${esc(tripDest(trip))}</span>${trip.shared ? `<span class="trip-shared-badge">${esc(t('gal.sharedBadge'))}</span>` : ''}</div>
-        <div class="journey-meta">${esc(joinParts(trip.country, monthYear(trip)))}</div>
+        <div class="journey-meta">${esc(joinParts(tripCountry(trip), monthYear(trip)))}</div>
         ${tags.length ? `<div class="journey-tags">${tags.map((g, j) => `<span class="jtag${j === 0 ? ' hi' : ''}">${esc(g)}</span>`).join('')}</div>` : ''}
       </div>
       <div class="journey-right">

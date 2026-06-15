@@ -3,7 +3,7 @@
  */
 
 import { state, getTrip, visibleTrips } from '../state.js';
-import { joinParts, monthYear, esc, tripDest, mountPhotoEmptyThumb } from '../utils.js';
+import { joinParts, monthYear, esc, tripDest, tripCountry, mountPhotoEmptyThumb } from '../utils.js';
 import { switchView } from '../router.js';
 import { reloadTrips } from '../data.js';
 import { openTripForm } from '../ui/modal.js';
@@ -128,7 +128,7 @@ function buildHero() {
       : (displayTripType(trip.type) || trip.continent || t('hero.trip'));
   el('heroTitle').textContent = tripDest(trip);
   el('heroDetail').textContent = joinParts(
-    trip.country,
+    tripCountry(trip),
     monthYear(trip),
     trip.days ? formatDays(trip.days) : null,
     formatPhotos(trip.photoCount || 0)
@@ -195,7 +195,7 @@ function buildTimeline() {
     node.innerHTML = `
       <div class="tl-ring"><div class="tl-dot"></div></div>
       <div class="tl-year">${esc(t.year ?? '—')}</div>
-      <div class="tl-place">${esc(t.dest)}</div>`;
+      <div class="tl-place">${esc(tripDest(t))}</div>`;
     node.onclick = () => { state.heroIdx = i; buildHero(); buildTimeline(); };
     sc.appendChild(node);
   });
@@ -229,7 +229,7 @@ function buildJourneyList() {
 function openDetail(trip) {
   const box = el('detailBox');
   el('dboxTitle').textContent = tripDest(trip);
-  el('dboxWhere').textContent = joinParts(trip.country, monthYear(trip)) || '—';
+  el('dboxWhere').textContent = joinParts(tripCountry(trip), monthYear(trip)) || '—';
   el('dboxD').textContent = trip.days ?? '—';
   el('dboxP').textContent = trip.photoCount ?? 0;
   el('dboxType').textContent = trip.type ? displayTripType(trip.type).slice(0, 8) : '—';

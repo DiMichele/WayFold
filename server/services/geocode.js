@@ -7,8 +7,19 @@
  * Espone anche le utility paese → bandiera emoji / continente.
  */
 
-const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const NOMINATIM = 'https://nominatim.openstreetmap.org';
 const USER_AGENT = 'RoadOfMemories/2.0 (personal travel diary)';
+const SUPPORTED_LANGS = new Set(['it', 'en', 'fr', 'es', 'de']);
+
+function normalizeLang(lang) {
+  const code = String(lang || 'it').toLowerCase().split(/[-,;]/)[0].trim();
+  return SUPPORTED_LANGS.has(code) ? code : 'it';
+}
+
+function acceptLanguage(lang) {
+  const primary = normalizeLang(lang);
+  return primary === 'en' ? 'en' : `${primary},en`;
+}
 
 // ─── Country code → continente ─────────────────────────────────────────────
 
@@ -44,12 +55,12 @@ let _lastNominatimAt = 0;
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-async function nominatimGet(params) {
+async function nominatimGet(path, params) {
   const wait = Math.max(0, 1100 - (Date.now() - _lastNominatimAt));
   if (wait) await sleep(wait);
   _lastNominatimAt = Date.now();
 
-  const url = `${NOMINATIM}?${params.toString()}`;
+  const url = `${NOMINATIM}${path}?${params.toString()}`;
   const res = await fetch(url, {
     headers: { 'User-Agent': USER_AGENT },
     signal: AbortSignal.timeout(8000),
@@ -96,11 +107,12 @@ function mapPlaceHit(hit) {
  * Cerca luoghi o paesi (autocomplete form viaggio).
  * @returns {Promise<Array<{placeId, label, dest, country, lat, lon}>>}
  */
-async function searchPlaces(query, { limit = 6, kind = 'place' } = {}) {
+async function searchPlaces(query, { limit = 6, kind = 'place', lang = 'it' } = {}) {
   const q = String(query || '').trim();
   if (q.length < 2) return [];
 
-  const cacheKey = `${kind}:${q.toLowerCase()}`;
+  const lng = normalizeLang(lang);
+  const cacheKey = `${lng}:${kind}:${q.toLowerCase()}`;
   if (_cache.has(cacheKey)) {
     const cached = _cache.get(cacheKey);
     return Array.isArray(cached) ? cached : [];
@@ -111,12 +123,12 @@ async function searchPlaces(query, { limit = 6, kind = 'place' } = {}) {
       format: 'jsonv2',
       limit: String(Math.min(limit, 8)),
       addressdetails: '1',
-      'accept-language': 'it',
+      'accept-language': acceptLanguage(lng),
       q,
     });
     if (kind === 'country') params.set('featuretype', 'country');
 
-    const data = await nominatimGet(params);
+    const data = await nominatimGet('/search', params);
     if (!data) {
       _cache.set(cacheKey, []);
       return [];
@@ -135,9 +147,10 @@ async function searchPlaces(query, { limit = 6, kind = 'place' } = {}) {
  * Geocodifica una località (es. "Santorini" o "Kyoto, Giappone").
  * @returns {Promise<{lat, lon, country, countryCode, flag, continent} | null>}
  */
-async function geocode(query) {
-  const key = `geo:${String(query).trim().toLowerCase()}`;
-  if (!key || key === 'geo:') return null;
+async function geocode(query, lang = 'it') {
+  const lng = normalizeLang(lang);
+  const key = `geo:${lng}:${String(query).trim().toLowerCase()}`;
+  if (!key || key === `geo:${lng}:`) return null;
   if (_cache.has(key)) return _cache.get(key);
 
   try {
@@ -145,10 +158,10 @@ async function geocode(query) {
       format: 'jsonv2',
       limit: '1',
       addressdetails: '1',
-      'accept-language': 'it',
+      'accept-language': acceptLanguage(lng),
       q: String(query).trim(),
     });
-    const data = await nominatimGet(params);
+    const data = await nominatimGet('/search', params);
     if (!data) return null;
 
     const [hit] = data;
@@ -174,4 +187,52 @@ async function geocode(query) {
   }
 }
 
-module.exports = { geocode, searchPlaces, flagEmoji, continentOf };
+/**
+ * Nome città/paese da coordinate (popup mappa, cambio lingua UI).
+ */
+async function reverseGeocode(lat, lon, { lang = 'it' } = {}) {
+  const latN = Number(lat);
+  const lonN = Number(lon);
+  if (!Number.isFinite(latN) || !Number.isFinite(lonN)) return { dest: null, country: null };
+
+  const lng = normalizeLang(lang);
+  const cacheKey = `rev:${lng}:${latN.toFixed(4)}:${lonN.toFixed(4)}`;
+  if (_cache.has(cacheKey)) return _cache.get(cacheKey);
+
+  try {
+    const params = new URLSearchParams({
+      format: 'jsonv2',
+      lat: String(latN),
+      lon: String(lonN),
+      addressdetails: '1',
+      'accept-language': acceptLanguage(lng),
+      zoom: '10',
+    });
+    const hit = await nominatimGet('/reverse', params);
+    if (!hit) {
+      const empty = { dest: null, country: null };
+      _cache.set(cacheKey, empty);
+      return empty;
+    }
+
+    const a = hit.address || {};
+    const result = {
+      dest: pickDestName(hit) || null,
+      country: a.country || null,
+    };
+    _cache.set(cacheKey, result);
+    return result;
+  } catch (err) {
+    console.warn(`⚠️  Reverse geocoding fallito (${lat}, ${lon}): ${err.message}`);
+    return { dest: null, country: null };
+  }
+}
+
+module.exports = {
+  geocode,
+  searchPlaces,
+  reverseGeocode,
+  normalizeLang,
+  flagEmoji,
+  continentOf,
+};

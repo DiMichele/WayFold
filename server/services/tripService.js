@@ -80,11 +80,11 @@ function pickScene({ type, lat, countryCode, dest }) {
 }
 
 /** Geocodifica la destinazione e restituisce i campi arricchiti. */
-async function enrichLocation(dest, country) {
+async function enrichLocation(dest, country, lang = 'it') {
   const query = country ? `${dest}, ${country}` : dest;
-  let geo = await geocode(query);
+  let geo = await geocode(query, lang);
   // Se "dest, paese" non dà risultati, riprova con la sola destinazione
-  if (!geo && country) geo = await geocode(dest);
+  if (!geo && country) geo = await geocode(dest, lang);
   if (!geo) return {};
   return {
     lat: geo.lat,
@@ -135,7 +135,7 @@ async function createFromTopic({ topicId, name }) {
  * Il topic viene creato PRIMA su Telegram (storage), poi localmente.
  * Ogni topic è prefissato con [username] nel gruppo Telegram.
  */
-async function createManual(user, { dest, country, year, month, days, type, tags }) {
+async function createManual(user, { dest, country, year, month, days, type, tags, lang }) {
   const cleanDest = String(dest || '').trim().slice(0, 60);
   if (!cleanDest) throw Object.assign(new Error('La destinazione è obbligatoria'), { status: 400 });
 
@@ -143,7 +143,11 @@ async function createManual(user, { dest, country, year, month, days, type, tags
   const topicName = telegramTopicName(user.username, baseName);
   const topic = await telegram.createTopic(topicName);
 
-  const loc = await enrichLocation(cleanDest, country ? String(country).trim() : null);
+  const loc = await enrichLocation(
+    cleanDest,
+    country ? String(country).trim() : null,
+    lang
+  );
   const now = new Date();
   return db.createTrip({
     userId: user.id,
@@ -185,7 +189,11 @@ async function updateManual(user, id, patch) {
   const destChanged = fields.dest && fields.dest.toLowerCase() !== (trip.dest || '').toLowerCase();
   const countryChanged = fields.country !== undefined && fields.country !== trip.country;
   if (destChanged || countryChanged) {
-    const loc = await enrichLocation(fields.dest || trip.dest, fields.country ?? trip.country);
+    const loc = await enrichLocation(
+      fields.dest || trip.dest,
+      fields.country ?? trip.country,
+      patch.lang
+    );
     Object.assign(fields, loc);
     fields.scene = pickScene({
       type: fields.type ?? trip.type,

@@ -10,6 +10,7 @@ import { renderCurrentView } from './router.js';
 import { showToast } from './ui/toast.js';
 import { updateSyncGate } from './ui/syncGate.js';
 import { t } from './i18n.js';
+import { warmTripLabels } from './places.js';
 
 // Baseline per il polling in main.js: evita toast "nuove foto" dopo upload propri
 let _pollCounts = null;
@@ -58,5 +59,8 @@ export async function reloadTrips({ render = true, silent = false } = {}) {
     console.warn('[data] reload fallito:', err.message);
   }
   updateSyncGate();
+  if (state.trips.length) {
+    warmTripLabels(state.trips, { onUpdate: () => render && renderCurrentView() });
+  }
   if (render) renderCurrentView();
 }

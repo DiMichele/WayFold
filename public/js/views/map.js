@@ -3,11 +3,12 @@
  */
 
 import { state, getTrip } from '../state.js';
-import { joinParts, monthYear, esc, tripDest } from '../utils.js';
+import { joinParts, monthYear, esc, tripDest, tripCountry } from '../utils.js';
 import { openTripPhotosFromMap } from './gallery.js';
 import { renderJourneyList } from './journeyList.js';
 import { showToast } from '../ui/toast.js';
 import { t, formatDays } from '../i18n.js';
+import { warmTripLabels } from '../places.js';
 
 let map = null;
 let layer = null;
@@ -143,7 +144,7 @@ export function renderMap() {
       const marker = L.marker([lat, lon], { icon }).addTo(layer);
       marker.bindPopup(`
         <div class="lp-dest">${esc(tripDest(trip))}</div>
-        <div class="lp-meta">${esc(joinParts(trip.country, monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
+        <div class="lp-meta">${esc(joinParts(tripCountry(trip), monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
         <button class="lp-btn" data-trip="${trip.id}">
           <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
           ${t('map.openGallery')}
@@ -165,6 +166,8 @@ export function renderMap() {
   );
 
   buildRouteList();
+
+  warmTripLabels(geoTrips, { onUpdate: () => renderMap() });
 
   requestAnimationFrame(() => {
     map.invalidateSize();

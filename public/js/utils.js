@@ -3,6 +3,7 @@
  */
 
 import { displayMonth, getMonthLabels, getMonthValues } from './i18n.js';
+import { getLocalizedTrip } from './places.js';
 
 export const MONTHS = getMonthValues();
 
@@ -42,9 +43,16 @@ export function esc(text) {
 
 /** Nome viaggio senza prefisso Telegram "[username]". */
 export function tripDest(trip) {
-  return String(trip?.dest ?? trip?.name ?? '')
+  const localized = getLocalizedTrip(trip)?.dest;
+  const raw = String(trip?.dest ?? trip?.name ?? '')
     .trim()
     .replace(/^\[[a-zA-Z0-9_.]{3,20}\]\s*/, '');
+  return localized || raw;
+}
+
+/** Paese nella lingua UI corrente (fallback su valore salvato). */
+export function tripCountry(trip) {
+  return getLocalizedTrip(trip)?.country || trip?.country || '';
 }
 
 /** Icona album vuoto (galleria / upload). */

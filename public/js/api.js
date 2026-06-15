@@ -6,9 +6,15 @@
  * (usata dalla sync automatica quando arrivano foto nuove).
  */
 
+import { getLang } from './i18n.js';
+
 async function request(path, options = {}) {
   const res = await fetch(path, {
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept-Language': getLang(),
+      ...options.headers,
+    },
     credentials: 'same-origin',
     ...options,
   });
@@ -90,11 +96,20 @@ export function deleteTrip(id) {
   return request(`/api/trips/${id}`, { method: 'DELETE' });
 }
 
-export function fetchPlaces({ q, field = 'dest', dest = '', country = '' } = {}) {
-  const params = new URLSearchParams({ q, field });
+export function fetchPlaces({ q, field = 'dest', dest = '', country = '', lang = getLang() } = {}) {
+  const params = new URLSearchParams({ q, field, lang });
   if (dest) params.set('dest', dest);
   if (country) params.set('country', country);
   return request(`/api/trips/places?${params}`);
+}
+
+export function reversePlace(lat, lon, lang = getLang()) {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    lang,
+  });
+  return request(`/api/trips/places/reverse?${params}`);
 }
 
 // ─── Photos (con cache) ────────────────────────────────────────────────────

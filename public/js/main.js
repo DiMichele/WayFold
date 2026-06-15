@@ -24,6 +24,7 @@ import { initPasswordToggle, refreshPasswordToggleLabels } from './ui/passwordTo
 import { initJourneyScrolls, refreshJourneyScrollsInView } from './ui/journeyScroll.js';
 import { initTooltips } from './ui/tooltip.js';
 import { initPwa, syncPwaInstall } from './pwa.js';
+import { clearPlaceLabels, warmTripLabels } from './places.js';
 
 // ─── Navigazione (tabs mobile + sidebar desktop) ───────────────────────────
 
@@ -158,10 +159,14 @@ async function boot() {
   applyStatic();
 
   onLangChange(() => {
+    clearPlaceLabels();
     refreshAuthLabels();
     refreshPasswordToggleLabels();
     updateSyncGate();
     if (state.user) applyUser(state.user);
+    if (state.trips.length) {
+      warmTripLabels(state.trips, { onUpdate: () => renderCurrentView() });
+    }
     renderCurrentView();
   });
 
