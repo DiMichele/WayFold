@@ -696,6 +696,7 @@ img{display:block}
 }
 .share-photos-target-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .share-photos-target--instagram .share-photos-target-ico{color:#e1306c}
+.share-photos-target--primary{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,var(--srf))}
 .share-photos-target--whatsapp .share-photos-target-ico{color:#25d366}
 .share-photos-target--telegram .share-photos-target-ico{color:#26a5e4}
 .share-photos-target-lbl{font-size:11.5px;font-weight:550;color:var(--ink2);text-align:center;line-height:1.25}

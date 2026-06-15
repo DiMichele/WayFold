@@ -80,6 +80,7 @@ if (!config.SESSION_SECRET) {
   console.warn('⚠️  SESSION_SECRET mancante nel .env: generato al volo (le sessioni non sopravvivono al riavvio)');
 }
 
+const prodHost = /wayfold\.xyz/i.test(config.BASE_URL);
 app.use(session({
   name: 'wf.sid',
   secret: sessionSecret,
@@ -92,6 +93,7 @@ app.use(session({
     sameSite: 'lax',
     secure: 'auto',                    // true dietro https (tunnel), false su localhost
     maxAge: 14 * 24 * 60 * 60 * 1000,  // 14 giorni
+    ...(prodHost ? { domain: '.wayfold.xyz' } : {}),
   },
 }));
 

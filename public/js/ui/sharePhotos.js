@@ -6,6 +6,8 @@ import { esc, tripDest } from '../utils.js';
 import { showToast } from './toast.js';
 import { closeModal } from './modal.js';
 import { t } from '../i18n.js';
+import { zipSync } from '../vendor/fflate.esm.js';
+import { fetchMe } from '../api.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -14,6 +16,10 @@ const MIME_BY_EXT = {
   webp: 'image/webp',
   heic: 'image/heic',
 };
+
+/** Limite conservativo per share nativo di un singolo file (Chrome/Android). */
+const MAX_SINGLE_SHARE_BYTES = 15 * 1024 * 1024;
+const MAX_ZIP_SHARE_BYTES = 50 * 1024 * 1024;
 
 function extFromUrl(url) {
   const m = String(url || '').match(/\.([a-z0-9]+)(?:\?|$)/i);
@@ -29,14 +35,93 @@ function safeBaseName(trip) {
     .slice(0, 40) || 'wayfold';
 }
 
-async function fetchPhotoBlob(url) {
-  const res = await fetch(url, { credentials: 'same-origin' });
+async function ensureSession() {
+  try {
+    await fetchMe();
+  } catch (err) {
+    if (err.status === 401) throw new Error(t('sharePhotos.sessionExpired'));
+    throw new Error(t('sharePhotos.fetchFail'));
+  }
+}
+
+function pathsMatch(a, b) {
+  try {
+    return new URL(a, window.location.origin).pathname
+      === new URL(b, window.location.origin).pathname;
+  } catch {
+    return a === b;
+  }
+}
+
+function waitImg(img) {
+  if (img.complete && img.naturalWidth) return Promise.resolve(true);
+  return new Promise(resolve => {
+    img.addEventListener('load', () => resolve(!!img.naturalWidth), { once: true });
+    img.addEventListener('error', () => resolve(false), { once: true });
+  });
+}
+
+/** Riutilizza immagini già caricate in galleria/lightbox (evita un fetch che può dare 401). */
+async function blobFromGalleryImage(url) {
+  const sel = '#lbImg, .gal-grid img, .gal-hthumb img';
+  for (const img of document.querySelectorAll(sel)) {
+    const src = img.currentSrc || img.src;
+    if (!src || !pathsMatch(src, url)) continue;
+    if (!(await waitImg(img))) continue;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+      if (blob?.size) return blob;
+    } catch {
+      /* canvas tainted */
+    }
+  }
+  return null;
+}
+
+async function fetchPhotoBlobUrl(url) {
+  const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+  if (res.status === 401) {
+    window.dispatchEvent(new Event('wf:unauthorized'));
+    throw new Error(t('sharePhotos.sessionExpired'));
+  }
+  if (res.status === 403) throw new Error(t('sharePhotos.emailRequired'));
   if (!res.ok) throw new Error(t('sharePhotos.fetchFail'));
-  return res.blob();
+  const blob = await res.blob();
+  if (!blob.size) throw new Error(t('sharePhotos.fetchFail'));
+  const ct = res.headers.get('content-type') || blob.type || '';
+  if (ct.includes('application/json')) throw new Error(t('sharePhotos.fetchFail'));
+  return blob;
+}
+
+async function fetchPhotoBlob(photo) {
+  const url = photo?.url;
+  if (url) {
+    const fromDom = await blobFromGalleryImage(url);
+    if (fromDom) return fromDom;
+  }
+
+  const candidates = [];
+  if (photo?.id) candidates.push(`/api/photos/${photo.id}/file`);
+  if (url) candidates.push(url);
+
+  let lastErr;
+  for (const candidate of candidates) {
+    try {
+      return await fetchPhotoBlobUrl(candidate);
+    } catch (err) {
+      lastErr = err;
+      if (err.message === t('sharePhotos.sessionExpired')) throw err;
+    }
+  }
+  throw lastErr || new Error(t('sharePhotos.fetchFail'));
 }
 
 async function photoToFile(photo, trip, index) {
-  const blob = await fetchPhotoBlob(photo.url);
+  const blob = await fetchPhotoBlob(photo);
   const ext = extFromUrl(photo.url);
   const type = blob.type?.startsWith('image/') ? blob.type : (MIME_BY_EXT[ext] || 'image/jpeg');
   const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
@@ -53,24 +138,20 @@ export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
   return files;
 }
 
-function downloadFiles(files) {
+async function buildZipFile(files, trip) {
+  const entries = {};
   for (const file of files) {
-    const url = URL.createObjectURL(file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = file.name;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    entries[file.name] = new Uint8Array(await file.arrayBuffer());
   }
+  const zipped = zipSync(entries, { level: 0 });
+  const zipName = `${safeBaseName(trip)}.zip`;
+  return new File([zipped], zipName, { type: 'application/zip', lastModified: Date.now() });
 }
 
 /** True se il dispositivo può condividere nativamente questi file. */
 function canShareFiles(files) {
   if (!navigator.share || !files?.length) return false;
-  if (!navigator.canShare) return true; // share esiste ma niente canShare: tentiamo
+  if (!navigator.canShare) return true;
   try {
     return navigator.canShare({ files });
   } catch {
@@ -79,24 +160,69 @@ function canShareFiles(files) {
 }
 
 /**
- * Condivisione nativa: solo immagini, nessun testo.
- * Deve essere invocata in modo sincrono dal click (user gesture).
+ * Sceglie il formato migliore: singola immagine o ZIP (mai multi-immagine nativo).
+ * canShare() su più file è inaffidabile: spesso accetta e poi share() fallisce con "too large".
+ * @returns {Promise<{ shareFiles: File[], downloadFiles: File[], mode: 'single'|'zip'|'download-only' }>}
  */
-function shareNatively(files) {
+async function prepareShareBundle(files, trip) {
+  if (!files.length) {
+    return { shareFiles: [], downloadFiles: [], mode: 'download-only' };
+  }
+
+  if (files.length === 1) {
+    const file = files[0];
+    const shareFiles = (file.size <= MAX_SINGLE_SHARE_BYTES && canShareFiles([file])) ? [file] : [];
+    return { shareFiles, downloadFiles: [file], mode: 'single' };
+  }
+
+  const zipFile = await buildZipFile(files, trip);
+  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canShareFiles([zipFile]);
+
+  if (zipShareOk) {
+    return { shareFiles: [zipFile], downloadFiles: [zipFile], mode: 'zip' };
+  }
+
+  return { shareFiles: [], downloadFiles: [zipFile], mode: 'download-only' };
+}
+
+function downloadFiles(files) {
+  const file = files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name;
+  a.rel = 'noopener';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function shareErrorMessage(err) {
+  const raw = String(err?.message || err?.name || 'Error');
+  if (/too large/i.test(raw)) return t('sharePhotos.tooLarge');
+  return `${t('sharePhotos.err')} (${err?.name || raw})`;
+}
+
+/**
+ * Condivisione nativa. Deve essere invocata in modo sincrono dal click (user gesture).
+ */
+function shareNatively(shareFiles) {
   if (!navigator.share) {
     showToast(t('sharePhotos.noWebShare'), 'error');
     return;
   }
-  if (navigator.canShare && !navigator.canShare({ files })) {
-    showToast(t('sharePhotos.cantShareFiles', { n: files.length }), 'error');
+  if (navigator.canShare && !navigator.canShare({ files: shareFiles })) {
+    showToast(t('sharePhotos.cantShareFiles', { n: shareFiles.length }), 'error');
     return;
   }
 
   let result;
   try {
-    result = navigator.share({ files });
+    result = navigator.share({ files: shareFiles });
   } catch (err) {
-    showToast(`${t('sharePhotos.err')} (${err?.name || 'Error'})`, 'error');
+    showToast(shareErrorMessage(err), 'error');
     return;
   }
 
@@ -104,21 +230,38 @@ function shareNatively(files) {
     .then(() => closeModal())
     .catch(err => {
       if (err?.name === 'AbortError') return;
-      showToast(`${t('sharePhotos.err')} (${err?.name || 'Error'})`, 'error');
+      showToast(shareErrorMessage(err), 'error');
     });
 }
 
-function handleShareClick(targetId, files) {
+function handleShareClick(targetId, bundle) {
+  const { shareFiles, downloadFiles: dlFiles, mode } = bundle;
+
   if (targetId === 'download') {
     closeModal();
-    downloadFiles(files);
-    showToast(t('sharePhotos.downloaded', { n: files.length }), 'neutral');
+    downloadFiles(dlFiles);
+    if (mode === 'zip' || dlFiles[0]?.name?.endsWith('.zip')) {
+      showToast(t('sharePhotos.downloadedZip'), 'neutral');
+    } else {
+      showToast(t('sharePhotos.downloaded', { n: dlFiles.length }), 'neutral');
+    }
     return;
   }
-  shareNatively(files);
+
+  if (!shareFiles.length) {
+    showToast(t('sharePhotos.noWebShare'), 'error');
+    return;
+  }
+
+  shareNatively(shareFiles);
 }
 
 const TARGETS = [
+  {
+    id: 'download',
+    labelKey: 'sharePhotos.save',
+    icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
+  },
   {
     id: 'native',
     labelKey: 'sharePhotos.system',
@@ -144,36 +287,40 @@ const TARGETS = [
     labelKey: 'sharePhotos.email',
     icon: '<svg viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 7 10-7"/></svg>',
   },
-  {
-    id: 'download',
-    labelKey: 'sharePhotos.save',
-    icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
-  },
 ];
 
-function renderTargets(root, files) {
+function renderTargets(root, bundle) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
 
-  const nativeOk = canShareFiles(files);
+  const nativeOk = bundle.shareFiles.length > 0 && canShareFiles(bundle.shareFiles);
 
   TARGETS.forEach(target => {
-    if (target.id !== 'download' && !nativeOk) return;
+    const isDownload = target.id === 'download';
+    if (!isDownload && !nativeOk) return;
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = `share-photos-target share-photos-target--${target.id}`;
+    btn.className = `share-photos-target share-photos-target--${target.id}${isDownload && bundle.mode === 'zip' ? ' share-photos-target--primary' : ''}`;
     btn.innerHTML = `
       <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
       <span class="share-photos-target-lbl">${esc(t(target.labelKey))}</span>`;
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
-      handleShareClick(target.id, files);
+      handleShareClick(target.id, bundle);
     });
     grid.appendChild(btn);
   });
 
-  if (!nativeOk) {
+  const existingNote = root.querySelector('.share-photos-note');
+  existingNote?.remove();
+
+  if (bundle.mode === 'zip') {
+    const note = document.createElement('p');
+    note.className = 'share-photos-note';
+    note.textContent = t('sharePhotos.zipHint');
+    root.appendChild(note);
+  } else if (!nativeOk) {
     const note = document.createElement('p');
     note.className = 'share-photos-note';
     note.textContent = t('sharePhotos.noWebShare');
@@ -203,13 +350,20 @@ export function mountSharePhotosPanel(root, { trip, photos }) {
 
   (async () => {
     try {
+      await ensureSession();
       const files = await buildPhotoFiles(list, trip, (done, total) => {
         status.textContent = t('sharePhotos.preparingN', { done, total });
       });
 
+      if (files.length > 1) {
+        status.textContent = t('sharePhotos.packing');
+      }
+
+      const bundle = await prepareShareBundle(files, trip);
+
       status.hidden = true;
       grid.hidden = false;
-      renderTargets(root, files);
+      renderTargets(root, bundle);
     } catch (err) {
       status.textContent = err.message || t('sharePhotos.err');
       status.classList.add('share-photos-status--err');

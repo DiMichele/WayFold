@@ -5,6 +5,7 @@
 const { Router } = require('express');
 const db = require('../db');
 const tripService = require('../services/tripService');
+const { serveUserPhoto } = require('../services/photoServe');
 const { requireAuth, requireVerifiedEmail, assertPhotoAccess } = require('../middleware/auth');
 
 const router = Router();
@@ -18,6 +19,14 @@ function validateId(req, res, next) {
   }
   next();
 }
+
+router.get('/:id/file', validateId, async (req, res, next) => {
+  try {
+    const { photo } = assertPhotoAccess(req.user, db.getPhotoById(req.params.id), 'read');
+    const served = await serveUserPhoto(res, { tripId: photo.tripId, file: photo.fileName });
+    if (!served) return res.status(404).json({ error: 'Non trovato' });
+  } catch (err) { next(err); }
+});
 
 router.patch('/:id', validateId, async (req, res, next) => {
   try {
