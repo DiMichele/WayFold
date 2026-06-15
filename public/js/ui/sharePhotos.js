@@ -4,7 +4,16 @@
 
 import { esc, tripDest } from '../utils.js';
 import { showToast } from './toast.js';
+import { closeModal } from './modal.js';
 import { t } from '../i18n.js';
+
+const MIME_BY_EXT = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  webp: 'image/webp',
+  heic: 'image/heic',
+};
 
 function extFromUrl(url) {
   const m = String(url || '').match(/\.([a-z0-9]+)(?:\?|$)/i);
@@ -28,10 +37,10 @@ async function fetchPhotoBlob(url) {
 
 async function photoToFile(photo, trip, index) {
   const blob = await fetchPhotoBlob(photo.url);
-  const type = blob.type && blob.type.startsWith('image/') ? blob.type : 'image/jpeg';
   const ext = extFromUrl(photo.url);
+  const type = blob.type?.startsWith('image/') ? blob.type : (MIME_BY_EXT[ext] || 'image/jpeg');
   const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
-  return new File([blob], name, { type });
+  return new File([blob], name, { type, lastModified: Date.now() });
 }
 
 export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
@@ -42,30 +51,6 @@ export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
     files.push(await photoToFile(list[i], trip, i));
   }
   return files;
-}
-
-export function canShareFiles(files) {
-  if (!navigator.share || !files?.length) return false;
-  try {
-    return !navigator.canShare || navigator.canShare({ files });
-  } catch {
-    return false;
-  }
-}
-
-function shareText(trip, count) {
-  const dest = tripDest(trip);
-  return count > 1
-    ? t('sharePhotos.textAlbum', { dest, n: count })
-    : t('sharePhotos.textSingle', { dest });
-}
-
-async function nativeShare(files, trip) {
-  await navigator.share({
-    files,
-    title: tripDest(trip),
-    text: shareText(trip, files.length),
-  });
 }
 
 function downloadFiles(files) {
@@ -82,40 +67,33 @@ function downloadFiles(files) {
   }
 }
 
-async function shareViaEmail(files, trip) {
-  const subject = encodeURIComponent(t('sharePhotos.emailSubject', { dest: tripDest(trip) }));
-  const body = encodeURIComponent(shareText(trip, files.length));
-  if (canShareFiles(files)) {
-    try {
-      await nativeShare(files, trip);
-      return;
-    } catch (err) {
-      if (err?.name === 'AbortError') return;
-    }
-  }
-  downloadFiles(files);
-  window.location.href = `mailto:?subject=${subject}&body=${body}`;
+/** Condivisione nativa: solo file, senza testo (richiesto da IG/WA/TG). */
+function openNativeShare(files) {
+  if (!navigator.share) return false;
+
+  closeModal();
+
+  const payload = { files };
+  navigator.share(payload).catch(err => {
+    if (err?.name === 'AbortError') return;
+    downloadFiles(files);
+    showToast(t('sharePhotos.downloadFallback'), 'neutral');
+  });
+  return true;
 }
 
-async function targetAction(id, files, trip) {
-  switch (id) {
-    case 'download':
-      downloadFiles(files);
-      showToast(t('sharePhotos.downloaded', { n: files.length }), 'neutral');
-      return;
-    case 'email':
-      return shareViaEmail(files, trip);
-    default:
-      if (canShareFiles(files)) {
-        return nativeShare(files, trip);
-      }
-      try {
-        await nativeShare(files, trip);
-      } catch (err) {
-        if (err?.name === 'AbortError') return;
-        downloadFiles(files);
-        showToast(t('sharePhotos.downloadFallback'), 'neutral');
-      }
+function handleShareClick(targetId, files) {
+  if (targetId === 'download') {
+    closeModal();
+    downloadFiles(files);
+    showToast(t('sharePhotos.downloaded', { n: files.length }), 'neutral');
+    return;
+  }
+
+  if (!openNativeShare(files)) {
+    closeModal();
+    downloadFiles(files);
+    showToast(t('sharePhotos.downloadFallback'), 'neutral');
   }
 }
 
@@ -152,7 +130,7 @@ const TARGETS = [
   },
 ];
 
-function renderTargets(root, files, trip) {
+function renderTargets(root, files) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
   TARGETS.forEach(target => {
@@ -162,14 +140,7 @@ function renderTargets(root, files, trip) {
     btn.innerHTML = `
       <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
       <span class="share-photos-target-lbl">${esc(t(target.labelKey))}</span>`;
-    btn.addEventListener('click', async () => {
-      try {
-        await targetAction(target.id, files, trip);
-      } catch (err) {
-        if (err?.name === 'AbortError') return;
-        showToast(err.message || t('sharePhotos.err'), 'error');
-      }
-    });
+    btn.addEventListener('click', () => handleShareClick(target.id, files));
     grid.appendChild(btn);
   });
 }
@@ -203,7 +174,7 @@ export function mountSharePhotosPanel(root, { trip, photos }) {
 
       status.hidden = true;
       grid.hidden = false;
-      renderTargets(root, files, trip);
+      renderTargets(root, files);
     } catch (err) {
       status.textContent = err.message || t('sharePhotos.err');
       status.classList.add('share-photos-status--err');
