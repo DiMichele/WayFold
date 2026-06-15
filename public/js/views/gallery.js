@@ -7,7 +7,7 @@ import { joinParts, monthYear, photoDisplayDate, esc, tripDest, PHOTO_EMPTY_SVG,
 import * as api from '../api.js';
 import { openLightbox } from '../ui/lightbox.js';
 import { showToast } from '../ui/toast.js';
-import { reloadTrips } from '../data.js';
+import { reloadTrips, suppressNewPhotoToast, refreshPollBaseline } from '../data.js';
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
 import { openTripForm } from '../ui/modal.js';
 import { openShareModal } from '../ui/shareModal.js';
@@ -139,6 +139,7 @@ async function runGalleryUpload(tripId, files) {
 
   showUploadUi(true);
   setUploadUi({ text: uploadLabel(images.length, 1, false), pct: 0, indeterminate: true });
+  suppressNewPhotoToast();
 
   try {
     const result = await api.uploadPhotos(tripId, images, {
@@ -163,6 +164,7 @@ async function runGalleryUpload(tripId, files) {
     if (result.errors?.length) showToast(result.errors[0], 'error');
     api.invalidatePhotoCache(tripId);
     await reloadTrips({ silent: true, render: false });
+    await refreshPollBaseline();
     showUploadUi(false);
     renderGallery();
   } catch (e) {
@@ -170,6 +172,7 @@ async function runGalleryUpload(tripId, files) {
     showUploadUi(false);
     api.invalidatePhotoCache(tripId);
     await reloadTrips({ silent: true, render: false });
+    await refreshPollBaseline();
     renderGallery();
   }
 }

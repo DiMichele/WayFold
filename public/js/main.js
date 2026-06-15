@@ -6,7 +6,7 @@
 
 import { state } from './state.js';
 import { switchView, renderCurrentView } from './router.js';
-import { reloadTrips } from './data.js';
+import { reloadTrips, getPollCounts, setPollCounts, shouldShowNewPhotosToast, refreshPollBaseline } from './data.js';
 import * as api from './api.js';
 import { initTheme } from './ui/theme.js';
 import { initModal } from './ui/modal.js';
@@ -68,7 +68,6 @@ function initReveal() {
 // ─── Sync automatica (polling) ─────────────────────────────────────────────
 
 const POLL_MS = 12000;
-let lastCounts = null;
 
 async function poll() {
   if (document.hidden) return;
@@ -88,13 +87,16 @@ async function poll() {
   updateSyncGate();
 
   const counts = `${status.trips}/${status.photos}`;
+  const lastCounts = getPollCounts();
   if (lastCounts !== null && counts !== lastCounts) {
     const photosBefore = Number(lastCounts.split('/')[1]);
     api.invalidatePhotoCache();
     await reloadTrips({ silent: true });
-    if (status.photos > photosBefore) showToast(t('toast.newPhotos'));
+    if (shouldShowNewPhotosToast(photosBefore, status.photos)) {
+      showToast(t('toast.newPhotos'));
+    }
   }
-  lastCounts = counts;
+  setPollCounts(counts);
 }
 
 // ─── Utente e ruoli ────────────────────────────────────────────────────────
@@ -140,12 +142,7 @@ async function startApp(user) {
   updateSyncGate();
 
   try {
-    const status = await api.fetchStatus();
-    lastCounts = `${status.trips}/${status.photos}`;
-    if (status.telegram !== undefined) {
-      state.tgOk = Boolean(status.telegram);
-    }
-    updateSyncGate();
+    await refreshPollBaseline();
   } catch {
     state.serverOk = false;
     updateSyncGate();
