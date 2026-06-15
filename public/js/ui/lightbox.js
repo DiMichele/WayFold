@@ -9,7 +9,7 @@ import { showToast } from './toast.js';
 import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
-import { shareLightboxPhoto } from './sharePhotos.js';
+import { shareLightboxPhoto } from './shareModal.js';
 
 let _trip = null;
 let _photos = [];

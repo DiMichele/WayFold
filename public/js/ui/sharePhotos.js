@@ -2,13 +2,9 @@
  * sharePhotos.js — Condividi foto su app esterne (Web Share API + fallback download)
  */
 
-import * as api from '../api.js';
 import { esc, tripDest } from '../utils.js';
-import { openModal } from './modal.js';
 import { showToast } from './toast.js';
 import { t } from '../i18n.js';
-
-const MAX_NATIVE_FILES = 10;
 
 function extFromUrl(url) {
   const m = String(url || '').match(/\.([a-z0-9]+)(?:\?|$)/i);
@@ -101,7 +97,7 @@ async function shareViaEmail(files, trip) {
   window.location.href = `mailto:?subject=${subject}&body=${body}`;
 }
 
-function targetAction(id, files, trip) {
+async function targetAction(id, files, trip) {
   switch (id) {
     case 'download':
       downloadFiles(files);
@@ -110,12 +106,16 @@ function targetAction(id, files, trip) {
     case 'email':
       return shareViaEmail(files, trip);
     default:
-      if (!canShareFiles(files)) {
+      if (canShareFiles(files)) {
+        return nativeShare(files, trip);
+      }
+      try {
+        await nativeShare(files, trip);
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
         downloadFiles(files);
         showToast(t('sharePhotos.downloadFallback'), 'neutral');
-        return;
       }
-      return nativeShare(files, trip);
   }
 }
 
@@ -175,69 +175,38 @@ function renderTargets(root, files, trip) {
 }
 
 /**
+ * Monta il pannello export foto dentro un contenitore esistente.
+ * @param {HTMLElement} root
  * @param {{ trip: object, photos: object[] }} opts
  */
-export function openSharePhotosModal({ trip, photos }) {
+export function mountSharePhotosPanel(root, { trip, photos }) {
   const list = (photos || []).filter(p => p.url);
   if (!list.length) {
-    showToast(t('gal.noPhotos'), 'neutral');
+    root.innerHTML = `<p class="share-empty">${esc(t('gal.noPhotos'))}</p>`;
     return;
   }
 
-  const body = document.createElement('div');
-  body.className = 'share-photos';
-  body.innerHTML = `
+  root.className = 'share-photos';
+  root.innerHTML = `
     <p class="share-photos-hint" id="sharePhotosHint">${esc(t('sharePhotos.hint'))}</p>
     <div class="share-photos-status" id="sharePhotosStatus">${esc(t('sharePhotos.preparing'))}</div>
-    <div class="share-photos-grid" id="sharePhotosGrid" hidden></div>
-    <p class="share-photos-note" id="sharePhotosNote" hidden></p>`;
+    <div class="share-photos-grid" id="sharePhotosGrid" hidden></div>`;
 
-  openModal({
-    title: list.length > 1
-      ? t('sharePhotos.titleAlbum', { n: list.length })
-      : t('sharePhotos.titleSingle'),
-    body,
-  });
-
-  const status = body.querySelector('#sharePhotosStatus');
-  const grid = body.querySelector('#sharePhotosGrid');
-  const note = body.querySelector('#sharePhotosNote');
+  const status = root.querySelector('#sharePhotosStatus');
+  const grid = root.querySelector('#sharePhotosGrid');
 
   (async () => {
     try {
-      const toShare = list.slice(0, MAX_NATIVE_FILES);
-      const files = await buildPhotoFiles(toShare, trip, (done, total) => {
+      const files = await buildPhotoFiles(list, trip, (done, total) => {
         status.textContent = t('sharePhotos.preparingN', { done, total });
       });
 
       status.hidden = true;
       grid.hidden = false;
-      renderTargets(body, files, trip);
-
-      if (list.length > MAX_NATIVE_FILES) {
-        note.hidden = false;
-        note.textContent = t('sharePhotos.limitNote', { n: MAX_NATIVE_FILES, total: list.length });
-      }
+      renderTargets(root, files, trip);
     } catch (err) {
       status.textContent = err.message || t('sharePhotos.err');
       status.classList.add('share-photos-status--err');
     }
   })();
-}
-
-/** Condividi tutte le foto di un album. */
-export async function shareTripPhotos(trip) {
-  let photos;
-  try {
-    photos = await api.fetchPhotos(trip.id, { fresh: true });
-  } catch {
-    showToast(t('sharePhotos.err'), 'error');
-    return;
-  }
-  openSharePhotosModal({ trip, photos });
-}
-
-/** Condividi la foto corrente dal lightbox. */
-export function shareLightboxPhoto(trip, photo) {
-  openSharePhotosModal({ trip, photos: [photo] });
 }

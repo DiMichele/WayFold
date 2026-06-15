@@ -1,20 +1,27 @@
 /**
- * ui/shareModal.js — Condivisione album tramite codice
+ * ui/shareModal.js — Condivisione album (invito Wayfold + export foto)
  */
 
 import * as api from '../api.js';
 import { esc } from '../utils.js';
 import { showToast } from './toast.js';
 import { openModal } from './modal.js';
+import { mountSharePhotosPanel } from './sharePhotos.js';
 import { t } from '../i18n.js';
 
 let _tripId = null;
+let _trip = null;
 
-export function openShareModal(trip) {
-  _tripId = trip.id;
-  const body = document.createElement('div');
-  body.className = 'share-modal';
-  body.innerHTML = `
+function canInvite(trip) {
+  return !trip?.shared;
+}
+
+function canExportPhotos(trip) {
+  return (trip?.photoCount || 0) > 0;
+}
+
+function invitePanelHtml() {
+  return `
     <p class="share-modal-hint">${esc(t('gal.shareCodeHint'))}</p>
     <div class="share-perm-row">
       <label class="share-perm">
@@ -42,11 +49,100 @@ export function openShareModal(trip) {
       <div class="share-section-title">${esc(t('gal.shareMembers'))}</div>
       <div class="share-list" id="shareMembersList"></div>
     </div>`;
+}
+
+function setActiveTab(body, tab) {
+  body.querySelectorAll('.share-tab').forEach(btn => {
+    const on = btn.dataset.tab === tab;
+    btn.classList.toggle('active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  const invite = body.querySelector('#sharePanelInvite');
+  const photos = body.querySelector('#sharePanelPhotos');
+  if (invite) invite.hidden = tab !== 'invite';
+  if (photos) photos.hidden = tab !== 'photos';
+}
+
+async function ensurePhotosPanel(body, photos) {
+  const panel = body.querySelector('#sharePanelPhotos');
+  if (!panel || panel.dataset.ready === '1') return;
+
+  let list = photos;
+  if (!list) {
+    try {
+      list = await api.fetchPhotos(_trip.id, { fresh: true });
+    } catch {
+      panel.innerHTML = `<p class="share-empty share-photos-status--err">${esc(t('sharePhotos.err'))}</p>`;
+      panel.dataset.ready = '1';
+      return;
+    }
+  }
+
+  mountSharePhotosPanel(panel, { trip: _trip, photos: list });
+  panel.dataset.ready = '1';
+}
+
+function bindInvitePanel(body) {
+  body.querySelector('#shareGenBtn')?.addEventListener('click', generateCode);
+  body.querySelector('#shareCopyBtn')?.addEventListener('click', copyCode);
+  loadLists(body);
+}
+
+/**
+ * @param {object} trip
+ * @param {{ tab?: 'invite'|'photos'|'auto', photos?: object[] }} [opts]
+ */
+export function openShareModal(trip, opts = {}) {
+  _trip = trip;
+  _tripId = trip.id;
+
+  const showInvite = canInvite(trip);
+  const showPhotos = canExportPhotos(trip);
+  if (!showInvite && !showPhotos) return;
+
+  let tab = opts.tab || 'auto';
+  if (tab === 'auto') tab = showInvite ? 'invite' : 'photos';
+  if (tab === 'invite' && !showInvite) tab = 'photos';
+  if (tab === 'photos' && !showPhotos) tab = 'invite';
+
+  const body = document.createElement('div');
+  body.className = 'share-modal';
+
+  if (showInvite && showPhotos) {
+    body.innerHTML = `
+      <div class="share-tabs" role="tablist">
+        <button type="button" class="share-tab" role="tab" data-tab="invite">${esc(t('gal.shareTabInvite'))}</button>
+        <button type="button" class="share-tab" role="tab" data-tab="photos">${esc(t('gal.shareTabPhotos'))}</button>
+      </div>
+      <div id="sharePanelInvite" role="tabpanel"></div>
+      <div id="sharePanelPhotos" role="tabpanel" hidden></div>`;
+
+    body.querySelector('#sharePanelInvite').innerHTML = invitePanelHtml();
+    bindInvitePanel(body);
+
+    body.querySelectorAll('.share-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const next = btn.dataset.tab;
+        setActiveTab(body, next);
+        if (next === 'photos') ensurePhotosPanel(body, opts.photos);
+      });
+    });
+  } else if (showInvite) {
+    body.innerHTML = `<div id="sharePanelInvite">${invitePanelHtml()}</div>`;
+    bindInvitePanel(body);
+  } else {
+    body.innerHTML = `<div id="sharePanelPhotos"></div>`;
+  }
 
   openModal({ title: t('gal.shareTitle'), body });
-  body.querySelector('#shareGenBtn').addEventListener('click', generateCode);
-  body.querySelector('#shareCopyBtn').addEventListener('click', copyCode);
-  loadLists(body);
+
+  if (showInvite && showPhotos) {
+    setActiveTab(body, tab);
+  }
+
+  if (tab === 'photos' && showPhotos) {
+    ensurePhotosPanel(body, opts.photos);
+  }
 }
 
 async function generateCode() {
@@ -136,4 +232,9 @@ function renderMembers(list, members) {
       }
     });
   });
+}
+
+/** Condividi una singola foto dal lightbox. */
+export function shareLightboxPhoto(trip, photo) {
+  openShareModal(trip, { tab: 'photos', photos: [photo] });
 }
