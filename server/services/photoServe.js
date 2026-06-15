@@ -34,17 +34,30 @@ async function serveUserPhoto(res, { tripId, file }) {
   const ext = path.extname(decoded).toLowerCase();
   const abs = path.resolve(config.PHOTOS_DIR, String(tripId), decoded);
   const inPhotosDir = abs.startsWith(path.resolve(config.PHOTOS_DIR) + path.sep);
+  const onDisk = inPhotosDir && fs.existsSync(abs);
 
-  if (inPhotosDir && fs.existsSync(abs)) {
+  if (onDisk) {
     res.set(photoHeaders(ext));
     res.sendFile(abs);
     return true;
   }
 
   if (photo.fileId && telegram.enabled()) {
-    res.set(photoHeaders(ext));
-    await telegram.pipeFile(photo.fileId, res);
-    return true;
+    let lastErr;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0 && !res.headersSent) {
+        await new Promise(r => setTimeout(r, 350 * attempt));
+      }
+      try {
+        if (!res.headersSent) res.set(photoHeaders(ext));
+        await telegram.pipeFile(photo.fileId, res);
+        return true;
+      } catch (err) {
+        lastErr = err;
+        if (res.headersSent) throw err;
+      }
+    }
+    throw lastErr;
   }
 
   return false;

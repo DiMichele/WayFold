@@ -82,19 +82,29 @@ async function blobFromGalleryImage(url) {
   return null;
 }
 
+function canProgrammaticDownload() {
+  const ua = navigator.userAgent || '';
+  const ios = /iPad|iPhone|iPod/.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return !ios;
+}
+
 async function fetchPhotoBlobUrl(url) {
-  const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
-  if (res.status === 401) {
-    window.dispatchEvent(new Event('wf:unauthorized'));
-    throw new Error(t('sharePhotos.sessionExpired'));
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
+    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+    if (res.status >= 500 && attempt < maxAttempts - 1) continue;
+    if (res.status === 401) throw new Error(t('sharePhotos.sessionExpired'));
+    if (res.status === 403) throw new Error(t('sharePhotos.emailRequired'));
+    if (!res.ok) throw new Error(t('sharePhotos.fetchFail'));
+    const blob = await res.blob();
+    if (!blob.size) throw new Error(t('sharePhotos.fetchFail'));
+    const ct = res.headers.get('content-type') || blob.type || '';
+    if (ct.includes('application/json')) throw new Error(t('sharePhotos.fetchFail'));
+    return blob;
   }
-  if (res.status === 403) throw new Error(t('sharePhotos.emailRequired'));
-  if (!res.ok) throw new Error(t('sharePhotos.fetchFail'));
-  const blob = await res.blob();
-  if (!blob.size) throw new Error(t('sharePhotos.fetchFail'));
-  const ct = res.headers.get('content-type') || blob.type || '';
-  if (ct.includes('application/json')) throw new Error(t('sharePhotos.fetchFail'));
-  return blob;
+  throw new Error(t('sharePhotos.fetchFail'));
 }
 
 async function fetchPhotoBlob(photo) {
@@ -105,8 +115,8 @@ async function fetchPhotoBlob(photo) {
   }
 
   const candidates = [];
-  if (photo?.id) candidates.push(`/api/photos/${photo.id}/file`);
   if (url) candidates.push(url);
+  if (photo?.id) candidates.push(`/api/photos/${photo.id}/file`);
 
   let lastErr;
   for (const candidate of candidates) {
@@ -114,8 +124,16 @@ async function fetchPhotoBlob(photo) {
       return await fetchPhotoBlobUrl(candidate);
     } catch (err) {
       lastErr = err;
-      if (err.message === t('sharePhotos.sessionExpired')) throw err;
     }
+  }
+
+  if (url) {
+    const fromDom = await blobFromGalleryImage(url);
+    if (fromDom) return fromDom;
+  }
+
+  if (lastErr?.message === t('sharePhotos.sessionExpired')) {
+    throw lastErr;
   }
   throw lastErr || new Error(t('sharePhotos.fetchFail'));
 }
@@ -238,6 +256,11 @@ function handleShareClick(targetId, bundle) {
   const { shareFiles, downloadFiles: dlFiles, mode } = bundle;
 
   if (targetId === 'download') {
+    const filesToSave = dlFiles.length ? dlFiles : shareFiles;
+    if (!canProgrammaticDownload() && filesToSave.length && navigator.share) {
+      shareNatively(filesToSave);
+      return;
+    }
     closeModal();
     downloadFiles(dlFiles);
     if (mode === 'zip' || dlFiles[0]?.name?.endsWith('.zip')) {
