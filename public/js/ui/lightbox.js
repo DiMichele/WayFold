@@ -42,7 +42,7 @@ function flashStoryTap(side) {
 
 function handleStoryTap(clientX, target) {
   if (!isStoryNavDevice() || _photos.length <= 1) return;
-  if (target?.closest?.('button, textarea, input, a, .lb-meta, .lb-note-wrap, .lb-top, .lb-toolbar, .lb-side')) return;
+  if (target?.closest?.('button, textarea, input, a, .lb-meta, .lb-note-wrap, .lb-top, .lb-toolbar, .lb-tool, .lb-side, #lbToolbar, #lbActions')) return;
 
   const box = el('lbBox');
   const rect = box.getBoundingClientRect();
@@ -64,12 +64,14 @@ export function initLightbox() {
   document.querySelectorAll('[data-lb-prev]').forEach(b => b.addEventListener('click', prev));
   document.querySelectorAll('[data-lb-next]').forEach(b => b.addEventListener('click', next));
   el('lbNoteSave').addEventListener('click', saveNote);
-  el('lbCover').addEventListener('click', makeCover);
-  el('lbDelete').addEventListener('click', removePhoto);
-  el('lbShare').addEventListener('click', () => {
+  el('lbCover').addEventListener('click', e => { e.stopPropagation(); makeCover(); });
+  el('lbDelete').addEventListener('click', e => { e.stopPropagation(); removePhoto(); });
+  el('lbShare')?.addEventListener('click', e => {
+    e.stopPropagation();
     const ph = currentPhoto();
     if (ph?.url && _trip) shareLightboxPhoto(_trip, ph);
   });
+  el('lbToolbar')?.addEventListener('click', e => e.stopPropagation());
 
   el('lbNote').addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') saveNote();
@@ -224,7 +226,14 @@ async function makeCover() {
 
 function removePhoto() {
   const ph = currentPhoto();
-  if (!ph?.id) return;
+  if (!ph?.id) {
+    showToast(t('sharePhotos.err'), 'error');
+    return;
+  }
+  if (ph.canDelete === false) {
+    showToast(t('toast.err'), 'error');
+    return;
+  }
   openConfirm({
     title: t('modal.deletePhoto'),
     message: t('modal.deletePhotoMsg', { dest: esc(_trip.dest) }) + t('modal.irreversible'),

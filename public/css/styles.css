@@ -641,7 +641,7 @@ img{display:block}
   background:rgba(12,10,8,.52);backdrop-filter:blur(16px);
   border:1px solid rgba(255,255,255,.12);
   box-shadow:0 10px 36px rgba(0,0,0,.38);
-  z-index:3;
+  z-index:5;pointer-events:auto;
 }
 .lb-tool{
   width:44px;height:44px;border-radius:50%;
@@ -655,7 +655,7 @@ img{display:block}
 .lb-tool.active{background:var(--acc);color:#fff;box-shadow:0 4px 18px color-mix(in srgb,var(--acc) 45%,transparent)}
 .lb-tool.active svg{fill:currentColor;stroke:currentColor}
 .lb-tool--danger:hover{background:var(--danger);color:#fff;box-shadow:0 4px 18px color-mix(in srgb,var(--danger) 40%,transparent)}
-.lb-toolbar-write{display:contents}
+.lb-toolbar-write{display:flex;align-items:center;gap:6px}
 .lb-meta{text-align:center;color:#EFEAE0;max-width:560px}
 .lb-title{font-family:var(--display);font-size:19px;font-weight:500;letter-spacing:-.2px}
 .lb-sub{font-family:var(--mono);font-size:10px;letter-spacing:1.8px;text-transform:uppercase;color:rgba(239,234,224,.55);margin-top:5px}
@@ -703,13 +703,14 @@ img{display:block}
 
 /* ─── Modale ─── */
 .modal{
-  position:fixed;inset:0;z-index:970;padding:18px;
+  position:fixed;inset:0;z-index:1000;padding:18px;
   background:rgba(20,17,12,.4);backdrop-filter:var(--blur);
   display:flex;align-items:flex-end;justify-content:center;
   opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s;
 }
 [data-theme="dark"] .modal{background:rgba(0,0,0,.55)}
 .modal.open{opacity:1;visibility:visible}
+body.modal-open .lb{z-index:900;pointer-events:none}
 body.modal-open{overflow:hidden;overscroll-behavior:none}
 .modal-card{
   width:100%;max-width:480px;max-height:88dvh;overflow-y:auto;

@@ -337,16 +337,22 @@ async function removeTrip(id) {
   return result.trip;
 }
 
-/** Elimina la foto: prima il messaggio su Telegram, poi il db e il file. */
+/** Elimina la foto: prima il messaggio su Telegram (best effort), poi db e file. */
 async function removePhoto(id) {
   const existing = db.getPhotoById(id);
   if (!existing) return null;
 
   if (existing.msgId != null && telegram.enabled()) {
     try {
-      await telegram.deleteMessage(existing.msgId);
+      await Promise.race([
+        telegram.deleteMessage(existing.msgId),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 8000)),
+      ]);
     } catch (err) {
-      if (!/not found|message to delete/i.test(err.tgDescription || '')) throw err;
+      const desc = err?.tgDescription || err?.message || '';
+      if (!/not found|message to delete|timeout/i.test(desc)) {
+        console.warn('[removePhoto] Telegram delete failed:', desc);
+      }
     }
   }
 

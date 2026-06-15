@@ -285,9 +285,9 @@ export function openConfirm({ title, message, confirmLabel, onConfirm }) {
 
     <div class="modal-actions">
 
-      <button class="modal-btn s" id="c-cancel">${t('modal.cancel')}</button>
+      <button type="button" class="modal-btn s" id="c-cancel">${t('modal.cancel')}</button>
 
-      <button class="modal-btn danger" id="c-ok">${esc(confirmLabel ?? t('modal.delete'))}</button>
+      <button type="button" class="modal-btn danger" id="c-ok">${esc(confirmLabel ?? t('modal.delete'))}</button>
 
     </div>
 
