@@ -7,14 +7,21 @@ import { joinParts, monthYear, esc, tripDest, tripCountry } from '../utils.js';
 import { openTripPhotosFromMap } from './gallery.js';
 import { renderJourneyList } from './journeyList.js';
 import { showToast } from '../ui/toast.js';
-import { t, formatDays } from '../i18n.js';
+import { t, formatDays, getLang } from '../i18n.js';
 import { warmTripLabels } from '../places.js';
 
 let map = null;
 let layer = null;
-let baseTileLayer = null;
+let baseTileLayer = null;   // fallback raster
+let baseGlLayer = null;     // MapLibre GL (tile vettoriali, etichette localizzate)
+let rawStylePromise = null; // cache dello stile OpenFreeMap
+let workerReady = false;
 
-const TILE = {
+// Stile vettoriale OpenFreeMap (gratuito, senza API key)
+const OFM_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
+
+// Tile raster di riserva, usati solo se MapLibre non è disponibile o fallisce
+const RASTER = {
   light: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
   dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
 };
@@ -23,25 +30,98 @@ function mapTheme() {
   return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
 }
 
-function applyBaseTiles() {
+function setMapThemeAttr(theme) {
+  const root = document.getElementById('leafletMap');
+  if (root) root.dataset.mapTheme = theme;
+}
+
+function mapsAvailable() {
+  return !!(window.maplibregl && window.L && typeof L.maplibreGL === 'function');
+}
+
+function ensureWorker() {
+  if (workerReady) return;
+  try { maplibregl.setWorkerUrl('/vendor/maplibre/maplibre-gl-csp-worker.js'); } catch { /* ok */ }
+  workerReady = true;
+}
+
+/** Scarica una sola volta lo stile OFM; restituisce una copia profonda. */
+async function fetchBaseStyle() {
+  if (!rawStylePromise) {
+    rawStylePromise = fetch(OFM_STYLE_URL).then(r => {
+      if (!r.ok) throw new Error(`style HTTP ${r.status}`);
+      return r.json();
+    }).catch(err => { rawStylePromise = null; throw err; });
+  }
+  return JSON.parse(JSON.stringify(await rawStylePromise));
+}
+
+/** Forza tutte le etichette-nome nella lingua dell'app (fallback latin → name). */
+function localizeStyle(style, lang) {
+  const want = ['get', `name:${lang}`];
+  for (const lyr of style.layers || []) {
+    const layout = lyr.layout;
+    if (!layout || !('text-field' in layout)) continue;
+    if (!JSON.stringify(layout['text-field']).includes('name')) continue;
+    layout['text-field'] = ['coalesce', want, ['get', 'name:latin'], ['get', 'name']];
+  }
+  return style;
+}
+
+function applyRasterFallback() {
   if (!map) return;
+  if (baseGlLayer) { map.removeLayer(baseGlLayer); baseGlLayer = null; }
   if (baseTileLayer) map.removeLayer(baseTileLayer);
   const theme = mapTheme();
-  baseTileLayer = L.tileLayer(TILE[theme], {
+  baseTileLayer = L.tileLayer(RASTER[theme], {
     subdomains: theme === 'dark' ? 'abcd' : 'abc',
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors',
   }).addTo(map);
-  const root = document.getElementById('leafletMap');
-  if (root) root.dataset.mapTheme = theme;
+  setMapThemeAttr(theme);
+}
+
+async function applyBaseTiles() {
+  if (!map) return;
+  setMapThemeAttr(mapTheme());
+
+  if (!mapsAvailable()) { applyRasterFallback(); return; }
+
+  try {
+    ensureWorker();
+    const style = localizeStyle(await fetchBaseStyle(), getLang());
+    if (!map) return;
+    if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
+    if (baseGlLayer && baseGlLayer.getMaplibreMap) {
+      baseGlLayer.getMaplibreMap().setStyle(style);
+    } else {
+      baseGlLayer = L.maplibreGL({ style, pane: 'tilePane' }).addTo(map);
+    }
+  } catch (err) {
+    console.warn('MapLibre non disponibile, uso tile raster:', err);
+    applyRasterFallback();
+  }
 }
 
 function watchMapTheme() {
   if (watchMapTheme._on) return;
   watchMapTheme._on = true;
-  new MutationObserver(() => applyBaseTiles()).observe(document.documentElement, {
+  new MutationObserver(() => {
+    setMapThemeAttr(mapTheme());
+    // Il tema dark sulla mappa vettoriale è gestito via filtro CSS sul canvas;
+    // solo il fallback raster ha bisogno di scambiare i tile.
+    if (!baseGlLayer) applyRasterFallback();
+  }).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
+  });
+}
+
+function watchMapLang() {
+  if (watchMapLang._on) return;
+  watchMapLang._on = true;
+  window.addEventListener('wf:langchange', () => {
+    if (baseGlLayer) applyBaseTiles();
   });
 }
 
@@ -125,6 +205,7 @@ export function renderMap() {
     map.setView([30, 10], 2);
     applyBaseTiles();
     watchMapTheme();
+    watchMapLang();
     layer = L.layerGroup().addTo(map);
   }
 
