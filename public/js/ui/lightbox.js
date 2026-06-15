@@ -10,6 +10,7 @@ import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
 import { shareLightboxPhoto } from './shareModal.js';
+import { t } from '../i18n.js';
 
 let _trip = null;
 let _photos = [];
