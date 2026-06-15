@@ -181,6 +181,25 @@ function canShareFiles(files) {
   }
 }
 
+function isZipFile(file) {
+  return file?.type === 'application/zip' || /\.zip$/i.test(file?.name || '');
+}
+
+/**
+ * canShare() su Windows desktop mente: accetta ZIP ma share() lancia NotAllowedError.
+ * Su desktop offriamo il foglio nativo solo su mobile; su desktop solo per singole immagini.
+ */
+function canNativeShareFiles(files) {
+  if (!files?.length || !navigator.share) return false;
+  if (!isMobileShareDevice()) {
+    if (files.some(isZipFile)) return false;
+    if (files.length !== 1) return false;
+    const f = files[0];
+    if (!f.type?.startsWith('image/') || f.size > MAX_SINGLE_SHARE_BYTES) return false;
+  }
+  return canShareFiles(files);
+}
+
 /**
  * Sceglie il formato migliore: singola immagine o ZIP (mai multi-immagine nativo).
  * canShare() su più file è inaffidabile: spesso accetta e poi share() fallisce con "too large".
@@ -193,12 +212,12 @@ async function prepareShareBundle(files, trip) {
 
   if (files.length === 1) {
     const file = files[0];
-    const shareFiles = (file.size <= MAX_SINGLE_SHARE_BYTES && canShareFiles([file])) ? [file] : [];
+    const shareFiles = canNativeShareFiles([file]) ? [file] : [];
     return { shareFiles, downloadFiles: [file], mode: 'single' };
   }
 
   const zipFile = await buildZipFile(files, trip);
-  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canShareFiles([zipFile]);
+  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canNativeShareFiles([zipFile]);
 
   if (zipShareOk) {
     return { shareFiles: [zipFile], downloadFiles: [zipFile], mode: 'zip' };
@@ -224,6 +243,9 @@ function downloadFiles(files) {
 function shareErrorMessage(err) {
   const raw = String(err?.message || err?.name || 'Error');
   if (/too large/i.test(raw)) return t('sharePhotos.tooLarge');
+  if (err?.name === 'NotAllowedError' && !isMobileShareDevice()) {
+    return t('sharePhotos.desktopShareBlocked');
+  }
   return `${t('sharePhotos.err')} (${err?.name || raw})`;
 }
 
@@ -301,7 +323,7 @@ function renderTargets(root, bundle) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
 
-  const shareOk = bundle.shareFiles.length > 0 && navigator.share;
+  const shareOk = bundle.shareFiles.length > 0 && canNativeShareFiles(bundle.shareFiles);
   const mobile = isMobileShareDevice();
 
   TARGETS.forEach(target => {
