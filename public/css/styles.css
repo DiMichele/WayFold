@@ -1579,7 +1579,7 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
   gap:8px;flex-shrink:0;margin-left:auto;
 }
 .gal-actions-toolbar{
-  display:flex;align-items:center;gap:6px;padding:4px;
+  display:flex;align-items:center;flex-wrap:wrap;gap:6px;padding:4px;
   background:var(--bg2);border:1px solid var(--line);border-radius:14px;
 }
 .gal-upload{
@@ -1969,6 +1969,12 @@ body[data-role="user"] .owner-only{display:none!important}
   .tabs{display:none}
   .spacer{height:30px}
 
+  /* Spazio riservato alla topbar fissa (ricerca/lingua/tema), così i
+     contenuti in alto a destra non finiscono sotto i pulsanti flottanti
+     anche con lo zoom del browser attivo. */
+  :root{--topbar-w:154px}
+  .map-hint,.gal-pick-label{padding-right:var(--topbar-w)}
+
   /* sidebar */
   .side{
     position:fixed;left:0;top:0;bottom:0;width:228px;z-index:80;
@@ -2088,6 +2094,7 @@ body[data-role="user"] .owner-only{display:none!important}
   .gal-header{
     position:sticky;top:16px;
     z-index:35;padding:20px 24px 18px;
+    padding-right:calc(24px + var(--topbar-w));
   }
   .gal-hthumb{width:58px;height:58px;border-radius:16px}
   .gal-body:has(.gal-grid){padding:18px 18px 22px}
