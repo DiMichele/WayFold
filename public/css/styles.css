@@ -1863,11 +1863,15 @@ body.sync-blocked .tab,body.sync-blocked .side-link,body.sync-blocked .nav-new-t
   background:var(--srf);
 }
 #leafletMap{width:100%;height:100%;background:#aad3df}
-#leafletMap[data-map-theme="dark"]{background:#1c2228}
+#leafletMap[data-map-theme="dark"]{background:#2a323b}
 .leaflet-container{background:transparent}
 .leaflet-container img.leaflet-tile{
   max-width:none!important;max-height:none!important;
   image-rendering:auto;
+}
+/* Tema dark: tile più chiari e vivaci (i pin non sono toccati) */
+#leafletMap[data-map-theme="dark"] .leaflet-tile{
+  filter:brightness(1.5) saturate(1.65) contrast(.94);
 }
 .map-side{
   flex:0 0 auto;width:100%;min-width:0;
