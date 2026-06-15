@@ -193,16 +193,12 @@ async function prepareShareBundle(files, trip) {
 
   if (files.length === 1) {
     const file = files[0];
-    const shareFiles = (isMobileShareDevice()
-      && file.size <= MAX_SINGLE_SHARE_BYTES
-      && canShareFiles([file])) ? [file] : [];
+    const shareFiles = (file.size <= MAX_SINGLE_SHARE_BYTES && canShareFiles([file])) ? [file] : [];
     return { shareFiles, downloadFiles: [file], mode: 'single' };
   }
 
   const zipFile = await buildZipFile(files, trip);
-  const zipShareOk = isMobileShareDevice()
-    && zipFile.size <= MAX_ZIP_SHARE_BYTES
-    && canShareFiles([zipFile]);
+  const zipShareOk = zipFile.size <= MAX_ZIP_SHARE_BYTES && canShareFiles([zipFile]);
 
   if (zipShareOk) {
     return { shareFiles: [zipFile], downloadFiles: [zipFile], mode: 'zip' };
@@ -232,25 +228,15 @@ function shareErrorMessage(err) {
 }
 
 /**
- * Condivisione nativa (solo mobile). Su errore prova il download.
+ * Apre il foglio di condivisione nativo (Windows / iOS / Android).
+ * Nessun fallback al download: per salvare si usa il pulsante «Salva».
  */
-function shareNatively(shareFiles, downloadFallback) {
+function shareNatively(shareFiles) {
   if (!navigator.share) {
-    if (downloadFallback?.length && canProgrammaticDownload()) {
-      closeModal();
-      downloadFiles(downloadFallback);
-      return;
-    }
     showToast(t('sharePhotos.noWebShare'), 'error');
     return;
   }
   if (navigator.canShare && !navigator.canShare({ files: shareFiles })) {
-    if (downloadFallback?.length && canProgrammaticDownload()) {
-      closeModal();
-      downloadFiles(downloadFallback);
-      showToast(t('sharePhotos.downloadedZip'), 'neutral');
-      return;
-    }
     showToast(t('sharePhotos.cantShareFiles', { n: shareFiles.length }), 'error');
     return;
   }
@@ -259,12 +245,6 @@ function shareNatively(shareFiles, downloadFallback) {
   try {
     result = navigator.share({ files: shareFiles });
   } catch (err) {
-    if (downloadFallback?.length && canProgrammaticDownload()) {
-      closeModal();
-      downloadFiles(downloadFallback);
-      showToast(t('sharePhotos.downloadedZip'), 'neutral');
-      return;
-    }
     showToast(shareErrorMessage(err), 'error');
     return;
   }
@@ -273,12 +253,6 @@ function shareNatively(shareFiles, downloadFallback) {
     .then(() => closeModal())
     .catch(err => {
       if (err?.name === 'AbortError') return;
-      if (downloadFallback?.length && (err?.name === 'NotAllowedError' || err?.name === 'DataError')) {
-        closeModal();
-        downloadFiles(downloadFallback);
-        showToast(t('sharePhotos.downloadedZip'), 'neutral');
-        return;
-      }
       showToast(shareErrorMessage(err), 'error');
     });
 }
@@ -289,7 +263,7 @@ function handleShareClick(targetId, bundle) {
   if (targetId === 'download') {
     const filesToSave = dlFiles.length ? dlFiles : shareFiles;
     if (!canProgrammaticDownload() && filesToSave.length && navigator.share) {
-      shareNatively(filesToSave, dlFiles);
+      shareNatively(filesToSave);
       return;
     }
     closeModal();
@@ -307,20 +281,18 @@ function handleShareClick(targetId, bundle) {
     return;
   }
 
-  shareNatively(shareFiles, dlFiles);
+  shareNatively(shareFiles);
 }
 
 const TARGETS = [
   {
     id: 'download',
     labelKey: 'sharePhotos.save',
-    mobileOnly: false,
     icon: '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
   },
   {
     id: 'native',
     labelKey: 'sharePhotos.system',
-    mobileOnly: true,
     icon: '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>',
   },
 ];
@@ -329,16 +301,15 @@ function renderTargets(root, bundle) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
 
+  const shareOk = bundle.shareFiles.length > 0 && navigator.share;
   const mobile = isMobileShareDevice();
-  const nativeOk = mobile && bundle.shareFiles.length > 0 && canShareFiles(bundle.shareFiles);
 
   TARGETS.forEach(target => {
     const isDownload = target.id === 'download';
-    if (target.mobileOnly && !nativeOk) return;
-    if (!isDownload && !nativeOk) return;
+    if (!isDownload && !shareOk) return;
     const btn = document.createElement('button');
     btn.type = 'button';
-    const primary = isDownload && (bundle.mode === 'zip' || !mobile);
+    const primary = isDownload && bundle.mode === 'zip';
     btn.className = `share-photos-target share-photos-target--${target.id}${primary ? ' share-photos-target--primary' : ''}`;
     btn.innerHTML = `
       <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
@@ -356,13 +327,13 @@ function renderTargets(root, bundle) {
 
   const note = document.createElement('p');
   note.className = 'share-photos-note';
-  if (bundle.mode === 'zip' && !mobile) {
-    note.textContent = t('sharePhotos.desktopZipHint');
+  if (bundle.mode === 'zip' && shareOk) {
+    note.textContent = t('sharePhotos.zipShareHint');
   } else if (bundle.mode === 'zip') {
-    note.textContent = t('sharePhotos.zipHint');
-  } else if (!nativeOk && mobile) {
+    note.textContent = t('sharePhotos.desktopZipHint');
+  } else if (!shareOk && mobile) {
     note.textContent = t('sharePhotos.noWebShare');
-  } else if (!mobile) {
+  } else if (!shareOk) {
     note.textContent = t('sharePhotos.desktopHint');
   }
   if (note.textContent) root.appendChild(note);
