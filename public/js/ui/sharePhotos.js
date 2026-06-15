@@ -53,21 +53,18 @@ function pathsMatch(a, b) {
   }
 }
 
-function waitImg(img) {
-  if (img.complete && img.naturalWidth) return Promise.resolve(true);
-  return new Promise(resolve => {
-    img.addEventListener('load', () => resolve(!!img.naturalWidth), { once: true });
-    img.addEventListener('error', () => resolve(false), { once: true });
-  });
+/** True se l'img è già decodificata con successo (niente attese: lazy load o 401 bloccherebbero la share). */
+function imgReady(img) {
+  return img.complete && img.naturalWidth > 0;
 }
 
-/** Riutilizza immagini già caricate in galleria/lightbox (evita un fetch che può dare 401). */
+/** Riutilizza immagini già caricate in galleria/lightbox (evita un fetch quando possibile). */
 async function blobFromGalleryImage(url) {
   const sel = '#lbImg, .gal-grid img, .gal-hthumb img';
   for (const img of document.querySelectorAll(sel)) {
     const src = img.currentSrc || img.src;
     if (!src || !pathsMatch(src, url)) continue;
-    if (!(await waitImg(img))) continue;
+    if (!imgReady(img)) continue;
     try {
       const canvas = document.createElement('canvas');
       canvas.width = img.naturalWidth;
@@ -124,17 +121,17 @@ async function fetchPhotoBlob(photo) {
       return await fetchPhotoBlobUrl(candidate);
     } catch (err) {
       lastErr = err;
+      if (err.message === t('sharePhotos.sessionExpired')) {
+        try {
+          await fetchMe();
+          return await fetchPhotoBlobUrl(candidate);
+        } catch {
+          throw err;
+        }
+      }
     }
   }
 
-  if (url) {
-    const fromDom = await blobFromGalleryImage(url);
-    if (fromDom) return fromDom;
-  }
-
-  if (lastErr?.message === t('sharePhotos.sessionExpired')) {
-    throw lastErr;
-  }
   throw lastErr || new Error(t('sharePhotos.fetchFail'));
 }
 
@@ -373,6 +370,7 @@ export function mountSharePhotosPanel(root, { trip, photos }) {
 
   (async () => {
     try {
+      status.textContent = t('sharePhotos.preparingN', { done: 0, total: list.length });
       await ensureSession();
       const files = await buildPhotoFiles(list, trip, (done, total) => {
         status.textContent = t('sharePhotos.preparingN', { done, total });
