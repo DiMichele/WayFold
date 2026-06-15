@@ -6,6 +6,7 @@ import { esc, tripDest } from '../utils.js';
 import { showToast } from './toast.js';
 import { closeModal } from './modal.js';
 import { t } from '../i18n.js';
+import { zipSync } from '../vendor/fflate.esm.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -53,6 +54,25 @@ export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
   return files;
 }
 
+async function buildZipFile(files, trip) {
+  const entries = {};
+  for (const file of files) {
+    entries[file.name] = new Uint8Array(await file.arrayBuffer());
+  }
+  const zipped = zipSync(entries, { level: 0 });
+  const zipName = `${safeBaseName(trip)}.zip`;
+  return new File([zipped], zipName, { type: 'application/zip', lastModified: Date.now() });
+}
+
+/** Album: un file ZIP per il foglio di condivisione; singola foto: immagine diretta. */
+async function prepareShareBundle(files, trip) {
+  if (files.length <= 1) {
+    return { shareFiles: files, downloadFiles: files };
+  }
+  const zipFile = await buildZipFile(files, trip);
+  return { shareFiles: [zipFile], downloadFiles: files };
+}
+
 function downloadFiles(files) {
   for (const file of files) {
     const url = URL.createObjectURL(file);
@@ -67,32 +87,33 @@ function downloadFiles(files) {
   }
 }
 
-/** Condivisione nativa: solo file, senza testo (richiesto da IG/WA/TG). */
-function openNativeShare(files) {
+function openNativeShare(shareFiles, downloadFiles) {
   if (!navigator.share) return false;
 
+  const payload = { files: shareFiles };
+  const sharePromise = navigator.share(payload);
   closeModal();
-
-  const payload = { files };
-  navigator.share(payload).catch(err => {
+  sharePromise.catch(err => {
     if (err?.name === 'AbortError') return;
-    downloadFiles(files);
+    downloadFiles(downloadFiles);
     showToast(t('sharePhotos.downloadFallback'), 'neutral');
   });
   return true;
 }
 
-function handleShareClick(targetId, files) {
+function handleShareClick(targetId, bundle) {
+  const { shareFiles, downloadFiles: dlFiles } = bundle;
+
   if (targetId === 'download') {
     closeModal();
-    downloadFiles(files);
-    showToast(t('sharePhotos.downloaded', { n: files.length }), 'neutral');
+    downloadFiles(dlFiles);
+    showToast(t('sharePhotos.downloaded', { n: dlFiles.length }), 'neutral');
     return;
   }
 
-  if (!openNativeShare(files)) {
+  if (!openNativeShare(shareFiles, dlFiles)) {
     closeModal();
-    downloadFiles(files);
+    downloadFiles(dlFiles);
     showToast(t('sharePhotos.downloadFallback'), 'neutral');
   }
 }
@@ -130,7 +151,7 @@ const TARGETS = [
   },
 ];
 
-function renderTargets(root, files) {
+function renderTargets(root, bundle) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
   TARGETS.forEach(target => {
@@ -140,7 +161,7 @@ function renderTargets(root, files) {
     btn.innerHTML = `
       <span class="share-photos-target-ico" aria-hidden="true">${target.icon}</span>
       <span class="share-photos-target-lbl">${esc(t(target.labelKey))}</span>`;
-    btn.addEventListener('click', () => handleShareClick(target.id, files));
+    btn.addEventListener('click', () => handleShareClick(target.id, bundle));
     grid.appendChild(btn);
   });
 }
@@ -159,7 +180,6 @@ export function mountSharePhotosPanel(root, { trip, photos }) {
 
   root.className = 'share-photos';
   root.innerHTML = `
-    <p class="share-photos-hint" id="sharePhotosHint">${esc(t('sharePhotos.hint'))}</p>
     <div class="share-photos-status" id="sharePhotosStatus">${esc(t('sharePhotos.preparing'))}</div>
     <div class="share-photos-grid" id="sharePhotosGrid" hidden></div>`;
 
@@ -172,9 +192,15 @@ export function mountSharePhotosPanel(root, { trip, photos }) {
         status.textContent = t('sharePhotos.preparingN', { done, total });
       });
 
+      if (files.length > 1) {
+        status.textContent = t('sharePhotos.packing');
+      }
+
+      const bundle = await prepareShareBundle(files, trip);
+
       status.hidden = true;
       grid.hidden = false;
-      renderTargets(root, files);
+      renderTargets(root, bundle);
     } catch (err) {
       status.textContent = err.message || t('sharePhotos.err');
       status.classList.add('share-photos-status--err');

@@ -90,20 +90,28 @@ function bindInvitePanel(body) {
 
 /**
  * @param {object} trip
- * @param {{ tab?: 'invite'|'photos'|'auto', photos?: object[] }} [opts]
+ * @param {{ tab?: 'invite'|'photos'|'auto', photos?: object[], photosOnly?: boolean }} [opts]
  */
 export function openShareModal(trip, opts = {}) {
   _trip = trip;
   _tripId = trip.id;
 
-  const showInvite = canInvite(trip);
-  const showPhotos = canExportPhotos(trip);
+  const photosOnly = Boolean(opts.photosOnly);
+  const showInvite = canInvite(trip) && !photosOnly;
+  const showPhotos = photosOnly
+    ? Boolean(opts.photos?.length)
+    : canExportPhotos(trip);
   if (!showInvite && !showPhotos) return;
 
   let tab = opts.tab || 'auto';
   if (tab === 'auto') tab = showInvite ? 'invite' : 'photos';
   if (tab === 'invite' && !showInvite) tab = 'photos';
   if (tab === 'photos' && !showPhotos) tab = 'invite';
+
+  const photoCount = opts.photos?.length ?? trip.photoCount ?? 0;
+  const title = photosOnly
+    ? (photoCount === 1 ? t('sharePhotos.titleSingle') : t('sharePhotos.titleAlbum', { n: photoCount }))
+    : t('gal.shareTitle');
 
   const body = document.createElement('div');
   body.className = 'share-modal';
@@ -134,7 +142,7 @@ export function openShareModal(trip, opts = {}) {
     body.innerHTML = `<div id="sharePanelPhotos"></div>`;
   }
 
-  openModal({ title: t('gal.shareTitle'), body });
+  openModal({ title, body });
 
   if (showInvite && showPhotos) {
     setActiveTab(body, tab);
@@ -236,5 +244,5 @@ function renderMembers(list, members) {
 
 /** Condividi una singola foto dal lightbox. */
 export function shareLightboxPhoto(trip, photo) {
-  openShareModal(trip, { tab: 'photos', photos: [photo] });
+  openShareModal(trip, { photosOnly: true, photos: [photo] });
 }
