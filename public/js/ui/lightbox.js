@@ -9,7 +9,7 @@ import { showToast } from './toast.js';
 import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
-import { downloadSinglePhoto } from './sharePhotos.js';
+import { shareSinglePhoto, downloadSinglePhoto, isMobileShareDevice } from './sharePhotos.js';
 import { t } from '../i18n.js';
 
 let _trip = null;
@@ -32,6 +32,43 @@ let _touchStartX = 0;
 let _touchStartY = 0;
 let _touchStartT = 0;
 let _suppressStoryClick = false;
+const SHARE_SVG = '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+const DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
+
+let _photoExportBusy = false;
+
+function updateLbExportButton() {
+  const btn = el('lbShare');
+  if (!btn) return;
+  const mobile = isMobileShareDevice();
+  btn.innerHTML = mobile ? SHARE_SVG : DOWNLOAD_SVG;
+  setTip(btn, mobile ? t('lb.sharePhoto') : t('lb.downloadPhoto'), { position: 'top' });
+}
+
+async function exportCurrentPhoto() {
+  if (_photoExportBusy) return;
+  const ph = currentPhoto();
+  if (!ph?.url || !_trip) return;
+
+  const btn = el('lbShare');
+  const mobile = isMobileShareDevice();
+  _photoExportBusy = true;
+  if (btn) btn.disabled = true;
+
+  try {
+    if (mobile) {
+      await shareSinglePhoto(_trip, ph);
+    } else {
+      await downloadSinglePhoto(_trip, ph);
+      showToast(t('sharePhotos.downloaded', { n: 1 }), 'neutral');
+    }
+  } catch (err) {
+    showToast(err.message || t('sharePhotos.err'), 'error');
+  } finally {
+    _photoExportBusy = false;
+    if (btn) btn.disabled = false;
+  }
+}
 
 function flashStoryTap(side) {
   const stage = el('lbStage');
@@ -67,16 +104,9 @@ export function initLightbox() {
   el('lbNoteSave').addEventListener('click', saveNote);
   el('lbCover').addEventListener('click', e => { e.stopPropagation(); makeCover(); });
   el('lbDelete').addEventListener('click', e => { e.stopPropagation(); removePhoto(); });
-  el('lbShare')?.addEventListener('click', async e => {
+  el('lbShare')?.addEventListener('click', e => {
     e.stopPropagation();
-    const ph = currentPhoto();
-    if (!ph?.url || !_trip) return;
-    try {
-      await downloadSinglePhoto(_trip, ph);
-      showToast(t('sharePhotos.downloaded', { n: 1 }), 'neutral');
-    } catch (err) {
-      showToast(err.message || t('sharePhotos.err'), 'error');
-    }
+    exportCurrentPhoto();
   });
   el('lbToolbar')?.addEventListener('click', e => e.stopPropagation());
 
@@ -95,7 +125,10 @@ export function initLightbox() {
   });
 
   window.addEventListener('wf:langchange', () => {
-    if (el('lb').classList.contains('open')) render();
+    if (el('lb').classList.contains('open')) {
+      updateLbExportButton();
+      render();
+    }
   });
 
   const stage = el('lbStage');
@@ -183,6 +216,7 @@ function render() {
     cv.style.display = 'none';
     img.style.display = '';
     if (img.getAttribute('src') !== ph.url) img.src = ph.url;
+    updateLbExportButton();
     el('lbShare').hidden = false;
     if (ph.id && _canWrite) {
       noteWrap.classList.add('show');

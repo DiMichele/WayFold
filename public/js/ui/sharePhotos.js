@@ -215,18 +215,20 @@ export async function shareAlbum(trip, opts = {}) {
 }
 
 /** Scarica o condivide una singola foto (lightbox). */
-export async function downloadSinglePhoto(trip, photo) {
+async function buildSinglePhotoFile(trip, photo) {
   await ensureSession();
   if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
-  const file = await photoToFile(photo, trip, 0);
-  if (isMobileShareDevice() && navigator.share) {
-    try {
-      await shareFile(file);
-      return;
-    } catch (err) {
-      if (err.message === t('sharePhotos.noWebShare')) throw err;
-      if (err?.name === 'AbortError') return;
-    }
-  }
+  return photoToFile(photo, trip, 0);
+}
+
+/** Condivide una singola foto via foglio nativo (mobile / PWA). */
+export async function shareSinglePhoto(trip, photo) {
+  const file = await buildSinglePhotoFile(trip, photo);
+  await shareFile(file);
+}
+
+/** Scarica una singola foto (desktop). */
+export async function downloadSinglePhoto(trip, photo) {
+  const file = await buildSinglePhotoFile(trip, photo);
   downloadFiles([file]);
 }
