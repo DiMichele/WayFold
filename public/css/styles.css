@@ -1633,6 +1633,17 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 .gal-download:disabled{opacity:.55;pointer-events:none;transform:none;box-shadow:none}
 .gal-download svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .gal-download span{display:none}
+.gal-album-share{
+  display:flex;align-items:center;gap:7px;flex-shrink:0;
+  height:38px;padding:0 14px;border-radius:12px;
+  background:var(--srf);border:1px solid var(--line);color:var(--ink2);
+  font-size:12.5px;font-weight:600;box-shadow:none;
+  transition:transform .15s var(--spr),box-shadow .2s,color .15s,background .15s;
+}
+.gal-album-share:hover{transform:translateY(-1.5px);box-shadow:var(--sh-m);color:var(--ink)}
+.gal-album-share:disabled{opacity:.55;pointer-events:none;transform:none;box-shadow:none}
+.gal-album-share svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gal-album-share span{display:none}
 
 /* redeem codice */
 .gal-redeem{
@@ -1944,11 +1955,12 @@ body[data-role="user"] .owner-only{display:none!important}
   .gal-body:has(.gal-grid){padding:16px 16px 20px}
   .gal-body:has(.gal-dropzone) .gal-dropzone-card{min-height:min(44vh,460px)}
   .gal-actions-toolbar .gal-upload,.gal-actions-toolbar .gal-edit,
-  .gal-actions-toolbar .gal-share,.gal-actions-toolbar .gal-download,.gal-actions-toolbar .gal-delete{height:40px}
+  .gal-actions-toolbar .gal-share,.gal-actions-toolbar .gal-download,.gal-actions-toolbar .gal-album-share,.gal-actions-toolbar .gal-delete{height:40px}
   .gal-grid{grid-template-columns:repeat(3,1fr);grid-auto-rows:150px;gap:10px}
   .gal-upload span{display:inline}
   .gal-share span{display:inline}
   .gal-download span{display:inline}
+  .gal-album-share span{display:inline}
   .gal-edit span{display:inline}
   .gal-delete span{display:inline}
   .empty-actions{flex-direction:row;max-width:420px}

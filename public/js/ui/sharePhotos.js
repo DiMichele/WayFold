@@ -16,9 +16,6 @@ const MIME_BY_EXT = {
   heic: 'image/heic',
 };
 
-/** Limite conservativo per share nativo di un singolo file (Chrome/Android). */
-const MAX_SINGLE_SHARE_BYTES = 15 * 1024 * 1024;
-
 function extFromUrl(url) {
   const m = String(url || '').match(/\.([a-z0-9]+)(?:\?|$)/i);
   const ext = m?.[1]?.toLowerCase();
@@ -77,15 +74,8 @@ async function blobFromGalleryImage(url) {
   return null;
 }
 
-function canProgrammaticDownload() {
-  const ua = navigator.userAgent || '';
-  const ios = /iPad|iPhone|iPod/.test(ua)
-    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return !ios;
-}
-
-/** Web Share con file ha senso solo su mobile; su desktop Windows spesso dà NotAllowedError. */
-function isMobileShareDevice() {
+/** Mobile / PWA: Web Share con file. Su desktop i ZIP danno NotAllowedError. */
+export function isMobileShareDevice() {
   const ua = navigator.userAgent || '';
   return /Android|iPhone|iPad|iPod/i.test(ua)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -168,36 +158,6 @@ async function buildZipFile(files, trip) {
   return new File([zipped], zipName, { type: 'application/zip', lastModified: Date.now() });
 }
 
-/** True se il dispositivo può condividere nativamente questi file. */
-function canShareFiles(files) {
-  if (!navigator.share || !files?.length) return false;
-  if (!navigator.canShare) return true;
-  try {
-    return navigator.canShare({ files });
-  } catch {
-    return false;
-  }
-}
-
-function isZipFile(file) {
-  return file?.type === 'application/zip' || /\.zip$/i.test(file?.name || '');
-}
-
-/**
- * canShare() su Windows desktop mente: accetta ZIP ma share() lancia NotAllowedError.
- * Su desktop offriamo il foglio nativo solo su mobile; su desktop solo per singole immagini.
- */
-function canNativeShareFiles(files) {
-  if (!files?.length || !navigator.share) return false;
-  if (!isMobileShareDevice()) {
-    if (files.some(isZipFile)) return false;
-    if (files.length !== 1) return false;
-    const f = files[0];
-    if (!f.type?.startsWith('image/') || f.size > MAX_SINGLE_SHARE_BYTES) return false;
-  }
-  return canShareFiles(files);
-}
-
 function downloadFiles(files) {
   const file = files[0];
   if (!file) return;
@@ -212,41 +172,46 @@ function downloadFiles(files) {
   URL.revokeObjectURL(url);
 }
 
-/** Scarica sul disco o apre il foglio di condivisione su iOS. */
-async function deliverFile(file) {
-  if (!canProgrammaticDownload() && navigator.share) {
-    try {
-      await navigator.share({ files: [file] });
-      return;
-    } catch (err) {
-      if (err?.name === 'AbortError') return;
-      throw err;
-    }
+async function shareFile(file) {
+  if (!navigator.share) throw new Error(t('sharePhotos.noWebShare'));
+  if (navigator.canShare && !navigator.canShare({ files: [file] })) {
+    throw new Error(t('sharePhotos.cantShareFiles', { n: 1 }));
   }
-  downloadFiles([file]);
+  try {
+    await navigator.share({ files: [file] });
+  } catch (err) {
+    if (err?.name === 'AbortError') return;
+    throw err;
+  }
 }
 
-/**
- * Scarica l'album come ZIP (o condivide su iOS).
- * @param {object} trip
- * @param {{ onProgress?: (done: number, total: number) => void, photos?: object[] }} [opts]
- */
-export async function downloadAlbumAsZip(trip, { onProgress, photos } = {}) {
+async function buildAlbumExportFile(trip, { onProgress, photos } = {}) {
   await ensureSession();
   const list = (photos || await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
   if (!list.length) throw new Error(t('gal.noPhotos'));
 
   onProgress?.(0, list.length);
   const files = await buildPhotoFiles(list, trip, onProgress);
-
-  if (files.length === 1) {
-    await deliverFile(files[0]);
-    return;
-  }
+  if (files.length === 1) return files[0];
 
   onProgress?.(list.length, list.length);
-  const zip = await buildZipFile(files, trip);
-  await deliverFile(zip);
+  return buildZipFile(files, trip);
+}
+
+/**
+ * Scarica l'album come ZIP (solo desktop).
+ */
+export async function downloadAlbumAsZip(trip, opts = {}) {
+  const file = await buildAlbumExportFile(trip, opts);
+  downloadFiles([file]);
+}
+
+/**
+ * Condivide l'album via foglio nativo (mobile / PWA).
+ */
+export async function shareAlbum(trip, opts = {}) {
+  const file = await buildAlbumExportFile(trip, opts);
+  await shareFile(file);
 }
 
 /** Scarica o condivide una singola foto (lightbox). */
@@ -254,13 +219,14 @@ export async function downloadSinglePhoto(trip, photo) {
   await ensureSession();
   if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
   const file = await photoToFile(photo, trip, 0);
-  if (canNativeShareFiles([file]) && isMobileShareDevice()) {
+  if (isMobileShareDevice() && navigator.share) {
     try {
-      await navigator.share({ files: [file] });
+      await shareFile(file);
       return;
     } catch (err) {
+      if (err.message === t('sharePhotos.noWebShare')) throw err;
       if (err?.name === 'AbortError') return;
     }
   }
-  await deliverFile(file);
+  downloadFiles([file]);
 }

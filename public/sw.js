@@ -9,7 +9,7 @@
  *    SKIP_WAITING (vedi public/js/pwa.js), evitando reload durante l'uso.
  */
 
-const CACHE_NAME = 'wayfold-shell-v14';
+const CACHE_NAME = 'wayfold-shell-v15';
 const OFFLINE_URL = '/offline.html';
 
 const APP_SHELL = [
