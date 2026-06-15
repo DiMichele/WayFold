@@ -170,7 +170,8 @@ async function submit() {
     hideAuth();
     _onSuccess?.(user);
   } catch (e) {
-    setError(e.message || t('auth.errLogin'));
+    const fallback = _mode === 'register' ? t('auth.errRegister') : t('auth.errLogin');
+    setError(e.message || fallback);
   } finally {
     btn.disabled = false;
     btn.textContent = _mode === 'login' ? t('auth.enter') : t('auth.createAccount');

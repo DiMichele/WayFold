@@ -1098,6 +1098,7 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
   background:var(--srf);
 }
 .cover-empty[hidden]{display:none!important}
+#roadContent[hidden],.road-empty[hidden]{display:none!important}
 .cover-empty::before{
   content:'';position:absolute;inset:0;pointer-events:none;
   background:

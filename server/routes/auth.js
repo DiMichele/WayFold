@@ -34,8 +34,14 @@ const loginLimiter = rateLimit({
 
 const registerLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  limit: 3,
-  handler: (req, res) => res.status(429).json({ error: 'Troppe registrazioni: riprova più tardi' }),
+  limit: 5,
+  keyGenerator: ipKeyGenerator,
+  // Conta solo registrazioni riuscite (201), non errori di validazione o username occupato
+  skipFailedRequests: true,
+  handler: (req, res) => {
+    console.warn(`🔒  Rate limit registrazioni superato da ${req.ip}`);
+    res.status(429).json({ error: 'Troppe registrazioni da questo dispositivo: riprova più tardi' });
+  },
 });
 
 const forgotLimiter = rateLimit({
@@ -78,10 +84,21 @@ router.post('/register', registerLimiter, async (req, res, next) => {
   try {
     await slowDown(300);
     const user = await authService.register(req.body || {});
-    req.session.regenerate(err => {
-      if (err) return next(err);
+
+    const finish = () => {
       req.session.userId = user.id;
-      res.status(201).json(user);
+      req.session.save(err => {
+        if (err) return next(err);
+        res.status(201).json(user);
+      });
+    };
+
+    req.session.regenerate(err => {
+      if (err) {
+        console.warn('⚠️  Session regenerate (register):', err.message);
+        return finish();
+      }
+      finish();
     });
   } catch (err) { next(err); }
 });
