@@ -67,24 +67,45 @@ function downloadFiles(files) {
   }
 }
 
-/** Condivisione nativa: solo immagini, senza testo. */
-function openNativeShare(files) {
+/** True se il dispositivo può condividere nativamente questi file. */
+function canShareFiles(files) {
   if (!navigator.share || !files?.length) return false;
-
-  const payload = { files };
-
+  if (!navigator.canShare) return true; // share esiste ma niente canShare: tentiamo
   try {
-    navigator.share(payload)
-      .then(() => closeModal())
-      .catch(err => {
-        if (err?.name === 'AbortError') return;
-        downloadFiles(files);
-        showToast(t('sharePhotos.downloadFallback'), 'neutral');
-      });
-    return true;
+    return navigator.canShare({ files });
   } catch {
     return false;
   }
+}
+
+/**
+ * Condivisione nativa: solo immagini, nessun testo.
+ * Deve essere invocata in modo sincrono dal click (user gesture).
+ */
+function shareNatively(files) {
+  if (!navigator.share) {
+    showToast(t('sharePhotos.noWebShare'), 'error');
+    return;
+  }
+  if (navigator.canShare && !navigator.canShare({ files })) {
+    showToast(t('sharePhotos.cantShareFiles', { n: files.length }), 'error');
+    return;
+  }
+
+  let result;
+  try {
+    result = navigator.share({ files });
+  } catch (err) {
+    showToast(`${t('sharePhotos.err')} (${err?.name || 'Error'})`, 'error');
+    return;
+  }
+
+  Promise.resolve(result)
+    .then(() => closeModal())
+    .catch(err => {
+      if (err?.name === 'AbortError') return;
+      showToast(`${t('sharePhotos.err')} (${err?.name || 'Error'})`, 'error');
+    });
 }
 
 function handleShareClick(targetId, files) {
@@ -94,12 +115,7 @@ function handleShareClick(targetId, files) {
     showToast(t('sharePhotos.downloaded', { n: files.length }), 'neutral');
     return;
   }
-
-  if (!openNativeShare(files)) {
-    closeModal();
-    downloadFiles(files);
-    showToast(t('sharePhotos.downloadFallback'), 'neutral');
-  }
+  shareNatively(files);
 }
 
 const TARGETS = [
@@ -138,7 +154,11 @@ const TARGETS = [
 function renderTargets(root, files) {
   const grid = root.querySelector('#sharePhotosGrid');
   grid.innerHTML = '';
+
+  const nativeOk = canShareFiles(files);
+
   TARGETS.forEach(target => {
+    if (target.id !== 'download' && !nativeOk) return;
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = `share-photos-target share-photos-target--${target.id}`;
@@ -152,6 +172,13 @@ function renderTargets(root, files) {
     });
     grid.appendChild(btn);
   });
+
+  if (!nativeOk) {
+    const note = document.createElement('p');
+    note.className = 'share-photos-note';
+    note.textContent = t('sharePhotos.noWebShare');
+    root.appendChild(note);
+  }
 }
 
 /**
