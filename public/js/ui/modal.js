@@ -7,6 +7,7 @@
 
 
 import * as api from '../api.js';
+import { initTripKey } from '../crypto/tripKeyVault.js';
 
 import { esc } from '../utils.js';
 
@@ -242,6 +243,8 @@ export function openTripForm({ trip = null, onSaved }) {
         ? await api.updateTrip(trip.id, payload)
 
         : await api.createTrip(payload);
+
+      if (!isEdit) await initTripKey(saved.id);
 
       closeModal();
 

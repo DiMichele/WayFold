@@ -57,6 +57,9 @@ function load() {
       if (user.emailVerified === undefined) user.emailVerified = true;
       if (user.emailVerifyCodeHash === undefined) user.emailVerifyCodeHash = null;
       if (user.emailVerifyExpiresAt === undefined) user.emailVerifyExpiresAt = null;
+      if (user.publicKey === undefined) user.publicKey = null;
+      if (user.encryptedPrivateKey === undefined) user.encryptedPrivateKey = null;
+      if (user.keySalt === undefined) user.keySalt = null;
     }
     for (const photo of data.photos || []) {
       if (photo.fileId === undefined) photo.fileId = null;
@@ -66,6 +69,15 @@ function load() {
     }
     for (const trip of data.trips || []) {
       if (trip.keyEscrow === undefined) trip.keyEscrow = null;
+      if (trip.keyWraps === undefined) trip.keyWraps = {};
+      if (trip.e2e === undefined) trip.e2e = true;
+    }
+    for (const sc of data.shareCodes || []) {
+      if (sc.codeHash === undefined && sc.code) {
+        sc.codeHash = null;
+      }
+      if (sc.keyWrap === undefined) sc.keyWrap = null;
+      if (sc.wrapSalt === undefined) sc.wrapSalt = null;
     }
     for (const user of data.users) {
       if (user.role === 'owner') user.role = 'user';
@@ -160,6 +172,7 @@ function searchUsers(query) {
 async function createUser({
   username, passwordHash, email = null, role = 'user',
   emailVerified = false, emailVerifyCodeHash = null, emailVerifyExpiresAt = null,
+  publicKey = null, encryptedPrivateKey = null, keySalt = null,
 }) {
   return withLock(() => {
     const data = load();
@@ -182,6 +195,9 @@ async function createUser({
       emailVerifyExpiresAt,
       resetCodeHash: null,
       resetExpiresAt: null,
+      publicKey: publicKey || null,
+      encryptedPrivateKey: encryptedPrivateKey || null,
+      keySalt: keySalt || null,
       createdAt: new Date().toISOString(),
     };
     data.users.push(user);
@@ -208,6 +224,9 @@ async function updateUser(id, patch) {
     if (patch.emailVerified !== undefined) user.emailVerified = Boolean(patch.emailVerified);
     if (patch.emailVerifyCodeHash !== undefined) user.emailVerifyCodeHash = patch.emailVerifyCodeHash;
     if (patch.emailVerifyExpiresAt !== undefined) user.emailVerifyExpiresAt = patch.emailVerifyExpiresAt;
+    if (patch.publicKey !== undefined) user.publicKey = patch.publicKey || null;
+    if (patch.encryptedPrivateKey !== undefined) user.encryptedPrivateKey = patch.encryptedPrivateKey || null;
+    if (patch.keySalt !== undefined) user.keySalt = patch.keySalt || null;
     save(data);
     return user;
   });
@@ -299,7 +318,9 @@ async function createTrip(fields) {
       type: fields.type || null,
       tags: Array.isArray(fields.tags) ? fields.tags : [],
       scene: fields.scene || 'coast',
-      keyEscrow: fields.keyEscrow ?? null,
+      keyEscrow: null,
+      e2e: fields.e2e !== false,
+      keyWraps: fields.keyWraps && typeof fields.keyWraps === 'object' ? fields.keyWraps : {},
       createdAt: now,
       updatedAt: now,
     };
@@ -458,7 +479,17 @@ async function deletePhoto(id) {
 function getShareCodeByCode(code) {
   const q = String(code || '').trim().toUpperCase();
   if (!q) return null;
+  const crypto = require('crypto');
+  const hash = crypto.createHash('sha256').update(q).digest('hex');
+  const byHash = load().shareCodes.find(s => s.codeHash === hash);
+  if (byHash) return byHash;
   return load().shareCodes.find(s => s.code === q) || null;
+}
+
+function getShareCodeByHash(codeHash) {
+  const h = String(codeHash || '').trim().toLowerCase();
+  if (!h || h.length !== 64) return null;
+  return load().shareCodes.find(s => s.codeHash === h) || null;
 }
 
 function getShareCodeById(id) {
@@ -471,13 +502,19 @@ function getShareCodesByTrip(tripId) {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 }
 
-async function createShareCode({ tripId, code, permission, createdByUserId }) {
+async function createShareCode({
+  tripId, permission, createdByUserId,
+  codeHash = null, keyWrap = null, wrapSalt = null, code = null,
+}) {
   return withLock(() => {
     const data = load();
     const entry = {
       id: data._nextShareCodeId++,
       tripId: Number(tripId),
-      code: String(code).toUpperCase(),
+      code: code ? String(code).toUpperCase() : null,
+      codeHash: codeHash ? String(codeHash).toLowerCase() : null,
+      keyWrap: keyWrap || null,
+      wrapSalt: wrapSalt || null,
       permission: permission === 'upload' ? 'upload' : 'view',
       createdByUserId: Number(createdByUserId),
       createdAt: new Date().toISOString(),
@@ -547,8 +584,27 @@ async function removeTripMember(tripId, userId) {
   });
 }
 
-function codeExists(code) {
-  return Boolean(getShareCodeByCode(code));
+function codeExists(codeHash) {
+  return Boolean(getShareCodeByHash(codeHash));
+}
+
+function getTripKeyWrap(tripId, userId) {
+  const trip = getTripById(tripId);
+  if (!trip?.keyWraps) return null;
+  return trip.keyWraps[String(userId)] || null;
+}
+
+async function setTripKeyWrap(tripId, userId, wrap) {
+  return withLock(() => {
+    const data = load();
+    const trip = data.trips.find(t => t.id === Number(tripId));
+    if (!trip) return null;
+    if (!trip.keyWraps || typeof trip.keyWraps !== 'object') trip.keyWraps = {};
+    trip.keyWraps[String(userId)] = String(wrap);
+    trip.updatedAt = new Date().toISOString();
+    save(data);
+    return trip;
+  });
 }
 
 module.exports = {
@@ -581,6 +637,7 @@ module.exports = {
   updatePhoto,
   deletePhoto,
   getShareCodeByCode,
+  getShareCodeByHash,
   getShareCodeById,
   getShareCodesByTrip,
   createShareCode,
@@ -589,4 +646,6 @@ module.exports = {
   addTripMember,
   removeTripMember,
   codeExists,
+  getTripKeyWrap,
+  setTripKeyWrap,
 };

@@ -84,9 +84,12 @@ async function issueEmailVerification(user) {
   await mail.sendEmailVerification({ to: user.email, username: user.username, code });
 }
 
-async function register({ username, password, email }) {
+async function register({ username, password, email, publicKey, encryptedPrivateKey, keySalt }) {
   validateCredentials(username, password);
   const cleanEmail = validateEmail(email);
+  if (!publicKey || !encryptedPrivateKey || !keySalt) {
+    throw Object.assign(new Error('Chiavi E2E obbligatorie'), { status: 400 });
+  }
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
   const code = generateVerificationCode();
@@ -101,6 +104,9 @@ async function register({ username, password, email }) {
     emailVerified: false,
     emailVerifyCodeHash: codeHash,
     emailVerifyExpiresAt: expiresAt,
+    publicKey: String(publicKey).trim(),
+    encryptedPrivateKey: String(encryptedPrivateKey).trim(),
+    keySalt: String(keySalt).trim(),
   });
 
   try {
@@ -126,7 +132,7 @@ async function login({ username, password }) {
   return publicUser(user);
 }
 
-async function changePassword(userId, { currentPassword, newPassword }) {
+async function changePassword(userId, { currentPassword, newPassword, encryptedPrivateKey, keySalt }) {
   const user = db.getUserById(userId);
   if (!user) throw Object.assign(new Error('Utente non trovato'), { status: 404 });
 
@@ -135,8 +141,13 @@ async function changePassword(userId, { currentPassword, newPassword }) {
   validatePassword(newPassword);
 
   const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
-  await db.updateUser(user.id, { passwordHash, resetCodeHash: null, resetExpiresAt: null });
-  return publicUser({ ...user, passwordHash });
+  const patch = { passwordHash, resetCodeHash: null, resetExpiresAt: null };
+  if (encryptedPrivateKey && keySalt) {
+    patch.encryptedPrivateKey = String(encryptedPrivateKey).trim();
+    patch.keySalt = String(keySalt).trim();
+  }
+  await db.updateUser(user.id, patch);
+  return publicUser({ ...user, ...patch });
 }
 
 async function updateEmail(userId, { email }) {
@@ -330,6 +341,21 @@ async function deleteAccountByUsername(username) {
   return purgeUserAccount(user.id);
 }
 
+async function setupUserKeys(userId, { publicKey, encryptedPrivateKey, keySalt }) {
+  const user = db.getUserById(userId);
+  if (!user) throw Object.assign(new Error('Utente non trovato'), { status: 404 });
+  if (user.publicKey) throw Object.assign(new Error('Chiavi già configurate'), { status: 409 });
+  if (!publicKey || !encryptedPrivateKey || !keySalt) {
+    throw Object.assign(new Error('Chiavi E2E incomplete'), { status: 400 });
+  }
+  await db.updateUser(userId, {
+    publicKey: String(publicKey).trim(),
+    encryptedPrivateKey: String(encryptedPrivateKey).trim(),
+    keySalt: String(keySalt).trim(),
+  });
+  return publicUser(db.getUserById(userId));
+}
+
 function publicUser(user) {
   return {
     id: user.id,
@@ -337,12 +363,16 @@ function publicUser(user) {
     email: user.email || null,
     emailVerified: Boolean(user.emailVerified),
     role: user.role,
+    publicKey: user.publicKey || null,
+    encryptedPrivateKey: user.encryptedPrivateKey || null,
+    keySalt: user.keySalt || null,
   };
 }
 
 module.exports = {
   register,
   login,
+  setupUserKeys,
   changePassword,
   updateEmail,
   verifyEmail,

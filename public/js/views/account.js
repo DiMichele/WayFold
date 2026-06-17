@@ -8,6 +8,7 @@ import { showToast } from '../ui/toast.js';
 import { showVerifyEmail } from '../ui/auth.js';
 import { openConfirm } from '../ui/modal.js';
 import { t } from '../i18n.js';
+import { cryptoOnPasswordChange } from '../crypto/authCrypto.js';
 
 const el = id => document.getElementById(id);
 
@@ -73,7 +74,8 @@ async function onChangePassword(e) {
   btn.disabled = true;
   btn.textContent = t('modal.saving');
   try {
-    const updated = await api.changePassword(current, next);
+    const keys = await cryptoOnPasswordChange(current, next, state.user);
+    const updated = await api.changePassword(current, next, keys);
     state.user = updated;
     el('accountCurPass').value = '';
     el('accountNewPass').value = '';

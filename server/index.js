@@ -20,7 +20,6 @@ const path = require('path');
 const crypto = require('crypto');
 const config = require('./config');
 const db = require('./db');
-const photoCrypto = require('./services/photoCrypto');
 const { FileSessionStore } = require('./services/sessionStore');
 const { requireAuth, requireVerifiedEmail, getTripAccess } = require('./middleware/auth');
 const { serveUserPhoto } = require('./services/photoServe');
@@ -231,21 +230,10 @@ app.use((err, req, res, next) => {
 
 // ─── Avvio ─────────────────────────────────────────────────────────────────
 
-const isProduction = process.env.NODE_ENV === 'production'
-  || !/localhost|127\.0\.0\.1/i.test(config.BASE_URL);
-
-if (isProduction && !photoCrypto.escrowAvailable()) {
-  console.error('❌  PHOTO_BOT_ESCROW_KEY mancante o non valida: obbligatoria in produzione.');
-  console.error('    Genera con: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"');
-  process.exit(1);
-}
-
 const server = app.listen(config.PORT, () => {
   console.log(`🌍  Server → ${config.BASE_URL}`);
   console.log(`📡  API: /api/auth /api/status /api/trips /api/photos /api/shares`);
-  if (photoCrypto.escrowAvailable()) {
-    console.log('🔐  Cifratura foto: attiva (AES-256-GCM + escrow)');
-  }
+  console.log('🔐  Cifratura foto: E2E (chiavi solo client)');
   if (!config.PHOTOS_KEEP_LOCAL) {
     console.log('💾  Foto: solo Telegram (nessuna copia locale su disco)');
   }

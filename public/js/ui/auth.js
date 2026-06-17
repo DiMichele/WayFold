@@ -4,6 +4,7 @@
 
 import * as api from '../api.js';
 import { t } from '../i18n.js';
+import { cryptoOnRegister, cryptoOnLogin } from '../crypto/authCrypto.js';
 
 const el = id => document.getElementById(id);
 
@@ -140,9 +141,14 @@ async function submit() {
   btn.textContent = t('auth.wait');
 
   try {
-    const user = _mode === 'login'
-      ? await api.login(username, password)
-      : await api.register(username, password, email);
+    let user;
+    if (_mode === 'login') {
+      user = await api.login(username, password);
+      await cryptoOnLogin(password, user);
+    } else {
+      const keys = await cryptoOnRegister(password);
+      user = await api.register(username, password, email, keys);
+    }
     el('authPass').value = '';
     el('authEmail').value = '';
 

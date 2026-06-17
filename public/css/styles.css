@@ -2195,3 +2195,30 @@ body[data-role="user"] .owner-only{display:none!important}
   html{scroll-behavior:auto}
   .journey-scroll-affordance svg{animation:none}
 }
+
+/* ─── Sblocco E2E (password locale) ─── */
+.crypto-unlock-overlay{
+  position:fixed;inset:0;z-index:9999;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+  padding:24px;
+}
+.crypto-unlock-card{
+  width:min(100%,380px);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:16px;padding:28px 24px;
+  box-shadow:0 24px 48px rgba(0,0,0,.2);
+}
+.crypto-unlock-title{font-size:1.15rem;font-weight:600;margin:0 0 8px}
+.crypto-unlock-hint{font-size:.9rem;color:var(--muted);margin:0 0 18px;line-height:1.45}
+.crypto-unlock-card form{display:flex;flex-direction:column;gap:12px}
+.crypto-unlock-card input{
+  width:100%;padding:12px 14px;border-radius:10px;
+  border:1px solid var(--border);background:var(--bg);color:var(--text);
+}
+.crypto-unlock-err{color:var(--danger);font-size:.85rem;margin:0}
+.crypto-unlock-btn{
+  padding:12px;border:none;border-radius:10px;
+  background:var(--accent);color:#fff;font-weight:600;cursor:pointer;
+}
+.crypto-unlock-btn:hover{filter:brightness(1.05)}

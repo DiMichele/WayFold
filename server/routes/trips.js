@@ -153,16 +153,23 @@ router.get('/:id/photos', validateId, (req, res, next) => {
   } catch (err) { next(err); }
 });
 
-// Chiave di cifratura del viaggio: consegnata SOLO agli utenti con accesso
-// (proprietario o membro). Il server la ricava dall'escrow; non viene mai
-// esposta a Telegram. Serve al client per cifrare gli upload e decifrare la
-// galleria.
-router.get('/:id/crypto-key', validateId, async (req, res, next) => {
+// Backup cifrato della chiave album (solo blob opaco, per sync multi-dispositivo).
+router.get('/:id/key-wrap', validateId, (req, res, next) => {
   try {
     const trip = loadAccessibleTrip(req, 'read');
-    const key = await tripService.getTripKey(trip);
-    if (!key) return res.status(404).json({ error: 'Cifratura non disponibile' });
-    res.json({ key: key.toString('base64') });
+    const wrap = tripService.getKeyWrap(trip.id, req.user.id);
+    if (!wrap) return res.status(404).json({ error: 'Wrap non disponibile' });
+    res.json({ wrap });
+  } catch (err) { next(err); }
+});
+
+router.put('/:id/key-wrap', validateId, async (req, res, next) => {
+  try {
+    const trip = loadAccessibleTrip(req, 'read');
+    const wrap = req.body?.wrap;
+    if (!wrap) return res.status(400).json({ error: 'Wrap obbligatorio' });
+    await tripService.setKeyWrap(trip.id, req.user.id, wrap);
+    res.json({ ok: true });
   } catch (err) { next(err); }
 });
 
@@ -221,8 +228,13 @@ router.post('/:id/cover', validateId, async (req, res, next) => {
 
 router.post('/:id/share-codes', validateId, shareCodeLimiter, async (req, res, next) => {
   try {
-    const permission = req.body?.permission === 'upload' ? 'upload' : 'view';
-    const sc = await shareService.createShareCode(req.user, Number(req.params.id), permission);
+    const body = req.body || {};
+    const sc = await shareService.createShareCode(req.user, Number(req.params.id), {
+      permission: body.permission,
+      codeHash: body.codeHash,
+      keyWrap: body.keyWrap,
+      wrapSalt: body.wrapSalt,
+    });
     res.status(201).json(shareService.serializeShareCode(sc));
   } catch (err) { next(err); }
 });

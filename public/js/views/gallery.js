@@ -5,6 +5,7 @@
 import { state, getTrip, visibleTrips } from '../state.js';
 import { joinParts, monthYear, photoDisplayDate, esc, tripDest, PHOTO_EMPTY_SVG, mountPhotoEmptyThumb } from '../utils.js';
 import * as api from '../api.js';
+import { unlockTripKeyFromShare } from '../crypto/tripKeyVault.js';
 import { openLightbox } from '../ui/lightbox.js';
 import { showToast } from '../ui/toast.js';
 import { reloadTrips, suppressNewPhotoToast, refreshPollBaseline } from '../data.js';
@@ -351,6 +352,9 @@ async function redeemCode(raw) {
   if (btn) btn.disabled = true;
   try {
     const result = await api.redeemShareCode(code);
+    if (result.keyWrap && result.wrapSalt) {
+      await unlockTripKeyFromShare(result.trip.id, code, result.keyWrap, result.wrapSalt);
+    }
     await reloadTrips({ silent: true, render: false });
     showToast(result.alreadyMember ? t('gal.redeemAlready') : t('gal.redeemOk'));
     state.galTripId = result.trip.id;

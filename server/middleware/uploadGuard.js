@@ -84,9 +84,9 @@ function cleanupTempFiles(files) {
  * Arricchisce ogni file valido con { detectedExt, detectedMime, size }.
  * @throws {Error} con status appropriato; i temp file vengono puliti dal chiamante
  */
-/** True se la cifratura è attiva sul server: gli upload web devono essere WFENC1. */
+/** True: tutti gli upload web devono essere cifrati E2E nel browser. */
 function encryptionRequired() {
-  return photoCrypto.escrowAvailable();
+  return true;
 }
 
 function validateUpload(user, files, { encrypted = false, requireEncrypted = false } = {}) {
@@ -95,9 +95,9 @@ function validateUpload(user, files, { encrypted = false, requireEncrypted = fal
   }
 
   if (requireEncrypted && !encrypted) {
-    console.warn(`🔒  Upload in chiaro respinto (cifratura obbligatoria): utente ${user.id}`);
+    console.warn(`🔒  Upload in chiaro respinto (E2E obbligatorio): utente ${user.id}`);
     throw Object.assign(
-      new Error('Le foto devono essere cifrate: usa l\'app web o aggiorna il client'),
+      new Error('Le foto devono essere cifrate nel browser prima dell\'upload'),
       { status: 415 }
     );
   }

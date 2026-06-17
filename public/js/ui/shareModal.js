@@ -3,6 +3,7 @@
  */
 
 import * as api from '../api.js';
+import { buildShareCodePayload } from '../crypto/tripKeyVault.js';
 import { esc } from '../utils.js';
 import { showToast } from './toast.js';
 import { openModal } from './modal.js';
@@ -72,11 +73,17 @@ async function generateCode() {
   const btn = document.getElementById('shareGenBtn');
   btn.disabled = true;
   try {
-    const sc = await api.createShareCode(_tripId, perm);
+    const payload = await buildShareCodePayload(_tripId, perm);
+    const sc = await api.createShareCode(_tripId, {
+      permission: payload.permission,
+      codeHash: payload.codeHash,
+      keyWrap: payload.keyWrap,
+      wrapSalt: payload.wrapSalt,
+    });
     const box = document.getElementById('shareCodeBox');
     const val = document.getElementById('shareCodeVal');
     box.hidden = false;
-    val.textContent = sc.code;
+    val.textContent = payload.code;
     await loadLists(document.querySelector('.share-modal'));
   } catch (e) {
     showToast(e.message || t('toast.err'), 'error');
@@ -116,8 +123,8 @@ function renderCodes(list, codes) {
   }
   list.innerHTML = active.map(c => `
     <div class="share-row">
-      <code class="share-row-code">${esc(c.code)}</code>
       <span class="share-row-meta">${esc(c.permission === 'upload' ? t('gal.sharePermUpload') : t('gal.sharePermView'))}</span>
+      <span class="share-row-meta">${esc(t('gal.shareCodeActive'))}</span>
       <button type="button" class="share-row-btn" data-revoke="${c.id}">${esc(t('gal.shareRevoke'))}</button>
     </div>`).join('');
   list.querySelectorAll('[data-revoke]').forEach(btn => {

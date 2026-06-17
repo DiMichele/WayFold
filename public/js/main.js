@@ -24,6 +24,8 @@ import { initJourneyScrolls, refreshJourneyScrollsInView } from './ui/journeyScr
 import { initTooltips } from './ui/tooltip.js';
 import { initPwa, syncPwaInstall } from './pwa.js';
 import { clearPlaceLabels, warmTripLabels } from './places.js';
+import { unlockAndPrefetch } from './cryptoUnlock.js';
+import { cryptoOnLogout } from './crypto/authCrypto.js';
 
 // ─── Navigazione (tabs mobile + sidebar desktop) ───────────────────────────
 
@@ -113,6 +115,7 @@ async function doLogout() {
     const { clearImageCache } = await import('./ui/photoDisplay.js');
     clearImageCache();
   } catch { /* non bloccante */ }
+  await cryptoOnLogout();
   location.assign('/login');
 }
 
@@ -142,13 +145,13 @@ async function startApp(user) {
   applyUser(user);
 
   if (_appStarted) {
-    // Re-login dopo sessione scaduta: ricarica i dati e basta
     await reloadTrips();
     return;
   }
   _appStarted = true;
 
   await reloadTrips({ silent: true, render: false });
+  await unlockAndPrefetch(user, state.trips);
   renderCurrentView();
   refreshJourneyScrollsInView(state.view);
   updateSyncGate();

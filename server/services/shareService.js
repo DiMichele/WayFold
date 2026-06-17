@@ -1,59 +1,50 @@
 /**
- * shareService.js — Codici di condivisione album
+ * shareService.js — Codici di condivisione album (E2E)
+ *
+ * Il server memorizza solo hash del codice e blob opachi (keyWrap).
+ * Non conosce il codice in chiaro né la chiave dell'album.
  */
 
-const crypto = require('crypto');
 const db = require('../db');
 const tripService = require('./tripService');
 
-const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-const CODE_LEN = 8;
-
-function generateCode() {
-  const bytes = crypto.randomBytes(CODE_LEN);
-  let code = '';
-  for (let i = 0; i < CODE_LEN; i++) {
-    code += CODE_CHARS[bytes[i] % CODE_CHARS.length];
-  }
-  return code;
-}
-
-async function createShareCode(owner, tripId, permission) {
+async function createShareCode(owner, tripId, { permission, codeHash, keyWrap, wrapSalt }) {
   const trip = db.getTripById(tripId);
   if (!trip || trip.userId !== owner.id) {
     throw Object.assign(new Error('Non trovato'), { status: 404 });
   }
   const perm = permission === 'upload' ? 'upload' : 'view';
-
-  let code;
-  let attempts = 0;
-  do {
-    code = generateCode();
-    attempts++;
-  } while (db.codeExists(code) && attempts < 20);
-
-  if (db.codeExists(code)) {
-    throw Object.assign(new Error('Impossibile generare codice'), { status: 500 });
+  const hash = String(codeHash || '').trim().toLowerCase();
+  if (!/^[a-f0-9]{64}$/.test(hash)) {
+    throw Object.assign(new Error('Hash codice non valido'), { status: 400 });
+  }
+  if (!keyWrap || !wrapSalt) {
+    throw Object.assign(new Error('Wrap chiave album obbligatorio'), { status: 400 });
+  }
+  if (db.codeExists(hash)) {
+    throw Object.assign(new Error('Codice già in uso'), { status: 409 });
   }
 
   return db.createShareCode({
     tripId: trip.id,
-    code,
     permission: perm,
     createdByUserId: owner.id,
+    codeHash: hash,
+    keyWrap: String(keyWrap),
+    wrapSalt: String(wrapSalt),
   });
 }
 
 function serializeShareCode(sc) {
   return {
     id: sc.id,
-    code: sc.code,
     permission: sc.permission,
     createdAt: sc.createdAt,
     usedAt: sc.usedAt,
     usedByUserId: sc.usedByUserId,
     revokedAt: sc.revokedAt,
     active: !sc.usedAt && !sc.revokedAt,
+    hasKeyWrap: Boolean(sc.keyWrap),
   };
 }
 
@@ -122,6 +113,9 @@ async function redeemCode(user, rawCode) {
   if (!sc || sc.revokedAt || sc.usedAt) {
     throw Object.assign(new Error('Non trovato'), { status: 404 });
   }
+  if (!sc.keyWrap || !sc.wrapSalt) {
+    throw Object.assign(new Error('Codice non valido (legacy)'), { status: 404 });
+  }
 
   const trip = db.getTripById(sc.tripId);
   if (!trip) throw Object.assign(new Error('Non trovato'), { status: 404 });
@@ -135,6 +129,8 @@ async function redeemCode(user, rawCode) {
     return {
       alreadyMember: true,
       trip: tripService.serializeTripForUser(trip, user),
+      keyWrap: sc.keyWrap,
+      wrapSalt: sc.wrapSalt,
     };
   }
 
@@ -149,6 +145,8 @@ async function redeemCode(user, rawCode) {
   return {
     alreadyMember: false,
     trip: tripService.serializeTripForUser(trip, user),
+    keyWrap: sc.keyWrap,
+    wrapSalt: sc.wrapSalt,
   };
 }
 

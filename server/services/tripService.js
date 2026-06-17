@@ -13,7 +13,6 @@ const config = require('../config');
 const { geocode } = require('./geocode');
 const telegram = require('./telegram');
 const { extractPhotoMeta } = require('./exif');
-const photoCrypto = require('./photoCrypto');
 
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
@@ -97,30 +96,19 @@ async function enrichLocation(dest, country, lang = 'it') {
   };
 }
 
-// ─── Chiavi di cifratura ───────────────────────────────────────────────────
+// ─── Chiavi E2E (solo blob opachi, mai decifrabili dal server) ─────────────
 
-/** Nuovo escrow per un viaggio, se la cifratura è configurata (altrimenti null). */
-function newKeyEscrow() {
-  if (!photoCrypto.escrowAvailable()) return null;
-  return photoCrypto.wrapTripKey(photoCrypto.generateTripKey());
+function getKeyWrap(tripId, userId) {
+  return db.getTripKeyWrap(tripId, userId);
 }
 
-/**
- * Chiave di cifratura del viaggio (Buffer di 32 byte) ricavata dall'escrow.
- * Se l'escrow manca ma la cifratura è configurata, lo crea al volo e lo
- * persiste. Ritorna null se la cifratura non è configurata sul server.
- */
-async function getTripKey(trip) {
-  if (!photoCrypto.escrowAvailable()) return null;
-  // Rilegge lo stato più recente: un altro upload concorrente potrebbe aver
-  // già creato l'escrow per un viaggio legacy.
-  let escrow = (db.getTripById(trip.id) || trip).keyEscrow;
-  if (!escrow) {
-    escrow = photoCrypto.wrapTripKey(photoCrypto.generateTripKey());
-    await db.updateTrip(trip.id, { keyEscrow: escrow });
-    trip.keyEscrow = escrow;
+async function setKeyWrap(tripId, userId, wrap) {
+  if (!wrap || typeof wrap !== 'string' || wrap.length > 65536) {
+    throw Object.assign(new Error('Wrap chiave non valido'), { status: 400 });
   }
-  return photoCrypto.unwrapTripKey(escrow);
+  const trip = db.getTripById(tripId);
+  if (!trip) throw Object.assign(new Error('Non trovato'), { status: 404 });
+  return db.setTripKeyWrap(tripId, userId, wrap);
 }
 
 // ─── Creazione ─────────────────────────────────────────────────────────────
@@ -154,7 +142,7 @@ async function createFromTopic({ topicId, name }) {
     month: MONTHS[createdAt.getMonth()],
     ...loc,
     scene: pickScene({ lat: loc.lat, countryCode: loc.countryCode, dest }),
-    keyEscrow: newKeyEscrow(),
+    e2e: true,
   });
 }
 
@@ -189,7 +177,7 @@ async function createManual(user, { dest, country, year, month, days, type, tags
     tags: parseTags(tags),
     ...loc,
     scene: pickScene({ type, lat: loc.lat, countryCode: loc.countryCode, dest: cleanDest }),
-    keyEscrow: newKeyEscrow(),
+    e2e: true,
   });
 }
 
@@ -574,5 +562,6 @@ module.exports = {
   serializeTrip,
   serializeTripForUser,
   serializePhoto,
-  getTripKey,
+  getKeyWrap,
+  setKeyWrap,
 };

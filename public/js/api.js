@@ -9,6 +9,7 @@
 import { getLang } from './i18n.js';
 import { getTripKey } from './crypto/keyStore.js';
 import { encryptPhoto } from './crypto/photoCrypto.js';
+import { state } from './state.js';
 
 async function request(path, options = {}) {
   const res = await fetch(path, {
@@ -44,12 +45,18 @@ export function login(username, password) {
   return request('/api/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
 }
 
-export function register(username, password, email) {
-  return request('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, password, email }) });
+export function register(username, password, email, keys = null) {
+  return request('/api/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ username, password, email, ...(keys || {}) }),
+  });
 }
 
-export function changePassword(currentPassword, newPassword) {
-  return request('/api/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+export function changePassword(currentPassword, newPassword, keys = null) {
+  return request('/api/auth/password', {
+    method: 'POST',
+    body: JSON.stringify({ currentPassword, newPassword, ...(keys || {}) }),
+  });
 }
 
 export function updateEmail(email) {
@@ -147,10 +154,10 @@ export function setCover(tripId, photoId) {
 
 // ─── Share ─────────────────────────────────────────────────────────────────
 
-export function createShareCode(tripId, permission) {
+export function createShareCode(tripId, payload) {
   return request(`/api/trips/${tripId}/share-codes`, {
     method: 'POST',
-    body: JSON.stringify({ permission }),
+    body: JSON.stringify(payload),
   });
 }
 
@@ -244,20 +251,17 @@ export async function uploadPhotos(tripId, files, { caption = '', onProgress, on
   const rawList = [...files];
   if (!rawList.length) return { photos: [], errors: [] };
 
-  // Se il viaggio è cifrato, le foto vengono cifrate nel browser prima di
-  // partire: Telegram riceve solo byte illeggibili. Senza chiave (cifratura
-  // non configurata sul server) si procede con upload in chiaro (legacy).
-  const cryptoKey = await getTripKey(tripId);
-  const encrypted = Boolean(cryptoKey);
+  // E2E: cifratura obbligatoria nel browser prima dell'upload.
+  const trip = state.trips.find(t => t.id === Number(tripId));
+  const cryptoKey = await getTripKey(tripId, { isOwner: Boolean(trip?.isOwner) });
+  if (!cryptoKey) {
+    throw new Error('Chiave album non disponibile: sblocca la cifratura o apri l\'album dal dispositivo principale');
+  }
+  const encrypted = true;
 
-  let items;
-  if (encrypted) {
-    items = [];
-    for (let i = 0; i < rawList.length; i++) {
-      items.push(await encryptForUpload(rawList[i], cryptoKey, i));
-    }
-  } else {
-    items = rawList.map(f => ({ file: f, meta: null }));
+  const items = [];
+  for (let i = 0; i < rawList.length; i++) {
+    items.push(await encryptForUpload(rawList[i], cryptoKey, i));
   }
 
   const batches = [];

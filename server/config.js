@@ -41,11 +41,6 @@ module.exports = {
   UPLOAD_QUOTA_MB: Number(process.env.UPLOAD_QUOTA_MB) || 500,
   UPLOAD_MAX_PHOTOS: Number(process.env.UPLOAD_MAX_PHOTOS) || 1000,
 
-  // Cifratura foto: chiave di escrow (32 byte in base64) con cui il server
-  // custodisce le chiavi per-viaggio. Necessaria perché le foto vengano
-  // cifrate prima di finire su Telegram. Se assente, le foto restano in chiaro.
-  PHOTO_BOT_ESCROW_KEY: (process.env.PHOTO_BOT_ESCROW_KEY || '').trim(),
-
   // Email (recupero password)
   SMTP_HOST: (process.env.SMTP_HOST || '').trim(),
   SMTP_PORT: Number(process.env.SMTP_PORT) || 587,
