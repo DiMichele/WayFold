@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#F7F6F3" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#141A1F" media="(prefers-color-scheme: dark)">
 <meta name="description" content="wayfold — Your Journeys. Organized.">
-<title>wayfold</title>
+<title>wayfold — app</title>
 <link rel="icon" href="/img/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
@@ -19,7 +19,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;450;500;600&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/vendor/leaflet/leaflet.css"/>
 <link rel="stylesheet" href="/vendor/maplibre/maplibre-gl.css"/>
-<link rel="stylesheet" href="/css/styles.css?v=27">
+<link rel="stylesheet" href="/css/styles.css?v=28">
 <script src="/js/install-capture.js"></script>
 </head>
 <body>
@@ -34,103 +34,6 @@
     <div class="brand-tagline" data-i18n="auth.tagline">Your Journeys. Organized.</div>
   </div>
   <div class="ld-rule"><div class="ld-seg"></div><div class="ld-seg"></div><div class="ld-seg"></div><div class="ld-seg"></div></div>
-</div>
-
-<!-- AUTH -->
-<div class="auth" id="auth">
-  <div class="auth-chrome">
-    <div class="lang-wrap">
-      <button class="tb-btn lang-btn" id="authLangToggle" type="button" aria-haspopup="listbox" aria-expanded="false" aria-label="Lingua">
-        <span id="authLangFlag">IT</span>
-      </button>
-      <div class="lang-menu" id="authLangMenu" role="listbox">
-        <button class="lang-opt" type="button" data-lang="it" role="option"><span class="lang-flag">IT</span><span data-i18n="lang.it">Italiano</span></button>
-        <button class="lang-opt" type="button" data-lang="en" role="option"><span class="lang-flag">GB</span><span data-i18n="lang.en">English</span></button>
-        <button class="lang-opt" type="button" data-lang="fr" role="option"><span class="lang-flag">FR</span><span data-i18n="lang.fr">Français</span></button>
-        <button class="lang-opt" type="button" data-lang="es" role="option"><span class="lang-flag">ES</span><span data-i18n="lang.es">Español</span></button>
-        <button class="lang-opt" type="button" data-lang="de" role="option"><span class="lang-flag">DE</span><span data-i18n="lang.de">Deutsch</span></button>
-      </div>
-    </div>
-    <button class="tb-btn tb-theme" id="authThemeToggle" type="button" data-i18n-aria="theme" aria-label="Cambia tema">
-      <svg class="icon-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="icon-sun" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-    </button>
-  </div>
-  <div class="auth-panel">
-    <header class="auth-panel-head">
-      <h1 class="auth-panel-logo">wayfold</h1>
-      <p class="auth-panel-tagline" data-i18n="auth.tagline">Your Journeys. Organized.</p>
-    </header>
-    <div class="auth-card">
-    <div class="auth-tabs" id="authTabs">
-      <button type="button" id="authTabLogin" class="on" data-i18n="auth.login">Accedi</button>
-      <button type="button" id="authTabRegister" data-i18n="auth.register">Registrati</button>
-    </div>
-    <form id="authForm" autocomplete="on">
-      <div class="field">
-        <label for="authUser">Username</label>
-        <input id="authUser" type="text" autocomplete="username" maxlength="20" spellcheck="false">
-      </div>
-      <div class="field auth-email-field" id="authEmailField" style="display:none">
-        <label for="authEmail" data-i18n="auth.email">Email</label>
-        <input id="authEmail" type="email" autocomplete="email" maxlength="254" spellcheck="false">
-      </div>
-      <div class="field">
-        <label for="authPass">Password</label>
-        <input id="authPass" type="password" autocomplete="current-password" maxlength="128">
-      </div>
-      <div class="field-err" id="authErr"></div>
-      <div class="auth-hint" id="authHint"></div>
-      <div class="auth-forgot-wrap" id="authForgotWrap">
-        <button type="button" class="auth-link" id="authForgot" data-i18n="auth.forgot">Password dimenticata?</button>
-      </div>
-      <button class="auth-submit" id="authSubmit" type="submit" data-i18n="auth.enter">Entra</button>
-    </form>
-    <div class="auth-forgot-panel" id="authForgotPanel" style="display:none">
-      <div class="auth-forgot-title" data-i18n="auth.forgotTitle">Recupera password</div>
-      <p class="auth-forgot-desc" data-i18n="auth.forgotDesc">Inserisci il tuo username: ti invieremo un codice all'email usata in registrazione.</p>
-      <form id="authForgotForm" class="auth-forgot-form">
-        <div class="field">
-          <label for="authForgotUser">Username</label>
-          <input id="authForgotUser" type="text" autocomplete="username" maxlength="20" spellcheck="false">
-        </div>
-        <div class="field-err" id="authForgotErr"></div>
-        <button class="auth-submit" id="authForgotSubmit" type="submit" data-i18n="auth.sendCode">Invia codice</button>
-        <button type="button" class="auth-link auth-back" id="authBackLogin" data-i18n="auth.backLogin">Torna al login</button>
-      </form>
-    </div>
-    <div class="auth-forgot-panel" id="authResetPanel" style="display:none">
-      <div class="auth-forgot-title" data-i18n="auth.resetTitle">Reimposta password</div>
-      <p class="auth-forgot-desc"><span data-i18n="auth.resetDesc">Abbiamo inviato un codice a</span> <b id="authResetUser"></b></p>
-      <form id="authResetForm" class="auth-forgot-form">
-        <div class="field">
-          <label for="authCode" data-i18n="auth.code">Codice</label>
-          <input id="authCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" spellcheck="false">
-        </div>
-        <div class="field">
-          <label for="authNewPass" data-i18n="auth.newPass">Nuova password</label>
-          <input id="authNewPass" type="password" autocomplete="new-password" maxlength="128">
-        </div>
-        <div class="field-err" id="authResetErr"></div>
-        <button class="auth-submit" id="authResetSubmit" type="submit" data-i18n="auth.resetPass">Reimposta password</button>
-        <button type="button" class="auth-link auth-back" id="authBackCode" data-i18n="auth.resend">Richiedi un nuovo codice</button>
-      </form>
-    </div>
-    <div class="auth-forgot-panel" id="authVerifyPanel" style="display:none">
-      <div class="auth-forgot-title" data-i18n="auth.verifyTitle">Verifica email</div>
-      <p class="auth-forgot-desc"><span data-i18n="auth.verifyDesc">Abbiamo inviato un codice a</span> <b id="authVerifyEmail"></b></p>
-      <form id="authVerifyForm" class="auth-forgot-form">
-        <div class="field">
-          <label for="authVerifyCode" data-i18n="auth.code">Codice</label>
-          <input id="authVerifyCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" spellcheck="false">
-        </div>
-        <div class="field-err" id="authVerifyErr"></div>
-        <button class="auth-submit" id="authVerifySubmit" type="submit" data-i18n="auth.verifySubmit">Verifica email</button>
-        <button type="button" class="auth-link auth-back" id="authResendVerify" data-i18n="auth.resendVerify">Invia un nuovo codice</button>
-      </form>
-    </div>
-    </div>
-  </div>
 </div>
 
 <!-- SYNC BLOCKER -->
@@ -652,6 +555,6 @@
 <script src="/vendor/leaflet/leaflet.js"></script>
 <script src="/vendor/maplibre/maplibre-gl-csp.js"></script>
 <script src="/vendor/maplibre/leaflet-maplibre-gl.js"></script>
-<script type="module" src="/js/main.js?v=19"></script>
+<script type="module" src="/js/main.js?v=20"></script>
 </body>
 </html>

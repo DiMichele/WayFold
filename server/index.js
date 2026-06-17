@@ -26,6 +26,8 @@ const { requireAuth, requireVerifiedEmail, getTripAccess } = require('./middlewa
 const { serveUserPhoto } = require('./services/photoServe');
 const tripService = require('./services/tripService');
 
+const APP_SHELL_PATH = path.join(__dirname, 'shells', 'app.html');
+
 const app = express();
 
 // Dietro cloudflared/reverse proxy: 1 hop fidato per IP reale e cookie secure
@@ -136,6 +138,45 @@ app.get('/photos/:tripId/:file', requireAuth, requireVerifiedEmail, async (req, 
   }
 });
 
+// ─── Pagine HTML (login pubblica, app solo con sessione) ───────────────────
+
+function getSessionUser(req) {
+  const userId = req.session?.userId;
+  if (!userId) return null;
+  return db.getUserById(userId) || null;
+}
+
+function isVerifiedUser(user) {
+  return user && user.emailVerified !== false;
+}
+
+app.get('/', (req, res) => {
+  res.redirect(isVerifiedUser(getSessionUser(req)) ? '/app' : '/login');
+});
+
+app.get('/login', (req, res) => {
+  if (isVerifiedUser(getSessionUser(req))) {
+    return res.redirect('/app');
+  }
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(path.join(config.PUBLIC_DIR, 'login.html'));
+});
+
+app.get('/app', (req, res) => {
+  const user = getSessionUser(req);
+  if (!user) {
+    const next = encodeURIComponent(req.originalUrl);
+    return res.redirect(`/login?next=${next}`);
+  }
+  if (!user.emailVerified) {
+    return res.redirect('/login');
+  }
+  res.set('Cache-Control', 'no-store');
+  res.sendFile(APP_SHELL_PATH);
+});
+
+app.get('/app.html', (req, res) => res.status(404).end());
+
 // ─── Web app statica ───────────────────────────────────────────────────────
 
 app.use(express.static(config.PUBLIC_DIR, {
@@ -144,7 +185,7 @@ app.use(express.static(config.PUBLIC_DIR, {
     const ext = path.extname(filePath).toLowerCase();
     if (base === 'sw.js' || base === 'manifest.webmanifest') {
       res.set('Cache-Control', 'no-cache');
-    } else if (ext === '.js' || ext === '.css' || base === 'index.html') {
+    } else if (ext === '.js' || ext === '.css' || base === 'login.html') {
       // JS/CSS/HTML: rivalidazione frequente (evita banner PWA bloccati in dev)
       res.set('Cache-Control', 'no-cache');
     } else {
@@ -165,10 +206,12 @@ app.use('/api/share-codes', require('./routes/shareCodes'));
 // 404 esplicito per route API sconosciute (non deve cadere nel fallback HTML)
 app.use('/api', (req, res) => res.status(404).json({ error: 'Endpoint non trovato' }));
 
-// ─── Fallback SPA ──────────────────────────────────────────────────────────
-
+// 404 per navigazioni HTML sconosciute
 app.get('*', (req, res) => {
-  res.sendFile(path.join(config.PUBLIC_DIR, 'index.html'));
+  if (req.accepts('html')) {
+    return res.redirect('/');
+  }
+  res.status(404).end();
 });
 
 // ─── Error handler centralizzato (mai stack trace verso il client) ─────────

@@ -9,13 +9,15 @@
  *    SKIP_WAITING (vedi public/js/pwa.js), evitando reload durante l'uso.
  */
 
-const CACHE_NAME = 'wayfold-shell-v16';
+const CACHE_NAME = 'wayfold-shell-v17';
 const OFFLINE_URL = '/offline.html';
+const LOGIN_URL = '/login';
 
 const APP_SHELL = [
-  '/',
+  LOGIN_URL,
   OFFLINE_URL,
   '/css/styles.css',
+  '/js/login.js',
   '/js/main.js',
   '/img/favicon.svg',
   '/img/icon-192.png',
@@ -78,8 +80,8 @@ async function handleNavigation(request) {
     return await fetch(request);
   } catch {
     const cache = await caches.open(CACHE_NAME);
-    const shell = await cache.match('/');
-    if (shell) return shell;
+    const login = await cache.match(LOGIN_URL);
+    if (login) return login;
     const offline = await cache.match(OFFLINE_URL);
     return offline || Response.error();
   }

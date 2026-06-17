@@ -12,7 +12,6 @@ import { initTheme } from './ui/theme.js';
 import { initModal } from './ui/modal.js';
 import { initLightbox } from './ui/lightbox.js';
 import { initPalette } from './ui/palette.js';
-import { initAuth, showAuth, showVerifyEmail, refreshAuthLabels } from './ui/auth.js';
 import { initLang } from './ui/lang.js';
 import { applyStatic, onLangChange, t } from './i18n.js';
 import { initRoad } from './views/road.js';
@@ -109,12 +108,20 @@ function applyUser(user) {
 }
 
 async function doLogout() {
-  try { await api.logout(); } catch { /* comunque ricarica */ }
+  try { await api.logout(); } catch { /* comunque esci */ }
   try {
     const { clearImageCache } = await import('./ui/photoDisplay.js');
     clearImageCache();
   } catch { /* non bloccante */ }
-  location.reload();
+  location.assign('/login');
+}
+
+function redirectToLogin() {
+  const next = location.pathname + location.search;
+  const url = next && next !== '/login'
+    ? `/login?next=${encodeURIComponent(next)}`
+    : '/login';
+  location.assign(url);
 }
 
 // ─── Resize ────────────────────────────────────────────────────────────────
@@ -164,7 +171,6 @@ async function boot() {
 
   onLangChange(() => {
     clearPlaceLabels();
-    refreshAuthLabels();
     refreshPasswordToggleLabels();
     updateSyncGate();
     if (state.user) applyUser(state.user);
@@ -179,7 +185,6 @@ async function boot() {
   initModal();
   initLightbox();
   initPalette();
-  initAuth({ onSuccess: startApp });
   initSyncGate({ onRetry: retrySync });
   initRoad();
   initAccount();
@@ -193,21 +198,20 @@ async function boot() {
   document.getElementById('tbLogout').addEventListener('click', doLogout);
   document.getElementById('sideUser').addEventListener('click', () => switchView('account'));
 
+  window.addEventListener('wf:unauthorized', redirectToLogin);
+
   let me = null;
   try { me = await api.fetchMe(); } catch { /* non autenticato */ }
 
   document.getElementById('ld').classList.add('gone');
   setTimeout(syncPwaInstall, 400);
 
-  if (me) {
-    if (me.emailVerified === false) {
-      showVerifyEmail(me);
-    } else {
-      await startApp(me);
-    }
-  } else {
-    showAuth();
+  if (!me || me.emailVerified === false) {
+    redirectToLogin();
+    return;
   }
+
+  await startApp(me);
 }
 
 boot();

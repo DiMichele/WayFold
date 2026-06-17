@@ -23,7 +23,7 @@ async function request(path, options = {}) {
   let body = null;
   try { body = await res.json(); } catch { /* risposta senza body */ }
   if (!res.ok) {
-    // Sessione scaduta/assente: l'app mostra l'overlay di login
+    // Sessione scaduta/assente: redirect alla pagina di login
     if (res.status === 401 && !path.startsWith('/api/auth')) {
       window.dispatchEvent(new Event('wf:unauthorized'));
     }

@@ -225,7 +225,7 @@ img{display:block}
   background:var(--bg);
   opacity:0;visibility:hidden;transition:opacity .35s,visibility .35s;
 }
-.auth.open{opacity:1;visibility:visible}
+.auth.open,.auth--page{opacity:1;visibility:visible}
 .auth-chrome{
   position:fixed;top:max(12px,env(safe-area-inset-top));right:max(18px,env(safe-area-inset-right));
   z-index:991;display:flex;align-items:center;gap:8px;

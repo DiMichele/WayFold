@@ -200,7 +200,7 @@ function hasPendingUpdate(registration) {
 }
 
 function isBusyUi() {
-  return !!document.querySelector('.modal.open, .lb.open, .palette.open, .auth.open');
+  return !!document.querySelector('.modal.open, .lb.open, .palette.open');
 }
 
 function applyUpdate(registration) {

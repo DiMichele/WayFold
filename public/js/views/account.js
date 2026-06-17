@@ -143,7 +143,7 @@ function onDeleteAccount() {
       await api.deleteAccount(password);
       api.invalidatePhotoCache();
       showToast(t('account.deleteDone'));
-      location.reload();
+      location.assign('/login');
     },
   });
 }

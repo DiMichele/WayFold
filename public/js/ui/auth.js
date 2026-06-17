@@ -1,5 +1,5 @@
 /**
- * ui/auth.js — Overlay di accesso (login / registrazione / verifica email / reset password)
+ * ui/auth.js — Pagina di accesso (login / registrazione / verifica email / reset password)
  */
 
 import * as api from '../api.js';
@@ -38,31 +38,15 @@ export function initAuth({ onSuccess }) {
     e.preventDefault();
     await submitVerify();
   });
-
-  window.addEventListener('wf:unauthorized', () => showAuth());
 }
 
 export function refreshAuthLabels() {
   setMode(_mode);
 }
 
-export function showAuth() {
-  el('auth').classList.add('open');
-  document.body.classList.add('auth-open');
-  setMode('login');
-  setTimeout(() => el('authUser').focus(), 80);
-}
-
 export function showVerifyEmail(user) {
   _verifyUser = user;
-  el('auth').classList.add('open');
-  document.body.classList.add('auth-open');
   setMode('verify-email');
-}
-
-export function hideAuth() {
-  el('auth').classList.remove('open');
-  document.body.classList.remove('auth-open');
 }
 
 function setMode(mode) {
@@ -167,7 +151,6 @@ async function submit() {
       return;
     }
 
-    hideAuth();
     _onSuccess?.(user);
   } catch (e) {
     const fallback = _mode === 'register' ? t('auth.errRegister') : t('auth.errLogin');
@@ -256,7 +239,6 @@ async function submitVerify() {
     const user = await api.verifyEmail(code);
     el('authVerifyCode').value = '';
     _verifyUser = null;
-    hideAuth();
     _onSuccess?.(user);
     el('authHint').textContent = t('auth.verifyDone');
   } catch (e) {

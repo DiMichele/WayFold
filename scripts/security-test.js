@@ -59,6 +59,12 @@ async function main() {
   check('GET /api/trips senza sessione → 401', (await anon.req('GET', '/api/trips')).status === 401);
   check('GET /api/status senza sessione → 401', (await anon.req('GET', '/api/status')).status === 401);
 
+  const anonApp = await fetch(BASE + '/app', { redirect: 'manual' });
+  check('GET /app senza sessione → redirect login', anonApp.status === 302 && anonApp.headers.get('location')?.includes('/login'));
+
+  const anonAppFile = await fetch(BASE + '/app.html');
+  check('GET /app.html senza sessione → 404', anonAppFile.status === 404);
+
   console.log('\n— Registrazione —');
   const userB = client();
   const uname = 'testuser_e2e';
