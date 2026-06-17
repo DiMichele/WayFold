@@ -1646,6 +1646,7 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 .gal-album-share span{display:none}
 .gal-share-sheet-actions{display:flex;flex-direction:column;gap:8px}
 .gal-share-sheet-btn{width:100%;justify-content:center}
+.gal-actions-toolbar [data-gal-export]:disabled{opacity:.45;pointer-events:none}
 
 /* redeem codice */
 .gal-redeem{

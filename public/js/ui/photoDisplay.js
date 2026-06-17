@@ -7,7 +7,7 @@
  */
 
 import { getTripKey, clearTripKeys } from '../crypto/keyStore.js';
-import { decryptPhoto } from '../crypto/photoCrypto.js';
+import { decryptPhoto, isEncryptedBytes } from '../crypto/photoCrypto.js';
 
 const _objectUrls = new Map(); // photoId → objectURL (plaintext)
 const _plainBlobs = new Map(); // photoId → Blob (plaintext, per export)
@@ -61,8 +61,8 @@ function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
     if (!key) return null;
     const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
     if (!res.ok) return null;
-    const buf = await res.arrayBuffer();
-    const plain = await decryptPhoto(new Uint8Array(buf), key);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const plain = await decryptPhoto(buf, key);
     const blob = new Blob([plain], { type: mime || 'image/jpeg' });
     rememberPlainBlob(pid, blob);
     const objUrl = URL.createObjectURL(blob);
@@ -123,17 +123,25 @@ export async function fetchDecryptedBlob({ tripId, photoId, url, encrypted, mime
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
-    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
-    if (res.status >= 500 && attempt < maxAttempts - 1) continue;
-    if (!res.ok) return null;
-    if (!encrypted) return res.blob();
-    const key = await getTripKey(tripId, { isOwner });
-    if (!key) return null;
-    const buf = await res.arrayBuffer();
-    const plain = await decryptPhoto(new Uint8Array(buf), key);
-    const blob = new Blob([plain], { type: mime || 'image/jpeg' });
-    rememberPlainBlob(pid, blob);
-    return blob;
+    try {
+      const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+      if (res.status >= 500 && attempt < maxAttempts - 1) continue;
+      if (!res.ok) return null;
+      const buf = new Uint8Array(await res.arrayBuffer());
+      if (!buf.length) return null;
+      if (!encrypted && !isEncryptedBytes(buf)) {
+        return new Blob([buf], { type: mime || 'image/jpeg' });
+      }
+      const key = await getTripKey(tripId, { isOwner });
+      if (!key) return null;
+      const plain = await decryptPhoto(buf, key);
+      const blob = new Blob([plain], { type: mime || 'image/jpeg' });
+      rememberPlainBlob(pid, blob);
+      return blob;
+    } catch {
+      if (attempt < maxAttempts - 1) continue;
+      return null;
+    }
   }
   return null;
 }
@@ -171,6 +179,70 @@ export async function exportPhotoBlob({ tripId, photoId, url, encrypted, mime, i
   const blob = await fetchDecryptedBlob({ tripId, photoId: pid, url, encrypted, mime, isOwner });
   if (blob?.size && encrypted) rememberPlainBlob(pid, blob);
   return blob;
+}
+
+function photoUrls(photo) {
+  const urls = [];
+  if (photo?.url) urls.push(photo.url);
+  if (photo?.id) urls.push(`/api/photos/${photo.id}/file`);
+  return urls;
+}
+
+/**
+ * Carica il blob in chiaro per export/condivisione (stesso percorso della galleria).
+ * @returns {Promise<Blob|null>}
+ */
+export async function loadPhotoForShare(photo, trip) {
+  const tripId = photo?.tripId ?? trip?.id;
+  const pid = normalizePhotoId(photo?.id);
+  const mime = photo?.originalMime || photo?.mime || 'image/jpeg';
+  const encrypted = Boolean(photo?.encrypted);
+  const isOwner = false;
+
+  if (pid != null) {
+    const cached = _plainBlobs.get(pid);
+    if (cached?.size) return cached;
+    const fromDom = await blobFromMountedImage(pid);
+    if (fromDom?.size) {
+      rememberPlainBlob(pid, fromDom);
+      return fromDom;
+    }
+  }
+
+  for (const url of photoUrls(photo)) {
+    const blob = await exportPhotoBlob({
+      tripId,
+      photoId: pid,
+      url,
+      encrypted,
+      mime,
+      isOwner,
+    });
+    if (blob?.size) return blob;
+
+    const fetched = await fetchDecryptedBlob({
+      tripId,
+      photoId: pid,
+      url,
+      encrypted: true,
+      mime,
+      isOwner,
+    });
+    if (fetched?.size) return fetched;
+  }
+
+  return null;
+}
+
+/** Precarica i blob decifrati per l'export album (dopo il render galleria). */
+export async function prefetchPhotosForExport(photos, trip) {
+  if (!photos?.length || !trip?.id) return;
+  const tripId = trip.id;
+  await getTripKey(tripId, { isOwner: false });
+  for (const photo of photos) {
+    if ((photo.tripId ?? tripId) !== tripId) continue;
+    await loadPhotoForShare(photo, trip);
+  }
 }
 
 /** Svuota cache immagini e chiavi (logout). */
