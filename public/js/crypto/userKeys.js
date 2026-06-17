@@ -6,10 +6,7 @@
 import { bytesToB64, b64ToBytes } from './bytes.js';
 import { deriveMasterKey } from './masterKey.js';
 import { sealBytes, openBytes } from './seal.js';
-import { deriveMasterKey } from './masterKey.js';
-import { sealBytes, openBytes } from './seal.js';
-import { setSessionCrypto, getPrivateKey, getMasterKey, getPublicKeyRaw } from './sessionCrypto.js';
-import { bytesToB64, b64ToBytes } from './bytes.js';
+import { setSessionCrypto, getPrivateKey, getPublicKeyRaw } from './sessionCrypto.js';
 import { rewrapAllTripKeys } from './tripKeyVault.js';
 
 const SALT_LEN = 16;

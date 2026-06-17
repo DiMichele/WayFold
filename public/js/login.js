@@ -37,8 +37,8 @@ async function boot() {
 
   let me = null;
   try { me = await api.fetchMe(); } catch { /* non autenticato */ }
+  finally { document.getElementById('ld')?.classList.add('gone'); }
 
-  document.getElementById('ld').classList.add('gone');
   setTimeout(syncPwaInstall, 400);
 
   if (me) {

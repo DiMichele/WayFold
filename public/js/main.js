@@ -151,10 +151,11 @@ async function startApp(user) {
   _appStarted = true;
 
   await reloadTrips({ silent: true, render: false });
-  await unlockAndPrefetch(user, state.trips);
   renderCurrentView();
   refreshJourneyScrollsInView(state.view);
   updateSyncGate();
+  // Sblocco E2E in background: non blocca il primo render
+  unlockAndPrefetch(user, state.trips).catch(() => {});
 
   try {
     await refreshPollBaseline();
@@ -205,8 +206,8 @@ async function boot() {
 
   let me = null;
   try { me = await api.fetchMe(); } catch { /* non autenticato */ }
+  finally { document.getElementById('ld')?.classList.add('gone'); }
 
-  document.getElementById('ld').classList.add('gone');
   setTimeout(syncPwaInstall, 400);
 
   if (!me || me.emailVerified === false) {
