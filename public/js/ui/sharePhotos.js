@@ -7,7 +7,7 @@ import { t } from '../i18n.js';
 import { zipSync } from '../vendor/fflate.esm.js';
 import { fetchMe } from '../api.js';
 import * as api from '../api.js';
-import { fetchDecryptedBlob } from './photoDisplay.js';
+import { exportPhotoBlob } from './photoDisplay.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -60,11 +60,13 @@ function imgReady(img) {
 }
 
 /** Riutilizza immagini già caricate in galleria/lightbox (evita un fetch quando possibile). */
-async function blobFromGalleryImage(url) {
+async function blobFromGalleryImage(url, photoId) {
   const sel = '#lbImg, .gal-grid img, .gal-hthumb img';
   for (const img of document.querySelectorAll(sel)) {
+    const matchesId = photoId != null && img.dataset.photoId === String(photoId);
     const src = img.currentSrc || img.src;
-    if (!src || !pathsMatch(src, url)) continue;
+    const matchesUrl = src && url && pathsMatch(src, url);
+    if (!matchesId && !matchesUrl) continue;
     if (!imgReady(img)) continue;
     try {
       const canvas = document.createElement('canvas');
@@ -106,25 +108,35 @@ async function fetchPhotoBlobUrl(url) {
 }
 
 async function fetchPhotoBlob(photo, trip) {
-  // Foto cifrata: scarica i byte e li decifra nel browser (mai in chiaro su rete)
+  const tripId = photo.tripId ?? trip?.id;
+  const mime = photo.originalMime || photo.mime || 'image/jpeg';
+  const isOwner = trip?.isOwner ?? (trip ? !trip.shared : false);
+
   if (photo?.encrypted) {
-    const tripId = photo.tripId ?? trip?.id;
-    const mime = photo.originalMime || photo.mime || 'image/jpeg';
     const candidates = [];
     if (photo.url) candidates.push(photo.url);
     if (photo.id) candidates.push(`/api/photos/${photo.id}/file`);
     for (const candidate of candidates) {
       try {
-        const blob = await fetchDecryptedBlob({ tripId, url: candidate, encrypted: true, mime });
+        const blob = await exportPhotoBlob({
+          tripId,
+          photoId: photo.id,
+          url: candidate,
+          encrypted: true,
+          mime,
+          isOwner,
+        });
         if (blob?.size) return blob;
-      } catch { /* prova il prossimo candidato */ }
+      } catch {
+        /* prova il prossimo candidato */
+      }
     }
     throw new Error(t('sharePhotos.fetchFail'));
   }
 
   const url = photo?.url;
   if (url) {
-    const fromDom = await blobFromGalleryImage(url);
+    const fromDom = await blobFromGalleryImage(url, photo.id);
     if (fromDom) return fromDom;
   }
 
@@ -208,16 +220,34 @@ async function shareFile(file) {
   }
 }
 
-async function buildAlbumExportFile(trip, { onProgress, photos } = {}) {
+async function shareFiles(files) {
+  if (!navigator.share) throw new Error(t('sharePhotos.noWebShare'));
+  if (navigator.canShare && !navigator.canShare({ files })) {
+    throw new Error(t('sharePhotos.cantShareFiles', { n: files.length }));
+  }
+  try {
+    await navigator.share({ files });
+  } catch (err) {
+    if (err?.name === 'AbortError') return;
+    throw err;
+  }
+}
+
+async function buildAlbumExportFiles(trip, { onProgress, photos } = {}) {
   await ensureSession();
   const list = (photos || await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
   if (!list.length) throw new Error(t('gal.noPhotos'));
 
   onProgress?.(0, list.length);
   const files = await buildPhotoFiles(list, trip, onProgress);
+  return files;
+}
+
+async function buildAlbumExportFile(trip, opts = {}) {
+  const files = await buildAlbumExportFiles(trip, opts);
   if (files.length === 1) return files[0];
 
-  onProgress?.(list.length, list.length);
+  opts.onProgress?.(files.length, files.length);
   return buildZipFile(files, trip);
 }
 
@@ -233,8 +263,16 @@ export async function downloadAlbumAsZip(trip, opts = {}) {
  * Condivide l'album via foglio nativo (mobile / PWA).
  */
 export async function shareAlbum(trip, opts = {}) {
-  const file = await buildAlbumExportFile(trip, opts);
-  await shareFile(file);
+  const files = await buildAlbumExportFiles(trip, opts);
+  if (files.length === 1) {
+    await shareFile(files[0]);
+    return;
+  }
+  if (isMobileShareDevice()) {
+    await shareFiles(files);
+    return;
+  }
+  await shareFile(await buildZipFile(files, trip));
 }
 
 /** Scarica o condivide una singola foto (lightbox). */

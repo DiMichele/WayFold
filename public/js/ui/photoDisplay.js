@@ -16,12 +16,12 @@ const _inflight = new Map();   // photoId → Promise<string|null>
  * Scarica e decifra una foto, restituendo un blob URL (con cache per photoId).
  * @returns {Promise<string|null>}
  */
-function resolveObjectUrl({ tripId, photoId, url, mime }) {
+function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
   if (_objectUrls.has(photoId)) return Promise.resolve(_objectUrls.get(photoId));
   if (_inflight.has(photoId)) return _inflight.get(photoId);
 
   const promise = (async () => {
-    const key = await getTripKey(tripId);
+    const key = await getTripKey(tripId, { isOwner });
     if (!key) return null;
     const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
     if (!res.ok) return null;
@@ -44,6 +44,7 @@ function resolveObjectUrl({ tripId, photoId, url, mime }) {
  */
 export function mountImage(img, { tripId, photoId, url, encrypted, mime }) {
   if (!img || !url) return;
+  if (photoId != null) img.dataset.photoId = String(photoId);
   if (!encrypted) {
     img.src = url;
     return;
@@ -79,15 +80,60 @@ export function mountCover(img, trip) {
  * scarica i byte e li decifra; per le legacy scarica direttamente.
  * @returns {Promise<Blob|null>}
  */
-export async function fetchDecryptedBlob({ tripId, url, encrypted, mime }) {
-  const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
-  if (!res.ok) return null;
-  if (!encrypted) return res.blob();
-  const key = await getTripKey(tripId);
-  if (!key) return null;
-  const buf = await res.arrayBuffer();
-  const plain = await decryptPhoto(new Uint8Array(buf), key);
-  return new Blob([plain], { type: mime || 'image/jpeg' });
+async function blobFromObjectUrl(objUrl) {
+  try {
+    const res = await fetch(objUrl);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    return blob?.size ? blob : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchDecryptedBlob({ tripId, url, encrypted, mime, isOwner = false }) {
+  const maxAttempts = 3;
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
+    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+    if (res.status >= 500 && attempt < maxAttempts - 1) continue;
+    if (!res.ok) return null;
+    if (!encrypted) return res.blob();
+    const key = await getTripKey(tripId, { isOwner });
+    if (!key) return null;
+    const buf = await res.arrayBuffer();
+    const plain = await decryptPhoto(new Uint8Array(buf), key);
+    return new Blob([plain], { type: mime || 'image/jpeg' });
+  }
+  return null;
+}
+
+/**
+ * Blob in chiaro per export/condivisione: riusa la decifratura già in cache
+ * (galleria/lightbox) prima di un nuovo fetch di rete.
+ */
+export async function exportPhotoBlob({ tripId, photoId, url, encrypted, mime, isOwner = false }) {
+  if (encrypted && photoId != null) {
+    if (_objectUrls.has(photoId)) {
+      const blob = await blobFromObjectUrl(_objectUrls.get(photoId));
+      if (blob) return blob;
+    }
+    if (_inflight.has(photoId)) {
+      const objUrl = await _inflight.get(photoId).catch(() => null);
+      if (objUrl) {
+        const blob = await blobFromObjectUrl(objUrl);
+        if (blob) return blob;
+      }
+    }
+    if (url) {
+      const objUrl = await resolveObjectUrl({ tripId, photoId, url, mime, isOwner });
+      if (objUrl) {
+        const blob = await blobFromObjectUrl(objUrl);
+        if (blob) return blob;
+      }
+    }
+  }
+  return fetchDecryptedBlob({ tripId, url, encrypted, mime, isOwner });
 }
 
 /** Svuota cache immagini e chiavi (logout). */

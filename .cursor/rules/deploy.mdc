@@ -1,0 +1,27 @@
+---
+description: Deploy su produzione dopo ogni aggiornamento al codice
+alwaysApply: true
+---
+
+# Deploy WayFold
+
+Dopo ogni modifica al codice che va in produzione, esegui il deploy prima di considerare il lavoro completato.
+
+## Comando
+
+Dalla root del progetto (Windows):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File deploy/deploy.ps1 -Message "descrizione breve delle modifiche"
+```
+
+- Se il codice è già committato e pushato: aggiungi `-SkipPush`
+- Primo setup o emergenza: `-Full`
+
+## Flusso
+
+1. Completa le modifiche richieste
+2. Esegui `deploy.ps1` con `-Message` (committa, push su `main`, aggiorna il server Hetzner)
+3. Verifica che il deploy termini con `Deploy completato: https://wayfold.xyz`
+
+Non chiedere conferma per il deploy: è parte del flusso standard dopo ogni aggiornamento.
