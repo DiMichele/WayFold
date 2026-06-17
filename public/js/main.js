@@ -24,8 +24,8 @@ import { initJourneyScrolls, refreshJourneyScrollsInView } from './ui/journeyScr
 import { initTooltips } from './ui/tooltip.js';
 import { initPwa, syncPwaInstall } from './pwa.js';
 import { clearPlaceLabels, warmTripLabels } from './places.js';
-import { unlockAndPrefetch } from './cryptoUnlock.js';
-import { cryptoOnLogout } from './crypto/authCrypto.js';
+import { cryptoAutoUnlock, cryptoOnLogout } from './crypto/authCrypto.js';
+import { prefetchTripKeys } from './crypto/keyStore.js';
 
 // ─── Navigazione (tabs mobile + sidebar desktop) ───────────────────────────
 
@@ -115,7 +115,7 @@ async function doLogout() {
     const { clearImageCache } = await import('./ui/photoDisplay.js');
     clearImageCache();
   } catch { /* non bloccante */ }
-  await cryptoOnLogout();
+  await cryptoOnLogout(state.user?.id);
   location.assign('/login');
 }
 
@@ -145,17 +145,18 @@ async function startApp(user) {
   applyUser(user);
 
   if (_appStarted) {
+    await cryptoAutoUnlock(user);
     await reloadTrips();
     return;
   }
   _appStarted = true;
 
+  await cryptoAutoUnlock(user);
   await reloadTrips({ silent: true, render: false });
   renderCurrentView();
   refreshJourneyScrollsInView(state.view);
   updateSyncGate();
-  // Sblocco E2E in background: non blocca il primo render
-  unlockAndPrefetch(user, state.trips).catch(() => {});
+  prefetchTripKeys(state.trips).catch(() => {});
 
   try {
     await refreshPollBaseline();

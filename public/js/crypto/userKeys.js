@@ -4,16 +4,32 @@
  */
 
 import { bytesToB64, b64ToBytes } from './bytes.js';
-import { deriveMasterKey } from './masterKey.js';
+import { deriveMasterKeyMaterial, importMasterKey } from './masterKey.js';
 import { sealBytes, openBytes } from './seal.js';
 import { setSessionCrypto, getPrivateKey, getPublicKeyRaw } from './sessionCrypto.js';
 import { rewrapAllTripKeys } from './tripKeyVault.js';
 
 const SALT_LEN = 16;
 
+async function loadSessionFromPassword(password, salt, encryptedPrivateKeyB64, publicKeyB64) {
+  const rawMk = await deriveMasterKeyMaterial(password, salt);
+  const masterKey = await importMasterKey(rawMk);
+  const privateKeyRaw = await openBytes(b64ToBytes(encryptedPrivateKeyB64), masterKey);
+  const privateKey = await crypto.subtle.importKey(
+    'pkcs8',
+    privateKeyRaw,
+    { name: 'X25519' },
+    false,
+    ['deriveKey', 'deriveBits'],
+  );
+  const publicKeyRaw = b64ToBytes(publicKeyB64);
+  setSessionCrypto({ masterKey, masterKeyRaw: rawMk, privateKey, publicKeyRaw });
+}
+
 export async function createUserKeyBundle(password) {
   const salt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
-  const masterKey = await deriveMasterKey(password, salt);
+  const rawMk = await deriveMasterKeyMaterial(password, salt);
+  const masterKey = await importMasterKey(rawMk);
   const pair = await crypto.subtle.generateKey(
     { name: 'X25519' },
     true,
@@ -23,7 +39,7 @@ export async function createUserKeyBundle(password) {
   const privateKeyRaw = new Uint8Array(await crypto.subtle.exportKey('pkcs8', pair.privateKey));
   const encryptedPrivateKey = await sealBytes(privateKeyRaw, masterKey);
 
-  setSessionCrypto({ masterKey, privateKey: pair.privateKey, publicKeyRaw });
+  setSessionCrypto({ masterKey, masterKeyRaw: rawMk, privateKey: pair.privateKey, publicKeyRaw });
 
   return {
     publicKey: bytesToB64(publicKeyRaw),
@@ -36,37 +52,25 @@ export async function unlockUserKeys(password, { keySalt, encryptedPrivateKey, p
   if (!keySalt || !encryptedPrivateKey || !publicKey) {
     throw new Error('Chiavi E2E non configurate per questo account');
   }
-  const salt = b64ToBytes(keySalt);
-  const masterKey = await deriveMasterKey(password, salt);
-  const privateKeyRaw = await openBytes(b64ToBytes(encryptedPrivateKey), masterKey);
-  const privateKey = await crypto.subtle.importKey(
-    'pkcs8',
-    privateKeyRaw,
-    { name: 'X25519' },
-    false,
-    ['deriveKey', 'deriveBits'],
-  );
-  const publicKeyRaw = b64ToBytes(publicKey);
-  setSessionCrypto({ masterKey, privateKey, publicKeyRaw });
+  await loadSessionFromPassword(password, b64ToBytes(keySalt), encryptedPrivateKey, publicKey);
 }
 
-/** Rigenera le chiavi per account legacy senza E2E. */
 export async function setupKeysForExistingUser(password) {
   return createUserKeyBundle(password);
 }
 
-/** Re-cifra chiavi utente e backup viaggi dopo cambio password. */
 export async function rotateKeysForPasswordChange(currentPassword, newPassword, user) {
   await unlockUserKeys(currentPassword, user);
   const privateKey = getPrivateKey();
   if (!privateKey) throw new Error('Chiavi non sbloccate');
 
   const newSalt = crypto.getRandomValues(new Uint8Array(SALT_LEN));
-  const newMk = await deriveMasterKey(newPassword, newSalt);
+  const rawMk = await deriveMasterKeyMaterial(newPassword, newSalt);
+  const newMk = await importMasterKey(rawMk);
   const privateKeyRaw = new Uint8Array(await crypto.subtle.exportKey('pkcs8', privateKey));
   const encryptedPrivateKey = await sealBytes(privateKeyRaw, newMk);
 
-  setSessionCrypto({ masterKey: newMk, privateKey, publicKeyRaw: getPublicKeyRaw() });
+  setSessionCrypto({ masterKey: newMk, masterKeyRaw: rawMk, privateKey, publicKeyRaw: getPublicKeyRaw() });
   await rewrapAllTripKeys(newMk);
 
   return {
@@ -76,7 +80,6 @@ export async function rotateKeysForPasswordChange(currentPassword, newPassword, 
   };
 }
 
-/** Avvolge la tripKey (32B) con la master key per backup/sync multi-dispositivo. */
 export async function wrapTripKeyForBackup(tripKeyRaw, masterKey) {
   const sealed = await sealBytes(tripKeyRaw, masterKey);
   return bytesToB64(sealed);

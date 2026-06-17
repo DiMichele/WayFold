@@ -4,22 +4,36 @@
 
 const PBKDF2_ITER = 310000;
 
-export async function deriveMasterKey(password, saltBytes) {
+/** 32 byte grezzi derivati dalla password (PBKDF2). */
+export async function deriveMasterKeyMaterial(password, saltBytes) {
   const enc = new TextEncoder();
   const keyMaterial = await crypto.subtle.importKey(
     'raw',
     enc.encode(String(password || '')),
     'PBKDF2',
     false,
-    ['deriveKey'],
+    ['deriveBits'],
   );
-  return crypto.subtle.deriveKey(
+  const bits = await crypto.subtle.deriveBits(
     { name: 'PBKDF2', salt: saltBytes, iterations: PBKDF2_ITER, hash: 'SHA-256' },
     keyMaterial,
-    { name: 'AES-GCM', length: 256 },
+    256,
+  );
+  return new Uint8Array(bits);
+}
+
+export async function importMasterKey(rawBytes) {
+  return crypto.subtle.importKey(
+    'raw',
+    rawBytes,
+    { name: 'AES-GCM' },
     false,
     ['encrypt', 'decrypt'],
   );
+}
+
+export async function deriveMasterKey(password, saltBytes) {
+  return importMasterKey(await deriveMasterKeyMaterial(password, saltBytes));
 }
 
 /** Deriva una chiave AES da codice invito + sale (condivisione album). */
