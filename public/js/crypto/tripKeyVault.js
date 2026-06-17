@@ -159,6 +159,15 @@ export async function resolveTripKey(tripId, { isOwner = false } = {}) {
     if (cached) {
       const key = await importRaw(cached);
       _mem.set(id, key);
+      // Garantisce backup account sul server (sync desktop ↔ mobile)
+      if (sessionReady()) {
+        fetchKeyWrap(id).then(async (wrap) => {
+          if (!wrap) {
+            const backup = await wrapTripKeyForBackup(cached, getMasterKey());
+            await uploadKeyWrap(id, backup);
+          }
+        }).catch(() => {});
+      }
       return key;
     }
     const fromServer = await loadFromServerWrap(id);
@@ -222,6 +231,7 @@ export async function unlockTripKeyFromShare(tripId, shareCode, keyWrap, wrapSal
   return cryptoKey;
 }
 
+/** Scarica/sblocca le chiavi album dal backup account sul server (cross-device). */
 export async function prefetchTripKeys(trips) {
   if (!sessionReady() || !Array.isArray(trips)) return;
   await Promise.all(trips.map(t => resolveTripKey(t.id, { isOwner: t.isOwner })));

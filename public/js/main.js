@@ -147,6 +147,7 @@ async function startApp(user) {
   if (_appStarted) {
     await cryptoAutoUnlock(user);
     await reloadTrips();
+    prefetchTripKeys(state.trips).catch(() => {});
     return;
   }
   _appStarted = true;

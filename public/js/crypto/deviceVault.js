@@ -1,10 +1,12 @@
 /**
- * deviceVault.js — Sessione E2E persistente sul dispositivo (invisibile all'utente)
+ * deviceVault.js — Cache locale della sessione crypto (invisibile all'utente)
  *
- * Dopo login/registrazione le chiavi di decifratura restano sul browser,
- * cifrate con un segreto generato localmente. Al reload dell'app (sessione
- * cookie ancora valida) lo sblocco avviene in automatico — nessuna password extra.
- * Il server non vede né può decifrare questi blob.
+ * NON è la fonte di verità delle chiavi album: quelle sono legate all'ACCOUNT
+ * (master key dalla password + backup cifrato sul server in trip.keyWraps[userId]).
+ *
+ * Questo modulo evita solo di ridigitare la password ad ogni reload sullo STESSO
+ * browser: salva la sessione sbloccata cifrata con un segreto locale (userId).
+ * Su un nuovo dispositivo: login con password → le chiavi album arrivano dal server.
  */
 
 import { bytesToB64, b64ToBytes } from './bytes.js';
@@ -108,7 +110,7 @@ export async function restoreDeviceSession(user) {
     const privateKeyRaw = await openBytes(b64ToBytes(blob.encPrivate), deviceKey);
     const masterKey = await importMasterKey(masterKeyRaw);
     const privateKey = await crypto.subtle.importKey(
-      'pkcs8', privateKeyRaw, { name: 'X25519' }, false, ['deriveKey', 'deriveBits'],
+      'pkcs8', privateKeyRaw, { name: 'X25519' }, true, ['deriveKey', 'deriveBits'],
     );
     const publicKeyRaw = blob.publicKey ? b64ToBytes(blob.publicKey) : b64ToBytes(user.publicKey);
     setSessionCrypto({ masterKey, masterKeyRaw, privateKey, publicKeyRaw });

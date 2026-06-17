@@ -19,7 +19,7 @@ async function loadSessionFromPassword(password, salt, encryptedPrivateKeyB64, p
     'pkcs8',
     privateKeyRaw,
     { name: 'X25519' },
-    false,
+    true,
     ['deriveKey', 'deriveBits'],
   );
   const publicKeyRaw = b64ToBytes(publicKeyB64);
