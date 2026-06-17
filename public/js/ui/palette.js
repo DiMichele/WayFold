@@ -10,6 +10,7 @@ import { switchView } from '../router.js';
 import { reloadTrips } from '../data.js';
 import { openTripForm } from './modal.js';
 import { joinParts, monthYear, esc } from '../utils.js';
+import { mountCover } from './photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
 
 const el = id => document.getElementById(id);
@@ -135,7 +136,7 @@ function renderResults(q) {
       html += `
         <div class="pal-row" data-i="${i}">
           <div class="pal-thumb">${t.coverUrl
-            ? `<img src="${t.coverUrl}" alt="" loading="lazy">`
+            ? `<img alt="" loading="lazy" data-cover="${i}">`
             : `<span class="pal-thumb-flag">${t.flag || '·'}</span>`}</div>
           <div class="pal-info">
             <div class="pal-dest">${highlight(t.dest, query)}</div>
@@ -168,6 +169,13 @@ function renderResults(q) {
   });
 
   list.innerHTML = html;
+
+  // Copertine: decifrate al volo per i viaggi cifrati
+  list.querySelectorAll('img[data-cover]').forEach(img => {
+    const item = _items[Number(img.dataset.cover)];
+    if (item?.trip) mountCover(img, item.trip);
+  });
+
   paintActive();
 
   list.querySelectorAll('.pal-row').forEach(row => {

@@ -7,6 +7,7 @@
 const fs = require('fs');
 const path = require('path');
 const config = require('../server/config');
+const photoCrypto = require('../server/services/photoCrypto');
 
 const BASE = `http://localhost:${config.PORT}`;
 let pass = 0, fail = 0;
@@ -107,6 +108,7 @@ async function main() {
     check('B: PATCH viaggio di A → 404', (await userB.req('PATCH', `/api/trips/${tripA.id}`, { body: { dest: 'hack' } })).status === 404);
     check('B: foto del viaggio di A → 404', (await userB.req('GET', `/api/trips/${tripA.id}/photos`)).status === 404);
     check('B: cover del viaggio di A → 404', (await userB.req('POST', `/api/trips/${tripA.id}/cover`, { body: { photoId: 1 } })).status === 404);
+    check('B: chiave di cifratura del viaggio di A → 404', (await userB.req('GET', `/api/trips/${tripA.id}/crypto-key`)).status === 404);
 
     // Foto fisica di A
     const aPhotos = await userA.req('GET', `/api/trips/${tripA.id}/photos`);
@@ -183,12 +185,40 @@ async function main() {
       check(`Upload "${name}" respinto`, r.status >= 400, `got ${r.status}`);
     }
 
-    // Upload legittimo: PNG 1x1 reale
+    // Upload legittimo: cifrato se escrow attivo, altrimenti PNG in chiaro (legacy)
     const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', 'base64');
-    const fd = new FormData();
-    fd.append('photos', new Blob([png], { type: 'image/png' }), 'pixel.png');
-    const ok = await upClient.req('POST', `/api/trips/${upTrip.id}/photos`, { body: fd, raw: true });
-    check('Upload PNG valido → 201', ok.status === 201, `got ${ok.status} ${JSON.stringify(ok.json)}`);
+    const keyRes = await upClient.req('GET', `/api/trips/${upTrip.id}/crypto-key`);
+
+    if (keyRes.status === 200 && keyRes.json?.key) {
+      const tripKey = Buffer.from(keyRes.json.key, 'base64');
+
+      const fdBypass = new FormData();
+      fdBypass.append('photos', new Blob([png], { type: 'image/png' }), 'bypass.png');
+      const bypass = await upClient.req('POST', `/api/trips/${upTrip.id}/photos`, { body: fdBypass, raw: true });
+      check('Upload in chiaro respinto (cifratura obbligatoria) → 415', bypass.status === 415, `got ${bypass.status}`);
+
+      const encBuf = photoCrypto.encryptBuffer(png, tripKey);
+      const fdEnc = new FormData();
+      fdEnc.append('photos', new Blob([encBuf], { type: 'application/octet-stream' }), 'photo_0.wfenc');
+      fdEnc.append('encrypted', '1');
+      fdEnc.append('meta', JSON.stringify([{ originalMime: 'image/png', originalExt: 'png' }]));
+      const enc = await upClient.req('POST', `/api/trips/${upTrip.id}/photos`, { body: fdEnc, raw: true });
+      check('Upload cifrato → 201', enc.status === 201, `got ${enc.status}`);
+      const encPhoto = enc.json?.photos?.[0];
+      if (encPhoto?.url) {
+        const r = await upClient.req('GET', encPhoto.url);
+        const buf = Buffer.from(await r.res.arrayBuffer());
+        check('Foto cifrata: byte serviti col magic WFENC1', photoCrypto.isEncrypted(buf));
+        check('Foto cifrata: nessun magic PNG/JPEG in chiaro',
+          !(buf[0] === 0x89 && buf[1] === 0x50) && !(buf[0] === 0xFF && buf[1] === 0xD8));
+      }
+    } else {
+      console.log('  · Cifratura non configurata: test foto cifrata saltato');
+      const fd = new FormData();
+      fd.append('photos', new Blob([png], { type: 'image/png' }), 'pixel.png');
+      const ok = await upClient.req('POST', `/api/trips/${upTrip.id}/photos`, { body: fd, raw: true });
+      check('Upload PNG valido → 201', ok.status === 201, `got ${ok.status} ${JSON.stringify(ok.json)}`);
+    }
 
     fs.rmSync(tmp, { recursive: true, force: true });
   }

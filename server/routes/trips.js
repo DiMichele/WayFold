@@ -10,15 +10,16 @@ const db = require('../db');
 const tripService = require('../services/tripService');
 const shareService = require('../services/shareService');
 const { requireAuth, requireVerifiedEmail, assertTripAccess } = require('../middleware/auth');
-const { validateUpload, cleanupTempFiles } = require('../middleware/uploadGuard');
+const { validateUpload, cleanupTempFiles, encryptionRequired } = require('../middleware/uploadGuard');
 
 const upload = multer({
   dest: os.tmpdir(),
   limits: {
     fileSize: 25 * 1024 * 1024,
     files: 12,
-    fields: 4,
-    fieldSize: 2 * 1024,
+    fields: 8,
+    // I metadati delle foto cifrate (EXIF + tipo originale) viaggiano come JSON
+    fieldSize: 64 * 1024,
   },
 });
 
@@ -152,18 +153,46 @@ router.get('/:id/photos', validateId, (req, res, next) => {
   } catch (err) { next(err); }
 });
 
+// Chiave di cifratura del viaggio: consegnata SOLO agli utenti con accesso
+// (proprietario o membro). Il server la ricava dall'escrow; non viene mai
+// esposta a Telegram. Serve al client per cifrare gli upload e decifrare la
+// galleria.
+router.get('/:id/crypto-key', validateId, async (req, res, next) => {
+  try {
+    const trip = loadAccessibleTrip(req, 'read');
+    const key = await tripService.getTripKey(trip);
+    if (!key) return res.status(404).json({ error: 'Cifratura non disponibile' });
+    res.json({ key: key.toString('base64') });
+  } catch (err) { next(err); }
+});
+
 router.post('/:id/photos', validateId, uploadLimiter, upload.array('photos', 12), async (req, res, next) => {
   try {
     const trip = loadAccessibleTrip(req, 'upload');
-    validateUpload(req.user, req.files);
+    const encrypted = req.body?.encrypted === '1';
+    validateUpload(req.user, req.files, {
+      encrypted,
+      requireEncrypted: encryptionRequired(),
+    });
+
+    // Metadati per-file (tipo originale) inviati dal client per le foto cifrate.
+    let metaList = [];
+    if (encrypted && req.body?.meta) {
+      try {
+        const parsed = JSON.parse(req.body.meta);
+        if (Array.isArray(parsed)) metaList = parsed;
+      } catch { /* meta malformato: si procede senza */ }
+    }
 
     const saved = [];
     const errors = [];
-    for (const file of req.files) {
+    for (let i = 0; i < req.files.length; i++) {
+      const file = req.files[i];
       try {
         const photo = await tripService.addPhotoFromWeb(trip, file, {
           caption: req.body?.caption || '',
           uploadedByUserId: req.user.id,
+          clientMeta: encrypted ? (metaList[i] || {}) : null,
         });
         saved.push(tripService.serializePhoto(photo, req.user));
       } catch (err) {

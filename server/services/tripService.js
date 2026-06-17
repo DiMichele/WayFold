@@ -13,6 +13,7 @@ const config = require('../config');
 const { geocode } = require('./geocode');
 const telegram = require('./telegram');
 const { extractPhotoMeta } = require('./exif');
+const photoCrypto = require('./photoCrypto');
 
 const MONTHS = ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'];
 
@@ -96,6 +97,32 @@ async function enrichLocation(dest, country, lang = 'it') {
   };
 }
 
+// ─── Chiavi di cifratura ───────────────────────────────────────────────────
+
+/** Nuovo escrow per un viaggio, se la cifratura è configurata (altrimenti null). */
+function newKeyEscrow() {
+  if (!photoCrypto.escrowAvailable()) return null;
+  return photoCrypto.wrapTripKey(photoCrypto.generateTripKey());
+}
+
+/**
+ * Chiave di cifratura del viaggio (Buffer di 32 byte) ricavata dall'escrow.
+ * Se l'escrow manca ma la cifratura è configurata, lo crea al volo e lo
+ * persiste. Ritorna null se la cifratura non è configurata sul server.
+ */
+async function getTripKey(trip) {
+  if (!photoCrypto.escrowAvailable()) return null;
+  // Rilegge lo stato più recente: un altro upload concorrente potrebbe aver
+  // già creato l'escrow per un viaggio legacy.
+  let escrow = (db.getTripById(trip.id) || trip).keyEscrow;
+  if (!escrow) {
+    escrow = photoCrypto.wrapTripKey(photoCrypto.generateTripKey());
+    await db.updateTrip(trip.id, { keyEscrow: escrow });
+    trip.keyEscrow = escrow;
+  }
+  return photoCrypto.unwrapTripKey(escrow);
+}
+
 // ─── Creazione ─────────────────────────────────────────────────────────────
 
 /**
@@ -127,6 +154,7 @@ async function createFromTopic({ topicId, name }) {
     month: MONTHS[createdAt.getMonth()],
     ...loc,
     scene: pickScene({ lat: loc.lat, countryCode: loc.countryCode, dest }),
+    keyEscrow: newKeyEscrow(),
   });
 }
 
@@ -161,6 +189,7 @@ async function createManual(user, { dest, country, year, month, days, type, tags
     tags: parseTags(tags),
     ...loc,
     scene: pickScene({ type, lat: loc.lat, countryCode: loc.countryCode, dest: cleanDest }),
+    keyEscrow: newKeyEscrow(),
   });
 }
 
@@ -260,7 +289,7 @@ async function renameFromTopic(topicId, newName) {
  * Il file DEVE essere già passato da uploadGuard.validateUpload:
  * estensione e mime derivano dal tipo binario rilevato, mai dal client.
  */
-async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
+async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId, clientMeta = null } = {}) {
   if (trip.topicId == null) {
     throw Object.assign(new Error('Viaggio non collegato allo storage'), { status: 409 });
   }
@@ -269,6 +298,7 @@ async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
   }
 
   const cleanCaption = String(caption || '').slice(0, 500);
+  const isEncrypted = Boolean(file.encrypted);
   // Nome neutro generato dal server: il nome originale non tocca mai il filesystem
   const safeName = `photo_${Date.now()}.${file.detectedExt}`;
 
@@ -280,7 +310,10 @@ async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
 
   const fileId = tgMsg.document?.file_id ?? null;
   const fileName = `${Date.now()}_${tgMsg.message_id}.${file.detectedExt}`;
-  const meta = await extractPhotoMeta(file.path);
+
+  // File cifrato: blob opaco; dal client arriva solo il tipo immagine originale.
+  const meta = isEncrypted ? null : await extractPhotoMeta(file.path);
+  const nowSec = Math.floor(Date.now() / 1000);
 
   // Salva in DB prima di toccare il file temp: se unlink/rename fallisce (es. EBUSY
   // su Windows) la foto resta comunque in archivio e visibile in webapp.
@@ -290,12 +323,15 @@ async function addPhotoFromWeb(trip, file, { caption, uploadedByUserId } = {}) {
     fileId,
     caption: cleanCaption,
     msgId: tgMsg.message_id,
-    date: meta.date ?? Math.floor(Date.now() / 1000),
-    takenAt: meta.takenAt || null,
-    lat: meta.lat,
-    lon: meta.lon,
+    date: isEncrypted ? nowSec : (meta?.date ?? nowSec),
+    takenAt: isEncrypted ? null : (meta?.takenAt || null),
+    lat: isEncrypted ? null : (meta?.lat ?? null),
+    lon: isEncrypted ? null : (meta?.lon ?? null),
     size: file.size || null,
     uploadedByUserId: uploadedByUserId ?? trip.userId,
+    encrypted: isEncrypted,
+    originalMime: isEncrypted ? (clientMeta?.originalMime || null) : file.detectedMime,
+    originalExt: isEncrypted ? (clientMeta?.originalExt || null) : file.detectedExt,
   });
 
   try {
@@ -448,6 +484,8 @@ function serializeTrip(trip, viewer = null) {
   const photos = db.getPhotos(trip.id);
   const coverPhoto =
     (trip.coverPhotoId != null && photos.find(p => p.id === trip.coverPhotoId)) || photos[0] || null;
+  const coverEncrypted = Boolean(coverPhoto?.encrypted);
+  const coverMime = coverPhoto?.originalMime || null;
   const created = new Date(trip.createdAt);
   const isOwner = viewer ? trip.userId === viewer.id : true;
   const member = viewer && !isOwner ? db.getTripMember(trip.id, viewer.id) : null;
@@ -471,6 +509,8 @@ function serializeTrip(trip, viewer = null) {
     photoCount: photos.length,
     coverUrl: coverPhoto ? photoUrl(coverPhoto) : null,
     coverPhotoId: coverPhoto?.id ?? null,
+    coverEncrypted,
+    coverMime,
     linked: trip.topicId != null,
     isOwner,
     shared: Boolean(member),
@@ -510,6 +550,8 @@ function serializePhoto(photo, viewer = null) {
     lon: photo.lon,
     addedAt: photo.addedAt,
     url: photoUrl(photo),
+    encrypted: Boolean(photo.encrypted),
+    originalMime: photo.originalMime || null,
     hasExifDate: Boolean(photo.takenAt),
     canDelete,
   };
@@ -532,4 +574,5 @@ module.exports = {
   serializeTrip,
   serializeTripForUser,
   serializePhoto,
+  getTripKey,
 };

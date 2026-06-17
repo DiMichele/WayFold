@@ -60,6 +60,12 @@ function load() {
     }
     for (const photo of data.photos || []) {
       if (photo.fileId === undefined) photo.fileId = null;
+      if (photo.encrypted === undefined) photo.encrypted = false;
+      if (photo.originalMime === undefined) photo.originalMime = null;
+      if (photo.originalExt === undefined) photo.originalExt = null;
+    }
+    for (const trip of data.trips || []) {
+      if (trip.keyEscrow === undefined) trip.keyEscrow = null;
     }
     for (const user of data.users) {
       if (user.role === 'owner') user.role = 'user';
@@ -293,6 +299,7 @@ async function createTrip(fields) {
       type: fields.type || null,
       tags: Array.isArray(fields.tags) ? fields.tags : [],
       scene: fields.scene || 'coast',
+      keyEscrow: fields.keyEscrow ?? null,
       createdAt: now,
       updatedAt: now,
     };
@@ -369,7 +376,7 @@ function getPhotoByMsgId(tripId, msgId) {
 
 async function addPhoto({
   tripId, fileName, fileId, caption, note, msgId, date, takenAt, lat, lon, size,
-  uploadedByUserId = null,
+  uploadedByUserId = null, encrypted = false, originalMime = null, originalExt = null,
 }) {
   return withLock(() => {
     const data = load();
@@ -397,6 +404,9 @@ async function addPhoto({
       lon: lon ?? null,
       size: size ?? null,
       uploadedByUserId: uploader,
+      encrypted: Boolean(encrypted),
+      originalMime: originalMime || null,
+      originalExt: originalExt || null,
       addedAt: new Date().toISOString(),
     };
     data.photos.push(photo);

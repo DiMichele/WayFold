@@ -110,6 +110,10 @@ function applyUser(user) {
 
 async function doLogout() {
   try { await api.logout(); } catch { /* comunque ricarica */ }
+  try {
+    const { clearImageCache } = await import('./ui/photoDisplay.js');
+    clearImageCache();
+  } catch { /* non bloccante */ }
   location.reload();
 }
 

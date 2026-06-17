@@ -14,6 +14,7 @@ import { openShareModal } from '../ui/shareModal.js';
 import { downloadAlbumAsZip, shareAlbum, isMobileShareDevice } from '../ui/sharePhotos.js';
 import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
+import { mountImage, mountCover } from '../ui/photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
 
 const el = id => document.getElementById(id);
@@ -29,9 +30,12 @@ function tripCanUpload(trip) {
 function photosToLightboxItems(trip, photos) {
   return photos.map(p => ({
     id: p.id,
+    tripId: trip.id,
     label: p.caption || p.note || photoDisplayDate(p),
     sub: joinParts(trip.dest, photoDisplayDate(p)),
     url: p.url,
+    encrypted: p.encrypted,
+    mime: p.originalMime,
     caption: p.caption,
     note: p.note,
     date: p.date,
@@ -318,7 +322,8 @@ function buildPicker(c) {
     cvWrap.className = 'gal-pick-cv';
     if (rowTrip.coverUrl) {
       const img = document.createElement('img');
-      img.src = rowTrip.coverUrl; img.alt = rowTrip.dest; img.loading = 'lazy';
+      img.alt = rowTrip.dest; img.loading = 'lazy';
+      mountCover(img, rowTrip);
       cvWrap.appendChild(img);
     } else {
       mountPhotoEmptyThumb(cvWrap);
@@ -384,7 +389,8 @@ async function buildPhotos(c, trip) {
   tw.className = 'gal-hthumb';
   if (trip.coverUrl) {
     const img = document.createElement('img');
-    img.src = trip.coverUrl; img.alt = trip.dest;
+    img.alt = trip.dest;
+    mountCover(img, trip);
     tw.appendChild(img);
   } else {
     mountPhotoEmptyThumb(tw);
@@ -581,10 +587,10 @@ async function buildPhotos(c, trip) {
     cell.className = 'gcell' + (idx === 0 ? ' big' : '');
 
     const img = document.createElement('img');
-    img.src = p.url;
     img.alt = p.caption || trip.dest;
     img.loading = 'lazy';
     img.decoding = 'async';
+    mountImage(img, { tripId: trip.id, photoId: p.id, url: p.url, encrypted: p.encrypted, mime: p.originalMime });
     cell.appendChild(img);
 
     if (p.id === trip.coverPhotoId) {

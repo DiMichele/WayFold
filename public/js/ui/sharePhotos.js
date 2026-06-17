@@ -7,6 +7,7 @@ import { t } from '../i18n.js';
 import { zipSync } from '../vendor/fflate.esm.js';
 import { fetchMe } from '../api.js';
 import * as api from '../api.js';
+import { fetchDecryptedBlob } from './photoDisplay.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -14,6 +15,11 @@ const MIME_BY_EXT = {
   png: 'image/png',
   webp: 'image/webp',
   heic: 'image/heic',
+};
+
+const EXT_BY_MIME = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/heic': 'heic', 'image/heif': 'heic',
 };
 
 function extFromUrl(url) {
@@ -99,7 +105,23 @@ async function fetchPhotoBlobUrl(url) {
   throw new Error(t('sharePhotos.fetchFail'));
 }
 
-async function fetchPhotoBlob(photo) {
+async function fetchPhotoBlob(photo, trip) {
+  // Foto cifrata: scarica i byte e li decifra nel browser (mai in chiaro su rete)
+  if (photo?.encrypted) {
+    const tripId = photo.tripId ?? trip?.id;
+    const mime = photo.originalMime || photo.mime || 'image/jpeg';
+    const candidates = [];
+    if (photo.url) candidates.push(photo.url);
+    if (photo.id) candidates.push(`/api/photos/${photo.id}/file`);
+    for (const candidate of candidates) {
+      try {
+        const blob = await fetchDecryptedBlob({ tripId, url: candidate, encrypted: true, mime });
+        if (blob?.size) return blob;
+      } catch { /* prova il prossimo candidato */ }
+    }
+    throw new Error(t('sharePhotos.fetchFail'));
+  }
+
   const url = photo?.url;
   if (url) {
     const fromDom = await blobFromGalleryImage(url);
@@ -131,9 +153,10 @@ async function fetchPhotoBlob(photo) {
 }
 
 async function photoToFile(photo, trip, index) {
-  const blob = await fetchPhotoBlob(photo);
-  const ext = extFromUrl(photo.url);
-  const type = blob.type?.startsWith('image/') ? blob.type : (MIME_BY_EXT[ext] || 'image/jpeg');
+  const blob = await fetchPhotoBlob(photo, trip);
+  const mime = photo.originalMime || photo.mime || null;
+  const ext = photo.encrypted ? (EXT_BY_MIME[mime] || 'jpg') : extFromUrl(photo.url);
+  const type = blob.type?.startsWith('image/') ? blob.type : (mime || MIME_BY_EXT[ext] || 'image/jpeg');
   const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
   return new File([blob], name, { type, lastModified: Date.now() });
 }

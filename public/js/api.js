@@ -7,6 +7,8 @@
  */
 
 import { getLang } from './i18n.js';
+import { getTripKey } from './crypto/keyStore.js';
+import { encryptPhoto } from './crypto/photoCrypto.js';
 
 async function request(path, options = {}) {
   const res = await fetch(path, {
@@ -177,10 +179,42 @@ export function redeemShareCode(code) {
 
 const UPLOAD_BATCH = 12;
 
-function uploadPhotosBatch(tripId, files, { caption = '', onProgress } = {}) {
+const MIME_BY_EXT = {
+  jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png',
+  webp: 'image/webp', heic: 'image/heic', heif: 'image/heic',
+};
+const EXT_BY_MIME = {
+  'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+  'image/heic': 'heic', 'image/heif': 'heic',
+};
+
+function guessMime(file) {
+  if (file.type) return file.type;
+  const ext = (file.name || '').split('.').pop()?.toLowerCase();
+  return MIME_BY_EXT[ext] || 'image/jpeg';
+}
+
+/** Cifra un file prima dell'upload (solo tipo MIME/origine, nessun EXIF/GPS). */
+async function encryptForUpload(file, cryptoKey, index) {
+  const buf = await file.arrayBuffer();
+  const mime = guessMime(file);
+  const meta = {
+    originalMime: mime,
+    originalExt: EXT_BY_MIME[mime] || 'jpg',
+  };
+  const blob = await encryptPhoto(buf, cryptoKey);
+  const encFile = new File([blob], `photo_${Date.now()}_${index}.wfenc`, { type: 'application/octet-stream' });
+  return { file: encFile, meta };
+}
+
+function uploadPhotosBatch(tripId, items, { caption = '', onProgress, encrypted = false } = {}) {
   const fd = new FormData();
-  for (const f of files) fd.append('photos', f, f.name);
+  for (const it of items) fd.append('photos', it.file, it.file.name);
   if (caption) fd.append('caption', caption);
+  if (encrypted) {
+    fd.append('encrypted', '1');
+    fd.append('meta', JSON.stringify(items.map(it => it.meta || {})));
+  }
 
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
@@ -207,13 +241,29 @@ function uploadPhotosBatch(tripId, files, { caption = '', onProgress } = {}) {
 
 /** Upload multiplo verso l'archivio del viaggio (batch da 12, progresso aggregato). */
 export async function uploadPhotos(tripId, files, { caption = '', onProgress, onBatchStart } = {}) {
-  const list = [...files];
-  if (!list.length) return { photos: [], errors: [] };
+  const rawList = [...files];
+  if (!rawList.length) return { photos: [], errors: [] };
+
+  // Se il viaggio è cifrato, le foto vengono cifrate nel browser prima di
+  // partire: Telegram riceve solo byte illeggibili. Senza chiave (cifratura
+  // non configurata sul server) si procede con upload in chiaro (legacy).
+  const cryptoKey = await getTripKey(tripId);
+  const encrypted = Boolean(cryptoKey);
+
+  let items;
+  if (encrypted) {
+    items = [];
+    for (let i = 0; i < rawList.length; i++) {
+      items.push(await encryptForUpload(rawList[i], cryptoKey, i));
+    }
+  } else {
+    items = rawList.map(f => ({ file: f, meta: null }));
+  }
 
   const batches = [];
-  for (let i = 0; i < list.length; i += UPLOAD_BATCH) batches.push(list.slice(i, i + UPLOAD_BATCH));
+  for (let i = 0; i < items.length; i += UPLOAD_BATCH) batches.push(items.slice(i, i + UPLOAD_BATCH));
 
-  const totalBytes = list.reduce((s, f) => s + (f.size || 1), 0);
+  const totalBytes = items.reduce((s, it) => s + (it.file.size || 1), 0);
   let doneBytes = 0;
   const allPhotos = [];
   const allErrors = [];
@@ -221,25 +271,26 @@ export async function uploadPhotos(tripId, files, { caption = '', onProgress, on
   for (let b = 0; b < batches.length; b++) {
     const batch = batches[b];
     const batchStartIdx = b * UPLOAD_BATCH;
-    onBatchStart?.(batchStartIdx, batch.length, list.length);
+    onBatchStart?.(batchStartIdx, batch.length, items.length);
 
-    const batchBytes = batch.reduce((s, f) => s + (f.size || 1), 0);
+    const batchBytes = batch.reduce((s, it) => s + (it.file.size || 1), 0);
     const batchCaption = b === 0 ? caption : '';
 
     const result = await uploadPhotosBatch(tripId, batch, {
       caption: batchCaption,
+      encrypted,
       onProgress: (batchFrac, meta) => {
         if (!onProgress) return;
         const uploaded = doneBytes + batchFrac * batchBytes;
         const overall = totalBytes > 0
           ? uploaded / totalBytes
-          : (batchStartIdx + batchFrac * batch.length) / list.length;
+          : (batchStartIdx + batchFrac * batch.length) / items.length;
         onProgress(overall, {
           ...meta,
           batch: b + 1,
           batches: batches.length,
           filesDone: batchStartIdx + Math.round(batchFrac * batch.length),
-          filesTotal: list.length,
+          filesTotal: items.length,
         });
       },
     });
@@ -250,7 +301,7 @@ export async function uploadPhotos(tripId, files, { caption = '', onProgress, on
       batch: b + 1,
       batches: batches.length,
       filesDone: batchStartIdx + batch.length,
-      filesTotal: list.length,
+      filesTotal: items.length,
     });
 
     allPhotos.push(...(result.photos || []));

@@ -9,6 +9,7 @@ import { reloadTrips } from '../data.js';
 import { openTripForm } from '../ui/modal.js';
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
 import { renderJourneyList } from './journeyList.js';
+import { mountCover } from '../ui/photoDisplay.js';
 import { t, displayTripType, formatDays, formatPhotos } from '../i18n.js';
 
 const el = id => document.getElementById(id);
@@ -108,13 +109,18 @@ function buildHero() {
     el('heroCv').hidden = true;
     empty.hidden = true;
     empty.innerHTML = '';
-    photo.src = trip.coverUrl;
+    if (photo.dataset.coverId !== String(trip.coverPhotoId)) {
+      photo.dataset.coverId = String(trip.coverPhotoId);
+      photo.removeAttribute('src');
+      mountCover(photo, trip);
+    }
     photo.classList.add('show');
   } else {
     heroEl.classList.add('hero--empty');
     el('heroCv').hidden = true;
     photo.classList.remove('show');
     photo.removeAttribute('src');
+    delete photo.dataset.coverId;
     empty.hidden = false;
     empty.innerHTML = '';
     mountPhotoEmptyThumb(empty);
@@ -243,7 +249,8 @@ function openDetail(trip) {
     if (trip.coverUrl) {
       cv.hidden = true;
       empty.hidden = true;
-      photo.src = trip.coverUrl;
+      photo.removeAttribute('src');
+      mountCover(photo, trip);
       photo.style.display = '';
     } else {
       cv.hidden = true;

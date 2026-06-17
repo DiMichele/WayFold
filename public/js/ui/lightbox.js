@@ -10,6 +10,7 @@ import { setTip } from './tooltip.js';
 import { openConfirm } from './modal.js';
 import { reloadTrips } from '../data.js';
 import { shareSinglePhoto, downloadSinglePhoto, isMobileShareDevice } from './sharePhotos.js';
+import { mountImage } from './photoDisplay.js';
 import { t } from '../i18n.js';
 
 let _trip = null;
@@ -181,6 +182,7 @@ export function closeLightbox() {
   const img = el('lbImg');
   img.style.display = 'none';
   img.removeAttribute('src');
+  delete img.dataset.photoId;
   el('lbCv').style.display = '';
   el('lbNote').value = '';
   el('lbNoteWrap').classList.remove('show');
@@ -215,7 +217,10 @@ function render() {
   if (ph.url) {
     cv.style.display = 'none';
     img.style.display = '';
-    if (img.getAttribute('src') !== ph.url) img.src = ph.url;
+    if (img.dataset.photoId !== String(ph.id)) {
+      img.dataset.photoId = String(ph.id);
+      mountImage(img, { tripId: ph.tripId, photoId: ph.id, url: ph.url, encrypted: ph.encrypted, mime: ph.mime });
+    }
     updateLbExportButton();
     el('lbShare').hidden = false;
     if (ph.id && _canWrite) {

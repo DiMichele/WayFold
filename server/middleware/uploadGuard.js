@@ -12,8 +12,25 @@
 const fs = require('fs');
 const db = require('../db');
 const config = require('../config');
+const photoCrypto = require('../services/photoCrypto');
 
 const HEIC_BRANDS = ['heic', 'heix', 'hevc', 'hevx', 'heif', 'mif1', 'msf1'];
+const ENC_MAGIC = Buffer.from('WFENC1', 'ascii');
+
+/** Verifica che il file inizi col magic WFENC1 (foto cifrata dal client). */
+function isEncryptedFile(filePath) {
+  let fd = null;
+  try {
+    fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(ENC_MAGIC.length);
+    const read = fs.readSync(fd, buf, 0, ENC_MAGIC.length, 0);
+    return read === ENC_MAGIC.length && buf.equals(ENC_MAGIC);
+  } catch {
+    return false;
+  } finally {
+    if (fd !== null) fs.closeSync(fd);
+  }
+}
 
 /**
  * Rileva il vero formato immagine dai magic bytes.
@@ -67,9 +84,22 @@ function cleanupTempFiles(files) {
  * Arricchisce ogni file valido con { detectedExt, detectedMime, size }.
  * @throws {Error} con status appropriato; i temp file vengono puliti dal chiamante
  */
-function validateUpload(user, files) {
+/** True se la cifratura è attiva sul server: gli upload web devono essere WFENC1. */
+function encryptionRequired() {
+  return photoCrypto.escrowAvailable();
+}
+
+function validateUpload(user, files, { encrypted = false, requireEncrypted = false } = {}) {
   if (!files?.length) {
     throw Object.assign(new Error('Nessuna immagine ricevuta'), { status: 400 });
+  }
+
+  if (requireEncrypted && !encrypted) {
+    console.warn(`🔒  Upload in chiaro respinto (cifratura obbligatoria): utente ${user.id}`);
+    throw Object.assign(
+      new Error('Le foto devono essere cifrate: usa l\'app web o aggiorna il client'),
+      { status: 415 }
+    );
   }
 
   // Quota: stato attuale + dimensione della richiesta
@@ -96,6 +126,20 @@ function validateUpload(user, files) {
     if (!file.size) {
       throw Object.assign(new Error('File vuoto'), { status: 415 });
     }
+
+    // Foto cifrate dal client: validiamo solo il magic WFENC1, non il contenuto
+    // (è un blob opaco). Il vero tipo immagine viaggia nei metadati del client.
+    if (encrypted) {
+      if (!isEncryptedFile(file.path)) {
+        console.warn(`🔒  Upload cifrato respinto (magic mancante): da utente ${user.id}`);
+        throw Object.assign(new Error('File cifrato non valido'), { status: 415 });
+      }
+      file.encrypted = true;
+      file.detectedExt = 'wfenc';
+      file.detectedMime = 'application/octet-stream';
+      continue;
+    }
+
     const type = sniffImageType(file.path);
     if (!type) {
       console.warn(`🔒  Upload respinto (non è un'immagine valida): "${file.originalname}" da utente ${user.id}`);
@@ -110,4 +154,4 @@ function validateUpload(user, files) {
   return files;
 }
 
-module.exports = { sniffImageType, validateUpload, cleanupTempFiles };
+module.exports = { sniffImageType, validateUpload, cleanupTempFiles, encryptionRequired };

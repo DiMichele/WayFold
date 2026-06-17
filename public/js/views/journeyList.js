@@ -5,6 +5,7 @@
 import { esc, joinParts, monthYear, tripDest, tripCountry, mountPhotoEmptyThumb } from '../utils.js';
 import { t } from '../i18n.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
+import { mountCover } from '../ui/photoDisplay.js';
 
 /**
  * @param {HTMLElement} listEl
@@ -29,9 +30,9 @@ export function renderJourneyList(listEl, trips, { onTripClick, emptyHtml } = {}
     thumb.className = 'journey-thumb';
     if (trip.coverUrl) {
       const img = document.createElement('img');
-      img.src = trip.coverUrl;
       img.alt = trip.dest;
       img.loading = 'lazy';
+      mountCover(img, trip);
       thumb.appendChild(img);
     } else {
       mountPhotoEmptyThumb(thumb);

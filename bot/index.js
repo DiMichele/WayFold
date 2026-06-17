@@ -13,6 +13,15 @@
 
 const { TelegramClient } = require('./telegramClient');
 const config = require('../server/config');
+const photoCrypto = require('../server/services/photoCrypto');
+
+const isProduction = process.env.NODE_ENV === 'production'
+  || !/localhost|127\.0\.0\.1/i.test(config.BASE_URL);
+
+if (isProduction && !photoCrypto.escrowAvailable()) {
+  console.error('❌  PHOTO_BOT_ESCROW_KEY mancante o non valida: obbligatoria in produzione.');
+  process.exit(1);
+}
 
 if (!config.BOT_TOKEN) {
   console.log('');
