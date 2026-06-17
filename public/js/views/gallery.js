@@ -10,7 +10,7 @@ import { openLightbox } from '../ui/lightbox.js';
 import { showToast } from '../ui/toast.js';
 import { reloadTrips, suppressNewPhotoToast, refreshPollBaseline } from '../data.js';
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
-import { openTripForm } from '../ui/modal.js';
+import { openTripForm, openModal, closeModal } from '../ui/modal.js';
 import { openShareModal } from '../ui/shareModal.js';
 import { downloadAlbumAsZip, shareAlbum, isMobileShareDevice } from '../ui/sharePhotos.js';
 import { setTip } from '../ui/tooltip.js';
@@ -19,6 +19,11 @@ import { mountImage, mountCover } from '../ui/photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
 
 const el = id => document.getElementById(id);
+
+const UPLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>';
+const SHARE_SVG = '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
+const INVITE_SVG = '<svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+const DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
 function tripIsOwner(trip) {
   return !trip.shared;
@@ -71,6 +76,25 @@ function sharedBadgeHtml() {
 let galleryDragDepth = 0;
 let uploadUi = null;
 let albumExportBusy = false;
+
+function openAlbumShareSheet(trip, onShareAlbum) {
+  const body = document.createElement('div');
+  body.className = 'modal-body gal-share-sheet';
+  body.innerHTML = `
+    <div class="gal-share-sheet-actions">
+      <button type="button" class="modal-btn s gal-share-sheet-btn" id="galShareInvite">${esc(t('gal.shareTabInvite'))}</button>
+      <button type="button" class="modal-btn s gal-share-sheet-btn" id="galSharePhotos">${esc(t('gal.shareAlbum'))}</button>
+    </div>`;
+  body.querySelector('#galShareInvite').addEventListener('click', () => {
+    closeModal();
+    openShareModal(trip);
+  });
+  body.querySelector('#galSharePhotos').addEventListener('click', () => {
+    closeModal();
+    onShareAlbum();
+  });
+  openModal({ title: t('gal.share'), body });
+}
 
 async function runAlbumExport(trip, btn, mode) {
   if (albumExportBusy) return;
@@ -424,36 +448,50 @@ async function buildPhotos(c, trip) {
   const toolbar = document.createElement('div');
   toolbar.className = 'gal-actions-toolbar';
 
+  const mobile = isMobileShareDevice();
+  const hasPhotos = trip.photoCount > 0;
+  const mergedMobileShare = mobile && isOwner && hasPhotos;
+
   if (canUpload) {
     const upBtn = document.createElement('button');
     upBtn.className = 'gal-upload';
-    upBtn.innerHTML = `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg><span>${t('gal.upload')}</span>`;
+    upBtn.innerHTML = `${UPLOAD_SVG}<span>${t('gal.upload')}</span>`;
     upBtn.onclick = () => fileInput.click();
     toolbar.appendChild(upBtn);
   }
 
-  if (isOwner) {
+  if (mergedMobileShare) {
     const shareBtn = document.createElement('button');
     shareBtn.className = 'gal-share';
-    setTip(shareBtn, t('gal.shareTabInvite'), { position: 'top' });
-    shareBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>${t('gal.share')}</span>`;
-    shareBtn.onclick = () => openShareModal(trip);
+    setTip(shareBtn, t('gal.share'), { position: 'top' });
+    shareBtn.innerHTML = `${SHARE_SVG}<span>${t('gal.share')}</span>`;
+    shareBtn.onclick = () => openAlbumShareSheet(trip, () => runAlbumExport(trip, shareBtn, 'share'));
     toolbar.appendChild(shareBtn);
-  }
-
-  if (trip.photoCount > 0) {
-    const mobile = isMobileShareDevice();
-    const exportBtn = document.createElement('button');
-    exportBtn.className = mobile ? 'gal-album-share' : 'gal-download';
-    setTip(exportBtn, mobile ? t('gal.shareAlbum') : t('gal.downloadAlbum'), { position: 'top' });
-    if (mobile) {
-      exportBtn.innerHTML = `<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg><span>${t('gal.shareAlbum')}</span>`;
-      exportBtn.onclick = () => runAlbumExport(trip, exportBtn, 'share');
-    } else {
-      exportBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span>${t('gal.downloadAlbum')}</span>`;
-      exportBtn.onclick = () => runAlbumExport(trip, exportBtn, 'download');
+  } else {
+    if (isOwner) {
+      const shareBtn = document.createElement('button');
+      shareBtn.className = 'gal-share';
+      setTip(shareBtn, t('gal.shareTabInvite'), { position: 'top' });
+      shareBtn.innerHTML = `${mobile ? SHARE_SVG : INVITE_SVG}<span>${t('gal.share')}</span>`;
+      shareBtn.onclick = () => openShareModal(trip);
+      toolbar.appendChild(shareBtn);
     }
-    toolbar.appendChild(exportBtn);
+
+    if (hasPhotos) {
+      const exportBtn = document.createElement('button');
+      if (mobile) {
+        exportBtn.className = 'gal-share';
+        setTip(exportBtn, t('gal.shareAlbum'), { position: 'top' });
+        exportBtn.innerHTML = `${SHARE_SVG}<span>${t('gal.shareAlbum')}</span>`;
+        exportBtn.onclick = () => runAlbumExport(trip, exportBtn, 'share');
+      } else {
+        exportBtn.className = 'gal-download';
+        setTip(exportBtn, t('gal.downloadAlbum'), { position: 'top' });
+        exportBtn.innerHTML = `${DOWNLOAD_SVG}<span>${t('gal.downloadAlbum')}</span>`;
+        exportBtn.onclick = () => runAlbumExport(trip, exportBtn, 'download');
+      }
+      toolbar.appendChild(exportBtn);
+    }
   }
 
   if (canUpload) {
