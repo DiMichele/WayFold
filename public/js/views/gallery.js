@@ -76,6 +76,7 @@ function sharedBadgeHtml() {
 let galleryDragDepth = 0;
 let uploadUi = null;
 let albumExportBusy = false;
+let activeGalleryPhotos = null;
 
 function openAlbumShareSheet(trip, onShareAlbum) {
   const body = document.createElement('div');
@@ -105,6 +106,7 @@ async function runAlbumExport(trip, btn, mode) {
   const exportFn = mode === 'share' ? shareAlbum : downloadAlbumAsZip;
   try {
     await exportFn(trip, {
+      photos: state.galTripId === trip.id ? activeGalleryPhotos : undefined,
       onProgress: (done, total) => {
         if (btn) btn.title = `${tip} ${done}/${total}`;
       },
@@ -621,6 +623,7 @@ async function buildPhotos(c, trip) {
 
   if (state.galTripId !== trip.id || !grid.isConnected) return;
 
+  activeGalleryPhotos = photos;
   const lbPhotos = photosToLightboxItems(trip, photos);
 
   grid.innerHTML = '';

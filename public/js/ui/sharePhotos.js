@@ -8,6 +8,8 @@ import { zipSync } from '../vendor/fflate.esm.js';
 import { fetchMe } from '../api.js';
 import * as api from '../api.js';
 import { exportPhotoBlob } from './photoDisplay.js';
+import { getTripKey } from '../crypto/keyStore.js';
+import { decryptPhoto, isEncryptedBytes } from '../crypto/photoCrypto.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -89,7 +91,23 @@ export function isMobileShareDevice() {
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-async function fetchPhotoBlobUrl(url) {
+function tripIsOwner(trip) {
+  return trip?.isOwner ?? (trip ? !trip.shared : false);
+}
+
+async function decryptFetchedBlob(blob, photo, trip) {
+  if (!blob?.size) return blob;
+  const head = new Uint8Array(await blob.slice(0, 6).arrayBuffer());
+  if (!isEncryptedBytes(head)) return blob;
+  const tripId = photo.tripId ?? trip?.id;
+  const key = await getTripKey(tripId, { isOwner: tripIsOwner(trip) });
+  if (!key) return null;
+  const plain = await decryptPhoto(new Uint8Array(await blob.arrayBuffer()), key);
+  const mime = photo.originalMime || photo.mime || 'image/jpeg';
+  return new Blob([plain], { type: mime });
+}
+
+async function fetchPhotoBlobUrl(url, photo, trip) {
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
@@ -98,10 +116,15 @@ async function fetchPhotoBlobUrl(url) {
     if (res.status === 401) throw new Error(t('sharePhotos.sessionExpired'));
     if (res.status === 403) throw new Error(t('sharePhotos.emailRequired'));
     if (!res.ok) throw new Error(t('sharePhotos.fetchFail'));
-    const blob = await res.blob();
+    let blob = await res.blob();
     if (!blob.size) throw new Error(t('sharePhotos.fetchFail'));
     const ct = res.headers.get('content-type') || blob.type || '';
     if (ct.includes('application/json')) throw new Error(t('sharePhotos.fetchFail'));
+    if (photo && trip) {
+      const plain = await decryptFetchedBlob(blob, photo, trip);
+      if (!plain?.size) throw new Error(t('sharePhotos.fetchFail'));
+      blob = plain;
+    }
     return blob;
   }
   throw new Error(t('sharePhotos.fetchFail'));
@@ -110,12 +133,17 @@ async function fetchPhotoBlobUrl(url) {
 async function fetchPhotoBlob(photo, trip) {
   const tripId = photo.tripId ?? trip?.id;
   const mime = photo.originalMime || photo.mime || 'image/jpeg';
-  const isOwner = trip?.isOwner ?? (trip ? !trip.shared : false);
+  const isOwner = tripIsOwner(trip);
+  const encrypted = Boolean(photo?.encrypted);
 
-  if (photo?.encrypted) {
+  if (encrypted) {
+    const fromDom = await blobFromGalleryImage(photo.url, photo.id);
+    if (fromDom) return fromDom;
+
     const candidates = [];
     if (photo.url) candidates.push(photo.url);
     if (photo.id) candidates.push(`/api/photos/${photo.id}/file`);
+    let lastErr;
     for (const candidate of candidates) {
       try {
         const blob = await exportPhotoBlob({
@@ -131,7 +159,14 @@ async function fetchPhotoBlob(photo, trip) {
         /* prova il prossimo candidato */
       }
     }
-    throw new Error(t('sharePhotos.fetchFail'));
+    for (const candidate of candidates) {
+      try {
+        return await fetchPhotoBlobUrl(candidate, photo, trip);
+      } catch (err) {
+        lastErr = err;
+      }
+    }
+    throw lastErr || new Error(t('sharePhotos.fetchFail'));
   }
 
   const url = photo?.url;
@@ -147,13 +182,13 @@ async function fetchPhotoBlob(photo, trip) {
   let lastErr;
   for (const candidate of candidates) {
     try {
-      return await fetchPhotoBlobUrl(candidate);
+      return await fetchPhotoBlobUrl(candidate, photo, trip);
     } catch (err) {
       lastErr = err;
       if (err.message === t('sharePhotos.sessionExpired')) {
         try {
           await fetchMe();
-          return await fetchPhotoBlobUrl(candidate);
+          return await fetchPhotoBlobUrl(candidate, photo, trip);
         } catch {
           throw err;
         }
@@ -165,12 +200,22 @@ async function fetchPhotoBlob(photo, trip) {
 }
 
 async function photoToFile(photo, trip, index) {
-  const blob = await fetchPhotoBlob(photo, trip);
-  const mime = photo.originalMime || photo.mime || null;
-  const ext = photo.encrypted ? (EXT_BY_MIME[mime] || 'jpg') : extFromUrl(photo.url);
-  const type = blob.type?.startsWith('image/') ? blob.type : (mime || MIME_BY_EXT[ext] || 'image/jpeg');
-  const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
-  return new File([blob], name, { type, lastModified: Date.now() });
+  let lastErr;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 450 * attempt));
+    try {
+      const blob = await fetchPhotoBlob(photo, trip);
+      const mime = photo.originalMime || photo.mime || null;
+      const enc = Boolean(photo.encrypted);
+      const ext = enc ? (EXT_BY_MIME[mime] || 'jpg') : extFromUrl(photo.url);
+      const type = blob.type?.startsWith('image/') ? blob.type : (mime || MIME_BY_EXT[ext] || 'image/jpeg');
+      const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
+      return new File([blob], name, { type, lastModified: Date.now() });
+    } catch (err) {
+      lastErr = err;
+    }
+  }
+  throw lastErr || new Error(t('sharePhotos.fetchFail'));
 }
 
 export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
@@ -234,8 +279,8 @@ async function shareFiles(files) {
 }
 
 async function buildAlbumExportFiles(trip, { onProgress, photos } = {}) {
-  await ensureSession();
-  const list = (photos || await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
+  if (!photos?.length) await ensureSession();
+  const list = (photos?.length ? photos : await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
   if (!list.length) throw new Error(t('gal.noPhotos'));
 
   onProgress?.(0, list.length);

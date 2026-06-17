@@ -10,15 +10,51 @@ import { getTripKey, clearTripKeys } from '../crypto/keyStore.js';
 import { decryptPhoto } from '../crypto/photoCrypto.js';
 
 const _objectUrls = new Map(); // photoId → objectURL (plaintext)
+const _plainBlobs = new Map(); // photoId → Blob (plaintext, per export)
 const _inflight = new Map();   // photoId → Promise<string|null>
+
+function normalizePhotoId(photoId) {
+  const id = Number(photoId);
+  return Number.isFinite(id) ? id : null;
+}
+
+function imgReady(img) {
+  return img.complete && img.naturalWidth > 0;
+}
+
+async function blobFromMountedImage(photoId) {
+  const id = String(photoId);
+  for (const img of document.querySelectorAll('#lbImg, .gal-grid img, .gal-hthumb img')) {
+    if (img.dataset.photoId !== id) continue;
+    if (!imgReady(img)) continue;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      canvas.getContext('2d').drawImage(img, 0, 0);
+      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
+      if (blob?.size) return blob;
+    } catch {
+      /* canvas non disponibile */
+    }
+  }
+  return null;
+}
+
+function rememberPlainBlob(photoId, blob) {
+  const pid = normalizePhotoId(photoId);
+  if (pid != null && blob?.size) _plainBlobs.set(pid, blob);
+}
 
 /**
  * Scarica e decifra una foto, restituendo un blob URL (con cache per photoId).
  * @returns {Promise<string|null>}
  */
 function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
-  if (_objectUrls.has(photoId)) return Promise.resolve(_objectUrls.get(photoId));
-  if (_inflight.has(photoId)) return _inflight.get(photoId);
+  const pid = normalizePhotoId(photoId);
+  if (pid == null) return Promise.resolve(null);
+  if (_objectUrls.has(pid)) return Promise.resolve(_objectUrls.get(pid));
+  if (_inflight.has(pid)) return _inflight.get(pid);
 
   const promise = (async () => {
     const key = await getTripKey(tripId, { isOwner });
@@ -27,14 +63,16 @@ function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
     if (!res.ok) return null;
     const buf = await res.arrayBuffer();
     const plain = await decryptPhoto(new Uint8Array(buf), key);
-    const objUrl = URL.createObjectURL(new Blob([plain], { type: mime || 'image/jpeg' }));
-    _objectUrls.set(photoId, objUrl);
+    const blob = new Blob([plain], { type: mime || 'image/jpeg' });
+    rememberPlainBlob(pid, blob);
+    const objUrl = URL.createObjectURL(blob);
+    _objectUrls.set(pid, objUrl);
     return objUrl;
   })()
     .catch(() => null)
-    .finally(() => _inflight.delete(photoId));
+    .finally(() => _inflight.delete(pid));
 
-  _inflight.set(photoId, promise);
+  _inflight.set(pid, promise);
   return promise;
 }
 
@@ -80,18 +118,8 @@ export function mountCover(img, trip) {
  * scarica i byte e li decifra; per le legacy scarica direttamente.
  * @returns {Promise<Blob|null>}
  */
-async function blobFromObjectUrl(objUrl) {
-  try {
-    const res = await fetch(objUrl);
-    if (!res.ok) return null;
-    const blob = await res.blob();
-    return blob?.size ? blob : null;
-  } catch {
-    return null;
-  }
-}
-
-export async function fetchDecryptedBlob({ tripId, url, encrypted, mime, isOwner = false }) {
+export async function fetchDecryptedBlob({ tripId, photoId, url, encrypted, mime, isOwner = false }) {
+  const pid = normalizePhotoId(photoId);
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
@@ -103,43 +131,53 @@ export async function fetchDecryptedBlob({ tripId, url, encrypted, mime, isOwner
     if (!key) return null;
     const buf = await res.arrayBuffer();
     const plain = await decryptPhoto(new Uint8Array(buf), key);
-    return new Blob([plain], { type: mime || 'image/jpeg' });
+    const blob = new Blob([plain], { type: mime || 'image/jpeg' });
+    rememberPlainBlob(pid, blob);
+    return blob;
   }
   return null;
 }
 
 /**
- * Blob in chiaro per export/condivisione: riusa la decifratura già in cache
- * (galleria/lightbox) prima di un nuovo fetch di rete.
+ * Blob in chiaro per export/condivisione: riusa blob già decifrati o immagini
+ * montate in pagina prima di un nuovo fetch di rete.
  */
 export async function exportPhotoBlob({ tripId, photoId, url, encrypted, mime, isOwner = false }) {
-  if (encrypted && photoId != null) {
-    if (_objectUrls.has(photoId)) {
-      const blob = await blobFromObjectUrl(_objectUrls.get(photoId));
-      if (blob) return blob;
+  const pid = normalizePhotoId(photoId);
+
+  if (encrypted && pid != null) {
+    const cached = _plainBlobs.get(pid);
+    if (cached?.size) return cached;
+
+    const fromDom = await blobFromMountedImage(pid);
+    if (fromDom) {
+      rememberPlainBlob(pid, fromDom);
+      return fromDom;
     }
-    if (_inflight.has(photoId)) {
-      const objUrl = await _inflight.get(photoId).catch(() => null);
-      if (objUrl) {
-        const blob = await blobFromObjectUrl(objUrl);
-        if (blob) return blob;
-      }
+
+    if (_inflight.has(pid)) {
+      await _inflight.get(pid).catch(() => null);
+      const warmed = _plainBlobs.get(pid);
+      if (warmed?.size) return warmed;
     }
+
     if (url) {
-      const objUrl = await resolveObjectUrl({ tripId, photoId, url, mime, isOwner });
-      if (objUrl) {
-        const blob = await blobFromObjectUrl(objUrl);
-        if (blob) return blob;
-      }
+      await resolveObjectUrl({ tripId, photoId: pid, url, mime, isOwner });
+      const warmed = _plainBlobs.get(pid);
+      if (warmed?.size) return warmed;
     }
   }
-  return fetchDecryptedBlob({ tripId, url, encrypted, mime, isOwner });
+
+  const blob = await fetchDecryptedBlob({ tripId, photoId: pid, url, encrypted, mime, isOwner });
+  if (blob?.size && encrypted) rememberPlainBlob(pid, blob);
+  return blob;
 }
 
 /** Svuota cache immagini e chiavi (logout). */
 export function clearImageCache() {
   for (const objUrl of _objectUrls.values()) URL.revokeObjectURL(objUrl);
   _objectUrls.clear();
+  _plainBlobs.clear();
   _inflight.clear();
   clearTripKeys();
 }
