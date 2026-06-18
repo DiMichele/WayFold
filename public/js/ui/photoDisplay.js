@@ -23,6 +23,32 @@ function rememberPlainBlob(photoId, blob) {
   if (pid != null && blob?.size) _plainBlobs.set(pid, blob);
 }
 
+function raceTimeout(promise, ms) {
+  return new Promise((resolve) => {
+    const timer = setTimeout(() => resolve(null), ms);
+    Promise.resolve(promise).then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      () => { clearTimeout(timer); resolve(null); },
+    );
+  });
+}
+
+async function fetchSameOrigin(url, timeoutMs = 22000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      credentials: 'same-origin',
+      cache: 'no-store',
+      signal: ctrl.signal,
+    });
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 function photoFileUrls(photo) {
   const urls = [];
   if (photo?.url) urls.push(photo.url);
@@ -43,8 +69,8 @@ function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
   const promise = (async () => {
     const key = await getTripKey(tripId, { isOwner });
     if (!key) return null;
-    const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetchSameOrigin(url);
+    if (!res?.ok) return null;
     const buf = new Uint8Array(await res.arrayBuffer());
     const plain = await decryptPhoto(buf, key);
     const blob = new Blob([plain], { type: mime || 'image/jpeg' });
@@ -99,7 +125,11 @@ async function fetchDecryptedBlob({ tripId, photoId, url, mime, isOwner = false,
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     if (attempt > 0) await new Promise(r => setTimeout(r, 500 * attempt));
     try {
-      const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
+      const res = await fetchSameOrigin(url);
+      if (!res) {
+        if (attempt < maxAttempts - 1) continue;
+        return null;
+      }
       if (res.status >= 500 && attempt < maxAttempts - 1) continue;
       if (!res.ok) return null;
       const buf = new Uint8Array(await res.arrayBuffer());
@@ -136,7 +166,7 @@ export async function awaitPlainBlob(photo, trip, { maxAttempts = 4 } = {}) {
     const cached = _plainBlobs.get(pid);
     if (cached?.size) return cached;
     if (_inflight.has(pid)) {
-      await _inflight.get(pid).catch(() => null);
+      await raceTimeout(_inflight.get(pid), 18000);
       const warmed = _plainBlobs.get(pid);
       if (warmed?.size) return warmed;
     }

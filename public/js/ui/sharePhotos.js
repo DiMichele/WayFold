@@ -74,27 +74,48 @@ function sleep(ms) {
   return new Promise(r => setTimeout(r, ms));
 }
 
-async function photoToFile(photo, trip, index) {
-  const attempts = isMobileShareDevice() ? 5 : 3;
-  for (let attempt = 0; attempt < attempts; attempt++) {
-    if (attempt > 0) await sleep(700 * attempt);
-    const blob = await awaitPlainBlob(photo, trip, { maxAttempts: 4 });
-    if (blob?.size) return blobToFile(blob, photo, trip, index);
+function raceTimeout(promise, ms) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timeout')), ms);
+    Promise.resolve(promise).then(
+      (v) => { clearTimeout(timer); resolve(v); },
+      (e) => { clearTimeout(timer); reject(e); },
+    );
+  });
+}
+
+const PHOTO_EXPORT_MS = 35000;
+
+async function photoToFile(photo, trip, index, { isCancelled } = {}) {
+  for (let attempt = 0; attempt < 2; attempt++) {
+    if (isCancelled?.()) return null;
+    if (attempt > 0) await sleep(800);
+    try {
+      const blob = await raceTimeout(
+        awaitPlainBlob(photo, trip, { maxAttempts: 2 }),
+        PHOTO_EXPORT_MS,
+      );
+      if (blob?.size) return blobToFile(blob, photo, trip, index);
+    } catch {
+      /* timeout o errore di rete: ritenta o salta */
+    }
   }
   return null;
 }
 
-export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
+export async function buildPhotoFiles(photos, trip, { onProgress, isCancelled } = {}) {
   const list = photos.filter(p => p.url);
   const files = [];
   let skipped = 0;
   const gapMs = isMobileShareDevice() ? 400 : 120;
 
   for (let i = 0; i < list.length; i++) {
-    const file = await photoToFile(list[i], trip, i);
+    if (isCancelled?.()) break;
+    const file = await photoToFile(list[i], trip, i, { isCancelled });
     if (file) files.push(file);
     else skipped += 1;
     onProgress?.(i + 1, list.length);
+    if (isCancelled?.()) break;
     if (i < list.length - 1) await sleep(gapMs);
   }
 
@@ -198,10 +219,10 @@ async function resolvePhotoList(trip, photos) {
   return list;
 }
 
-async function buildAlbumExportFiles(trip, { onProgress, photos } = {}) {
+async function buildAlbumExportFiles(trip, { onProgress, photos, isCancelled } = {}) {
   const list = await resolvePhotoList(trip, photos);
   onProgress?.(0, list.length);
-  return buildPhotoFiles(list, trip, { onProgress });
+  return buildPhotoFiles(list, trip, { onProgress, isCancelled });
 }
 
 async function buildAlbumExportFile(trip, opts = {}) {
@@ -250,6 +271,7 @@ export async function downloadAlbumAsZip(trip, opts = {}) {
   try {
     const file = await buildAlbumExportFile(trip, {
       ...opts,
+      isCancelled: () => progress.isCancelled(),
       onProgress: (done, total) => {
         if (progress.isCancelled()) throw new Error('cancel');
         progress.update(done, total);
@@ -272,6 +294,7 @@ export async function shareAlbum(trip, opts = {}) {
   const progress = openExportProgress(trip, list.length);
   try {
     const { files, skipped } = await buildPhotoFiles(list, trip, {
+      isCancelled: () => progress.isCancelled(),
       onProgress: (done, total) => {
         if (progress.isCancelled()) throw new Error('cancel');
         progress.update(done, total);
