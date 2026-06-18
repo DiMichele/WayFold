@@ -61,21 +61,6 @@ export function isMobileShareDevice() {
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-async function mapPool(items, concurrency, iterator) {
-  const out = new Array(items.length);
-  let next = 0;
-  async function worker() {
-    while (next < items.length) {
-      const i = next++;
-      out[i] = await iterator(items[i], i);
-    }
-  }
-  await Promise.all(
-    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
-  );
-  return out;
-}
-
 function blobToFile(blob, photo, trip, index) {
   const mime = photo.originalMime || photo.mime || null;
   const enc = Boolean(photo.encrypted);
@@ -85,22 +70,35 @@ function blobToFile(blob, photo, trip, index) {
   return new File([blob], name, { type, lastModified: Date.now() });
 }
 
-async function photoToFile(photo, trip, index) {
-  const blob = await awaitPlainBlob(photo, trip);
-  if (!blob?.size) throw new Error(t('sharePhotos.fetchFail'));
-  return blobToFile(blob, photo, trip, index);
+function sleep(ms) {
+  return new Promise(r => setTimeout(r, ms));
 }
 
-export async function buildPhotoFiles(photos, trip, { onProgress, concurrency = 3 } = {}) {
+async function photoToFile(photo, trip, index) {
+  const attempts = isMobileShareDevice() ? 5 : 3;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    if (attempt > 0) await sleep(700 * attempt);
+    const blob = await awaitPlainBlob(photo, trip, { maxAttempts: 4 });
+    if (blob?.size) return blobToFile(blob, photo, trip, index);
+  }
+  return null;
+}
+
+export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
   const list = photos.filter(p => p.url);
-  let done = 0;
-  const files = await mapPool(list, concurrency, async (photo, index) => {
-    const file = await photoToFile(photo, trip, index);
-    done += 1;
-    onProgress?.(done, list.length);
-    return file;
-  });
-  return files;
+  const files = [];
+  let skipped = 0;
+  const gapMs = isMobileShareDevice() ? 400 : 120;
+
+  for (let i = 0; i < list.length; i++) {
+    const file = await photoToFile(list[i], trip, i);
+    if (file) files.push(file);
+    else skipped += 1;
+    onProgress?.(i + 1, list.length);
+    if (i < list.length - 1) await sleep(gapMs);
+  }
+
+  return { files, skipped };
 }
 
 async function buildZipFile(files, trip) {
@@ -200,14 +198,18 @@ async function resolvePhotoList(trip, photos) {
   return list;
 }
 
-async function buildAlbumExportFiles(trip, { onProgress, photos, concurrency } = {}) {
+async function buildAlbumExportFiles(trip, { onProgress, photos } = {}) {
   const list = await resolvePhotoList(trip, photos);
   onProgress?.(0, list.length);
-  return buildPhotoFiles(list, trip, { onProgress, concurrency });
+  return buildPhotoFiles(list, trip, { onProgress });
 }
 
 async function buildAlbumExportFile(trip, opts = {}) {
-  const files = await buildAlbumExportFiles(trip, opts);
+  const { files, skipped } = await buildAlbumExportFiles(trip, opts);
+  if (!files.length) throw new Error(t('sharePhotos.fetchFail'));
+  if (skipped > 0) {
+    showToast(t('sharePhotos.partialSkipped', { n: skipped, ok: files.length }), 'neutral');
+  }
   if (files.length === 1) return files[0];
   opts.onProgress?.(files.length, files.length);
   return buildZipFile(files, trip);
@@ -248,7 +250,6 @@ export async function downloadAlbumAsZip(trip, opts = {}) {
   try {
     const file = await buildAlbumExportFile(trip, {
       ...opts,
-      concurrency: 4,
       onProgress: (done, total) => {
         if (progress.isCancelled()) throw new Error('cancel');
         progress.update(done, total);
@@ -270,14 +271,17 @@ export async function shareAlbum(trip, opts = {}) {
   const list = await resolvePhotoList(trip, opts.photos);
   const progress = openExportProgress(trip, list.length);
   try {
-    const files = await buildPhotoFiles(list, trip, {
-      concurrency: isMobileShareDevice() ? 2 : 4,
+    const { files, skipped } = await buildPhotoFiles(list, trip, {
       onProgress: (done, total) => {
         if (progress.isCancelled()) throw new Error('cancel');
         progress.update(done, total);
       },
     });
     progress.close();
+    if (!files.length) throw new Error(t('sharePhotos.fetchFail'));
+    if (skipped > 0) {
+      showToast(t('sharePhotos.partialSkipped', { n: skipped, ok: files.length }), 'neutral');
+    }
     await deliverAlbumShare(files, trip);
   } catch (e) {
     progress.close();
@@ -291,6 +295,7 @@ export async function shareSinglePhoto(trip, photo) {
   await ensureSession();
   if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
   const file = await photoToFile(photo, trip, 0);
+  if (!file) throw new Error(t('sharePhotos.fetchFail'));
   await shareFile(file);
 }
 
@@ -299,6 +304,7 @@ export async function downloadSinglePhoto(trip, photo) {
   await ensureSession();
   if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
   const file = await photoToFile(photo, trip, 0);
+  if (!file) throw new Error(t('sharePhotos.fetchFail'));
   downloadFiles([file]);
   showToast(t('sharePhotos.downloaded', { n: 1 }), 'neutral');
 }

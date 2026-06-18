@@ -44,9 +44,9 @@ async function serveUserPhoto(res, { tripId, file }) {
 
   if (photo.fileId && telegram.enabled()) {
     let lastErr;
-    for (let attempt = 0; attempt < 3; attempt++) {
+    for (let attempt = 0; attempt < 5; attempt++) {
       if (attempt > 0 && !res.headersSent) {
-        await new Promise(r => setTimeout(r, 350 * attempt));
+        await new Promise(r => setTimeout(r, 500 * attempt));
       }
       try {
         if (!res.headersSent) res.set(photoHeaders(ext));

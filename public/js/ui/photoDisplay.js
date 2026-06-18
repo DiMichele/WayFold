@@ -94,11 +94,10 @@ export function mountCover(img, trip) {
   });
 }
 
-async function fetchDecryptedBlob({ tripId, photoId, url, mime, isOwner = false }) {
+async function fetchDecryptedBlob({ tripId, photoId, url, mime, isOwner = false, maxAttempts = 3 }) {
   const pid = normalizePhotoId(photoId);
-  const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
-    if (attempt > 0) await new Promise(r => setTimeout(r, 400 * attempt));
+    if (attempt > 0) await new Promise(r => setTimeout(r, 500 * attempt));
     try {
       const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
       if (res.status >= 500 && attempt < maxAttempts - 1) continue;
@@ -127,7 +126,7 @@ async function fetchDecryptedBlob({ tripId, photoId, url, mime, isOwner = false 
  * Riutilizza la decifratura già in corso o in cache dalla galleria.
  * @returns {Promise<Blob|null>}
  */
-export async function awaitPlainBlob(photo, trip) {
+export async function awaitPlainBlob(photo, trip, { maxAttempts = 4 } = {}) {
   const tripId = photo?.tripId ?? trip?.id;
   const pid = normalizePhotoId(photo?.id);
   const mime = photo?.originalMime || photo?.mime || 'image/jpeg';
@@ -152,7 +151,9 @@ export async function awaitPlainBlob(photo, trip) {
   }
 
   for (const url of photoFileUrls(photo)) {
-    const blob = await fetchDecryptedBlob({ tripId, photoId: pid, url, mime, isOwner: false });
+    const blob = await fetchDecryptedBlob({
+      tripId, photoId: pid, url, mime, isOwner: false, maxAttempts,
+    });
     if (blob?.size) return blob;
   }
   return null;
