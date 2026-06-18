@@ -2,13 +2,14 @@
  * sharePhotos.js — Condividi foto su app esterne (Web Share API + fallback download)
  */
 
-import { tripDest } from '../utils.js';
+import { tripDest, esc } from '../utils.js';
 import { t } from '../i18n.js';
 import { zipSync } from '../vendor/fflate.esm.js';
 import { fetchMe } from '../api.js';
 import * as api from '../api.js';
-import { loadPhotoForShare, prefetchPhotosForExport } from './photoDisplay.js';
-import { getTripKey } from '../crypto/keyStore.js';
+import { awaitPlainBlob } from './photoDisplay.js';
+import { openModal, closeModal } from './modal.js';
+import { showToast } from './toast.js';
 
 const MIME_BY_EXT = {
   jpg: 'image/jpeg',
@@ -60,38 +61,45 @@ export function isMobileShareDevice() {
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 }
 
-async function fetchPhotoBlob(photo, trip) {
-  const blob = await loadPhotoForShare(photo, trip);
-  if (blob?.size) return blob;
-  throw new Error(t('sharePhotos.fetchFail'));
+async function mapPool(items, concurrency, iterator) {
+  const out = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      out[i] = await iterator(items[i], i);
+    }
+  }
+  await Promise.all(
+    Array.from({ length: Math.min(concurrency, items.length) }, () => worker()),
+  );
+  return out;
+}
+
+function blobToFile(blob, photo, trip, index) {
+  const mime = photo.originalMime || photo.mime || null;
+  const enc = Boolean(photo.encrypted);
+  const ext = enc ? (EXT_BY_MIME[mime] || 'jpg') : extFromUrl(photo.url);
+  const type = blob.type?.startsWith('image/') ? blob.type : (mime || MIME_BY_EXT[ext] || 'image/jpeg');
+  const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
+  return new File([blob], name, { type, lastModified: Date.now() });
 }
 
 async function photoToFile(photo, trip, index) {
-  let lastErr;
-  for (let attempt = 0; attempt < 3; attempt++) {
-    if (attempt > 0) await new Promise(r => setTimeout(r, 450 * attempt));
-    try {
-      const blob = await fetchPhotoBlob(photo, trip);
-      const mime = photo.originalMime || photo.mime || null;
-      const enc = Boolean(photo.encrypted);
-      const ext = enc ? (EXT_BY_MIME[mime] || 'jpg') : extFromUrl(photo.url);
-      const type = blob.type?.startsWith('image/') ? blob.type : (mime || MIME_BY_EXT[ext] || 'image/jpeg');
-      const name = `${safeBaseName(trip)}_${String(index + 1).padStart(2, '0')}.${ext}`;
-      return new File([blob], name, { type, lastModified: Date.now() });
-    } catch (err) {
-      lastErr = err;
-    }
-  }
-  throw lastErr || new Error(t('sharePhotos.fetchFail'));
+  const blob = await awaitPlainBlob(photo, trip);
+  if (!blob?.size) throw new Error(t('sharePhotos.fetchFail'));
+  return blobToFile(blob, photo, trip, index);
 }
 
-export async function buildPhotoFiles(photos, trip, { onProgress } = {}) {
+export async function buildPhotoFiles(photos, trip, { onProgress, concurrency = 3 } = {}) {
   const list = photos.filter(p => p.url);
-  const files = [];
-  for (let i = 0; i < list.length; i++) {
-    onProgress?.(i + 1, list.length);
-    files.push(await photoToFile(list[i], trip, i));
-  }
+  let done = 0;
+  const files = await mapPool(list, concurrency, async (photo, index) => {
+    const file = await photoToFile(photo, trip, index);
+    done += 1;
+    onProgress?.(done, list.length);
+    return file;
+  });
   return files;
 }
 
@@ -135,81 +143,162 @@ async function shareFile(file) {
 async function shareFiles(files) {
   if (!navigator.share) throw new Error(t('sharePhotos.noWebShare'));
   if (navigator.canShare && !navigator.canShare({ files })) {
-    throw new Error(t('sharePhotos.cantShareFiles', { n: files.length }));
+    return false;
   }
   try {
     await navigator.share({ files });
+    return true;
   } catch (err) {
-    if (err?.name === 'AbortError') return;
+    if (err?.name === 'AbortError') return true;
     throw err;
   }
 }
 
-async function buildAlbumExportFiles(trip, { onProgress, photos } = {}) {
+function openExportProgress(trip, total) {
+  let cancelled = false;
+  const body = document.createElement('div');
+  body.className = 'modal-body share-export-progress';
+  body.innerHTML = `
+    <p class="share-export-hint">${esc(t('sharePhotos.hint'))}</p>
+    <div class="share-export-status">${esc(t('sharePhotos.preparing'))}</div>
+    <div class="share-export-track">
+      <div class="share-export-bar"></div>
+    </div>
+    <button type="button" class="modal-btn s" id="shareExportCancel">${esc(t('modal.cancel'))}</button>`;
+
+  body.querySelector('#shareExportCancel').addEventListener('click', () => {
+    cancelled = true;
+    closeModal();
+  });
+
+  openModal({
+    title: total > 1 ? t('sharePhotos.titleAlbum', { n: total }) : t('sharePhotos.titleSingle'),
+    body,
+    onClose: () => { cancelled = true; },
+  });
+
+  const status = body.querySelector('.share-export-status');
+  const bar = body.querySelector('.share-export-bar');
+
+  return {
+    isCancelled: () => cancelled,
+    update(done, tot) {
+      status.textContent = t('sharePhotos.preparingN', { done, total: tot });
+      bar.style.width = `${Math.round((done / tot) * 100)}%`;
+    },
+    close() {
+      closeModal();
+    },
+  };
+}
+
+async function resolvePhotoList(trip, photos) {
   await ensureSession();
-  const cached = photosForTrip(trip, photos);
-  const list = (cached || await api.fetchPhotos(trip.id, { fresh: true })).filter(p => p.url);
+  const list = (photosForTrip(trip, photos) || await api.fetchPhotos(trip.id, { fresh: true }))
+    .filter(p => p.url);
   if (!list.length) throw new Error(t('gal.noPhotos'));
+  return list;
+}
 
-  const tripId = Number(trip.id);
-  const key = await getTripKey(tripId, { isOwner: false });
-  if (!key && list.some(p => p.encrypted)) {
-    throw new Error(t('sharePhotos.fetchFail'));
-  }
-
+async function buildAlbumExportFiles(trip, { onProgress, photos, concurrency } = {}) {
+  const list = await resolvePhotoList(trip, photos);
   onProgress?.(0, list.length);
-  await prefetchPhotosForExport(list, trip);
-  const files = await buildPhotoFiles(list, trip, onProgress);
-  return files;
+  return buildPhotoFiles(list, trip, { onProgress, concurrency });
 }
 
 async function buildAlbumExportFile(trip, opts = {}) {
   const files = await buildAlbumExportFiles(trip, opts);
   if (files.length === 1) return files[0];
-
   opts.onProgress?.(files.length, files.length);
   return buildZipFile(files, trip);
+}
+
+async function deliverAlbumShare(files, trip) {
+  if (files.length === 1) {
+    await shareFile(files[0]);
+    return;
+  }
+
+  if (isMobileShareDevice()) {
+    const shared = await shareFiles(files);
+    if (shared) return;
+
+    const zip = await buildZipFile(files, trip);
+    if (!navigator.canShare || navigator.canShare({ files: [zip] })) {
+      try {
+        await navigator.share({ files: [zip] });
+        return;
+      } catch (err) {
+        if (err?.name === 'AbortError') return;
+      }
+    }
+    downloadFiles([zip]);
+    showToast(t('sharePhotos.downloadFallback'), 'neutral');
+    return;
+  }
+
+  await shareFile(await buildZipFile(files, trip));
 }
 
 /**
  * Scarica l'album come ZIP (solo desktop).
  */
 export async function downloadAlbumAsZip(trip, opts = {}) {
-  const file = await buildAlbumExportFile(trip, opts);
-  downloadFiles([file]);
+  const progress = openExportProgress(trip, trip.photoCount || 0);
+  try {
+    const file = await buildAlbumExportFile(trip, {
+      ...opts,
+      concurrency: 4,
+      onProgress: (done, total) => {
+        if (progress.isCancelled()) throw new Error('cancel');
+        progress.update(done, total);
+      },
+    });
+    progress.close();
+    downloadFiles([file]);
+    showToast(t('sharePhotos.downloadedZip'), 'neutral');
+  } catch (e) {
+    progress.close();
+    if (e.message !== 'cancel') throw e;
+  }
 }
 
 /**
  * Condivide l'album via foglio nativo (mobile / PWA).
  */
 export async function shareAlbum(trip, opts = {}) {
-  const files = await buildAlbumExportFiles(trip, opts);
-  if (files.length === 1) {
-    await shareFile(files[0]);
-    return;
+  const list = await resolvePhotoList(trip, opts.photos);
+  const progress = openExportProgress(trip, list.length);
+  try {
+    const files = await buildPhotoFiles(list, trip, {
+      concurrency: isMobileShareDevice() ? 2 : 4,
+      onProgress: (done, total) => {
+        if (progress.isCancelled()) throw new Error('cancel');
+        progress.update(done, total);
+      },
+    });
+    progress.close();
+    await deliverAlbumShare(files, trip);
+  } catch (e) {
+    progress.close();
+    if (e.message === 'cancel') return;
+    throw e;
   }
-  if (isMobileShareDevice()) {
-    await shareFiles(files);
-    return;
-  }
-  await shareFile(await buildZipFile(files, trip));
-}
-
-/** Scarica o condivide una singola foto (lightbox). */
-async function buildSinglePhotoFile(trip, photo) {
-  await ensureSession();
-  if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
-  return photoToFile(photo, trip, 0);
 }
 
 /** Condivide una singola foto via foglio nativo (mobile / PWA). */
 export async function shareSinglePhoto(trip, photo) {
-  const file = await buildSinglePhotoFile(trip, photo);
+  await ensureSession();
+  if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
+  const file = await photoToFile(photo, trip, 0);
   await shareFile(file);
 }
 
 /** Scarica una singola foto (desktop). */
 export async function downloadSinglePhoto(trip, photo) {
-  const file = await buildSinglePhotoFile(trip, photo);
+  await ensureSession();
+  if (!photo?.url) throw new Error(t('sharePhotos.fetchFail'));
+  const file = await photoToFile(photo, trip, 0);
   downloadFiles([file]);
+  showToast(t('sharePhotos.downloaded', { n: 1 }), 'neutral');
 }

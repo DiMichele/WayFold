@@ -13,7 +13,6 @@ import { confirmDeleteTrip } from '../ui/tripDelete.js';
 import { openTripForm, openModal, closeModal } from '../ui/modal.js';
 import { openShareModal } from '../ui/shareModal.js';
 import { downloadAlbumAsZip, shareAlbum, isMobileShareDevice } from '../ui/sharePhotos.js';
-import { prefetchPhotosForExport } from '../ui/photoDisplay.js';
 import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 import { mountImage, mountCover } from '../ui/photoDisplay.js';
@@ -78,10 +77,8 @@ let galleryDragDepth = 0;
 let uploadUi = null;
 let albumExportBusy = false;
 let activeGalleryPhotos = null;
-let galleryPhotosReadyId = null;
 
 function galleryPhotosForTrip(tripId) {
-  if (galleryPhotosReadyId !== tripId) return null;
   if (!activeGalleryPhotos?.length) return null;
   if (Number(activeGalleryPhotos[0]?.tripId) !== Number(tripId)) return null;
   return activeGalleryPhotos;
@@ -91,19 +88,7 @@ function setGalleryExportButtons(toolbar, enabled) {
   if (!toolbar) return;
   toolbar.querySelectorAll('[data-gal-export]').forEach(btn => {
     btn.disabled = !enabled;
-    btn.classList.toggle('gal-export-pending', !enabled);
   });
-}
-
-async function waitForGalleryPhotos(tripId, timeoutMs = 20000) {
-  const start = Date.now();
-  while (galleryPhotosReadyId !== tripId) {
-    if (Date.now() - start > timeoutMs) {
-      throw new Error(t('sharePhotos.fetchFail'));
-    }
-    await new Promise(r => setTimeout(r, 120));
-  }
-  return galleryPhotosForTrip(tripId);
 }
 
 function openAlbumShareSheet(trip, onShareAlbum) {
@@ -129,28 +114,18 @@ async function runAlbumExport(trip, btn, mode) {
   if (albumExportBusy) return;
   albumExportBusy = true;
   if (btn) btn.disabled = true;
-  const tip = mode === 'share' ? t('sharePhotos.preparing') : t('gal.downloadAlbumProgress');
-  showToast(tip, 'neutral');
   const exportFn = mode === 'share' ? shareAlbum : downloadAlbumAsZip;
   try {
-    const photos = await waitForGalleryPhotos(trip.id);
     await exportFn(trip, {
-      photos: photos || undefined,
-      onProgress: (done, total) => {
-        if (btn) btn.title = `${tip} ${done}/${total}`;
-      },
+      photos: galleryPhotosForTrip(trip.id) || undefined,
     });
-    if (mode !== 'share') {
-      showToast(t('sharePhotos.downloadedZip'), 'neutral');
-    }
   } catch (e) {
-    showToast(e.message || t('sharePhotos.err'), 'error');
+    if (e.message !== 'cancel') {
+      showToast(e.message || t('sharePhotos.err'), 'error');
+    }
   } finally {
     albumExportBusy = false;
-    if (btn) {
-      btn.disabled = false;
-      btn.removeAttribute('title');
-    }
+    if (btn) btn.disabled = false;
   }
 }
 
@@ -425,7 +400,6 @@ async function redeemCode(raw) {
 // ─── Griglia foto ──────────────────────────────────────────────────────────
 
 async function buildPhotos(c, trip) {
-  galleryPhotosReadyId = null;
   activeGalleryPhotos = null;
 
   const shell = document.createElement('div');
@@ -660,12 +634,6 @@ async function buildPhotos(c, trip) {
   if (state.galTripId !== trip.id || !grid.isConnected) return;
 
   activeGalleryPhotos = photos;
-  try {
-    await prefetchPhotosForExport(photos, trip);
-  } catch {
-    /* prefetch best-effort: l'export riproverà */
-  }
-  galleryPhotosReadyId = trip.id;
   setGalleryExportButtons(toolbar, true);
 
   const lbPhotos = photosToLightboxItems(trip, photos);
@@ -677,7 +645,7 @@ async function buildPhotos(c, trip) {
 
     const img = document.createElement('img');
     img.alt = p.caption || trip.dest;
-    img.loading = 'lazy';
+    img.loading = idx < 4 ? 'eager' : 'lazy';
     img.decoding = 'async';
     mountImage(img, { tripId: trip.id, photoId: p.id, url: p.url, encrypted: p.encrypted, mime: p.originalMime });
     cell.appendChild(img);

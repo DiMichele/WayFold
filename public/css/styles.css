@@ -1644,6 +1644,16 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
 .gal-album-share:disabled{opacity:.55;pointer-events:none;transform:none;box-shadow:none}
 .gal-album-share svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .gal-album-share span{display:none}
+.gal-grid img.enc-pending{opacity:0;min-height:100%}
+.gal-grid .gcell:has(img.enc-pending){background:linear-gradient(110deg,var(--srf2) 8%,var(--bg2) 18%,var(--srf2) 33%);background-size:200% 100%;animation:gal-shimmer 1.4s linear infinite}
+@keyframes gal-shimmer{to{background-position-x:-200%}}
+
+.share-export-progress{gap:14px}
+.share-export-hint{margin:0;font-size:13px;line-height:1.55;color:var(--mut)}
+.share-export-status{font-size:13.5px;font-weight:550;color:var(--ink2)}
+.share-export-track{height:6px;border-radius:100px;background:var(--bg2);overflow:hidden}
+.share-export-bar{height:100%;width:0;border-radius:100px;background:var(--acc);transition:width .25s var(--eout)}
+
 .gal-share-sheet-actions{display:flex;flex-direction:column;gap:8px}
 .gal-share-sheet-btn{width:100%;justify-content:center}
 .gal-actions-toolbar [data-gal-export]:disabled{opacity:.45;pointer-events:none}

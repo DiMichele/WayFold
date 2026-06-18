@@ -18,32 +18,16 @@ function normalizePhotoId(photoId) {
   return Number.isFinite(id) ? id : null;
 }
 
-function imgReady(img) {
-  return img.complete && img.naturalWidth > 0;
-}
-
-async function blobFromMountedImage(photoId) {
-  const id = String(photoId);
-  for (const img of document.querySelectorAll('#lbImg, .gal-grid img, .gal-hthumb img')) {
-    if (img.dataset.photoId !== id) continue;
-    if (!imgReady(img)) continue;
-    try {
-      const canvas = document.createElement('canvas');
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      canvas.getContext('2d').drawImage(img, 0, 0);
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.92));
-      if (blob?.size) return blob;
-    } catch {
-      /* canvas non disponibile */
-    }
-  }
-  return null;
-}
-
 function rememberPlainBlob(photoId, blob) {
   const pid = normalizePhotoId(photoId);
   if (pid != null && blob?.size) _plainBlobs.set(pid, blob);
+}
+
+function photoFileUrls(photo) {
+  const urls = [];
+  if (photo?.url) urls.push(photo.url);
+  if (photo?.id) urls.push(`/api/photos/${photo.id}/file`);
+  return urls;
 }
 
 /**
@@ -87,9 +71,6 @@ export function mountImage(img, { tripId, photoId, url, encrypted, mime }) {
     img.src = url;
     return;
   }
-  // Marca la richiesta corrente: se l'<img> viene riusato (lightbox/hero) e
-  // l'utente naviga prima che la decifratura finisca, scartiamo i risultati
-  // ormai obsoleti.
   const token = String(photoId);
   img.dataset.encReq = token;
   img.classList.add('enc-pending');
@@ -113,12 +94,7 @@ export function mountCover(img, trip) {
   });
 }
 
-/**
- * Blob in chiaro di una foto (per export/condivisione). Per le foto cifrate
- * scarica i byte e li decifra; per le legacy scarica direttamente.
- * @returns {Promise<Blob|null>}
- */
-export async function fetchDecryptedBlob({ tripId, photoId, url, encrypted, mime, isOwner = false }) {
+async function fetchDecryptedBlob({ tripId, photoId, url, mime, isOwner = false }) {
   const pid = normalizePhotoId(photoId);
   const maxAttempts = 3;
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -129,7 +105,7 @@ export async function fetchDecryptedBlob({ tripId, photoId, url, encrypted, mime
       if (!res.ok) return null;
       const buf = new Uint8Array(await res.arrayBuffer());
       if (!buf.length) return null;
-      if (!encrypted && !isEncryptedBytes(buf)) {
+      if (!isEncryptedBytes(buf)) {
         return new Blob([buf], { type: mime || 'image/jpeg' });
       }
       const key = await getTripKey(tripId, { isOwner });
@@ -147,102 +123,39 @@ export async function fetchDecryptedBlob({ tripId, photoId, url, encrypted, mime
 }
 
 /**
- * Blob in chiaro per export/condivisione: riusa blob già decifrati o immagini
- * montate in pagina prima di un nuovo fetch di rete.
+ * Restituisce il blob in chiaro di una foto (condivisione / download).
+ * Riutilizza la decifratura già in corso o in cache dalla galleria.
+ * @returns {Promise<Blob|null>}
  */
-export async function exportPhotoBlob({ tripId, photoId, url, encrypted, mime, isOwner = false }) {
-  const pid = normalizePhotoId(photoId);
+export async function awaitPlainBlob(photo, trip) {
+  const tripId = photo?.tripId ?? trip?.id;
+  const pid = normalizePhotoId(photo?.id);
+  const mime = photo?.originalMime || photo?.mime || 'image/jpeg';
+  if (!tripId || !photo?.url) return null;
 
-  if (encrypted && pid != null) {
+  if (pid != null) {
     const cached = _plainBlobs.get(pid);
     if (cached?.size) return cached;
-
-    const fromDom = await blobFromMountedImage(pid);
-    if (fromDom) {
-      rememberPlainBlob(pid, fromDom);
-      return fromDom;
-    }
-
     if (_inflight.has(pid)) {
       await _inflight.get(pid).catch(() => null);
       const warmed = _plainBlobs.get(pid);
       if (warmed?.size) return warmed;
     }
+  }
 
-    if (url) {
-      await resolveObjectUrl({ tripId, photoId: pid, url, mime, isOwner });
+  if (photo.encrypted) {
+    await resolveObjectUrl({ tripId, photoId: pid, url: photo.url, mime, isOwner: false });
+    if (pid != null) {
       const warmed = _plainBlobs.get(pid);
       if (warmed?.size) return warmed;
     }
   }
 
-  const blob = await fetchDecryptedBlob({ tripId, photoId: pid, url, encrypted, mime, isOwner });
-  if (blob?.size && encrypted) rememberPlainBlob(pid, blob);
-  return blob;
-}
-
-function photoUrls(photo) {
-  const urls = [];
-  if (photo?.url) urls.push(photo.url);
-  if (photo?.id) urls.push(`/api/photos/${photo.id}/file`);
-  return urls;
-}
-
-/**
- * Carica il blob in chiaro per export/condivisione (stesso percorso della galleria).
- * @returns {Promise<Blob|null>}
- */
-export async function loadPhotoForShare(photo, trip) {
-  const tripId = photo?.tripId ?? trip?.id;
-  const pid = normalizePhotoId(photo?.id);
-  const mime = photo?.originalMime || photo?.mime || 'image/jpeg';
-  const encrypted = Boolean(photo?.encrypted);
-  const isOwner = false;
-
-  if (pid != null) {
-    const cached = _plainBlobs.get(pid);
-    if (cached?.size) return cached;
-    const fromDom = await blobFromMountedImage(pid);
-    if (fromDom?.size) {
-      rememberPlainBlob(pid, fromDom);
-      return fromDom;
-    }
-  }
-
-  for (const url of photoUrls(photo)) {
-    const blob = await exportPhotoBlob({
-      tripId,
-      photoId: pid,
-      url,
-      encrypted,
-      mime,
-      isOwner,
-    });
+  for (const url of photoFileUrls(photo)) {
+    const blob = await fetchDecryptedBlob({ tripId, photoId: pid, url, mime, isOwner: false });
     if (blob?.size) return blob;
-
-    const fetched = await fetchDecryptedBlob({
-      tripId,
-      photoId: pid,
-      url,
-      encrypted: true,
-      mime,
-      isOwner,
-    });
-    if (fetched?.size) return fetched;
   }
-
   return null;
-}
-
-/** Precarica i blob decifrati per l'export album (dopo il render galleria). */
-export async function prefetchPhotosForExport(photos, trip) {
-  if (!photos?.length || !trip?.id) return;
-  const tripId = trip.id;
-  await getTripKey(tripId, { isOwner: false });
-  for (const photo of photos) {
-    if ((photo.tripId ?? tripId) !== tripId) continue;
-    await loadPhotoForShare(photo, trip);
-  }
 }
 
 /** Svuota cache immagini e chiavi (logout). */
