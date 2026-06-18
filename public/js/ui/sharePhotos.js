@@ -300,6 +300,7 @@ export async function shareAlbum(trip, opts = {}) {
         progress.update(done, total);
       },
     });
+    if (progress.isCancelled()) return;
     progress.close();
     if (!files.length) throw new Error(t('sharePhotos.fetchFail'));
     if (skipped > 0) {
