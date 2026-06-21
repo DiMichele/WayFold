@@ -1,5 +1,5 @@
 /**
- * views/map.js — Mappa Leaflet con pin dai dati geocodificati
+ * views/map.js — Mappa MapLibre GL (Mapbox) con proiezione globo e pin viaggi
  */
 
 import { state, getTrip } from '../state.js';
@@ -11,19 +11,18 @@ import { t, formatDays, getLang } from '../i18n.js';
 import { warmTripLabels } from '../places.js';
 
 let map = null;
-let layer = null;
-let baseTileLayer = null;   // fallback raster
-let baseGlLayer = null;     // MapLibre GL (tile vettoriali, etichette localizzate)
-let rawStylePromise = null; // cache dello stile OpenFreeMap
+let markers = [];
+let mapConfigPromise = null;
+let mapReadyPromise = null;
+let rawStylePromise = null;
 let workerReady = false;
+let usingMapbox = false;
 
-// Stile vettoriale OpenFreeMap (gratuito, senza API key)
 const OFM_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 
-// Tile raster di riserva, usati solo se MapLibre non è disponibile o fallisce
-const RASTER = {
-  light: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+const MAPBOX_STYLE = {
+  light: 'light-v11',
+  dark: 'dark-v11',
 };
 
 function mapTheme() {
@@ -32,11 +31,13 @@ function mapTheme() {
 
 function setMapThemeAttr(theme) {
   const root = document.getElementById('leafletMap');
-  if (root) root.dataset.mapTheme = theme;
+  if (!root) return;
+  root.dataset.mapTheme = theme;
+  root.dataset.mapProvider = usingMapbox ? 'mapbox' : 'ofm';
 }
 
 function mapsAvailable() {
-  return !!(window.maplibregl && window.L && typeof L.maplibreGL === 'function');
+  return !!window.maplibregl;
 }
 
 function ensureWorker() {
@@ -45,7 +46,31 @@ function ensureWorker() {
   workerReady = true;
 }
 
-/** Scarica una sola volta lo stile OFM; restituisce una copia profonda. */
+async function fetchMapConfig() {
+  if (!mapConfigPromise) {
+    mapConfigPromise = fetch('/api/map/config', { credentials: 'same-origin' })
+      .then(r => (r.ok ? r.json() : { token: '' }))
+      .catch(() => ({ token: '' }));
+  }
+  return mapConfigPromise;
+}
+
+function makeMapboxTransform(token) {
+  return (url) => {
+    if (url.startsWith('mapbox://')) {
+      const path = url.slice('mapbox://'.length);
+      if (path.startsWith('styles/')) {
+        return { url: `https://api.mapbox.com/${path}?access_token=${token}` };
+      }
+      return { url: `https://api.mapbox.com/v4/${path}.json?secure&access_token=${token}` };
+    }
+    if (url.includes('api.mapbox.com') && !url.includes('access_token=')) {
+      return { url: `${url}${url.includes('?') ? '&' : '?'}access_token=${token}` };
+    }
+    return { url };
+  };
+}
+
 async function fetchBaseStyle() {
   if (!rawStylePromise) {
     rawStylePromise = fetch(OFM_STYLE_URL).then(r => {
@@ -56,7 +81,6 @@ async function fetchBaseStyle() {
   return JSON.parse(JSON.stringify(await rawStylePromise));
 }
 
-/** Forza tutte le etichette-nome nella lingua dell'app (fallback latin → name). */
 function localizeStyle(style, lang) {
   const want = ['get', `name:${lang}`];
   for (const lyr of style.layers || []) {
@@ -68,50 +92,73 @@ function localizeStyle(style, lang) {
   return style;
 }
 
-function applyRasterFallback() {
-  if (!map) return;
-  if (baseGlLayer) { map.removeLayer(baseGlLayer); baseGlLayer = null; }
-  if (baseTileLayer) map.removeLayer(baseTileLayer);
-  const theme = mapTheme();
-  baseTileLayer = L.tileLayer(RASTER[theme], {
-    subdomains: theme === 'dark' ? 'abcd' : 'abc',
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(map);
-  setMapThemeAttr(theme);
+async function resolveBaseStyle(theme, lang) {
+  const { token } = await fetchMapConfig();
+  if (token) {
+    usingMapbox = true;
+    return {
+      style: `https://api.mapbox.com/styles/v1/mapbox/${MAPBOX_STYLE[theme]}?access_token=${token}`,
+      transformRequest: makeMapboxTransform(token),
+    };
+  }
+  usingMapbox = false;
+  return { style: localizeStyle(await fetchBaseStyle(), lang) };
 }
 
-async function applyBaseTiles() {
+function applyGlobe() {
+  if (!map?.setProjection) return;
+  map.setProjection({ type: 'globe' });
+  if (!map.setFog) return;
+  const dark = mapTheme() === 'dark';
+  map.setFog(dark ? {
+    color: 'rgb(12, 18, 28)',
+    'high-color': 'rgb(36, 52, 72)',
+    'horizon-blend': 0.04,
+    'space-color': 'rgb(8, 12, 20)',
+    'star-intensity': 0.35,
+  } : {
+    color: 'rgb(186, 210, 235)',
+    'high-color': 'rgb(160, 196, 228)',
+    'horizon-blend': 0.02,
+    'space-color': 'rgb(230, 240, 250)',
+    'star-intensity': 0,
+  });
+}
+
+function applyMapLanguage() {
   if (!map) return;
-  setMapThemeAttr(mapTheme());
-
-  if (!mapsAvailable()) { applyRasterFallback(); return; }
-
-  try {
-    ensureWorker();
-    const style = localizeStyle(await fetchBaseStyle(), getLang());
-    if (!map) return;
-    if (baseTileLayer) { map.removeLayer(baseTileLayer); baseTileLayer = null; }
-    if (baseGlLayer && baseGlLayer.getMaplibreMap) {
-      baseGlLayer.getMaplibreMap().setStyle(style);
-    } else {
-      baseGlLayer = L.maplibreGL({ style, pane: 'tilePane' }).addTo(map);
-    }
-  } catch (err) {
-    console.warn('MapLibre non disponibile, uso tile raster:', err);
-    applyRasterFallback();
+  if (usingMapbox && map.setLanguage) {
+    map.setLanguage(getLang());
+    return;
   }
+  applyBaseStyle();
+}
+
+async function applyBaseStyle() {
+  if (!map) return;
+  const theme = mapTheme();
+  setMapThemeAttr(theme);
+  try {
+    const opts = await resolveBaseStyle(theme, getLang());
+    if (!map) return;
+    if (opts.transformRequest) map.setTransformRequest(opts.transformRequest);
+    else map.setTransformRequest(url => ({ url }));
+    map.setStyle(opts.style);
+  } catch (err) {
+    console.warn('Stile mappa non disponibile:', err);
+  }
+}
+
+function onStyleReady() {
+  applyGlobe();
+  applyMapLanguage();
+  setMapThemeAttr(mapTheme());
 }
 
 function watchMapTheme() {
   if (watchMapTheme._on) return;
   watchMapTheme._on = true;
-  new MutationObserver(() => {
-    setMapThemeAttr(mapTheme());
-    // Il tema dark sulla mappa vettoriale è gestito via filtro CSS sul canvas;
-    // solo il fallback raster ha bisogno di scambiare i tile.
-    if (!baseGlLayer) applyRasterFallback();
-  }).observe(document.documentElement, {
+  new MutationObserver(() => applyBaseStyle()).observe(document.documentElement, {
     attributes: true,
     attributeFilter: ['data-theme'],
   });
@@ -120,9 +167,7 @@ function watchMapTheme() {
 function watchMapLang() {
   if (watchMapLang._on) return;
   watchMapLang._on = true;
-  window.addEventListener('wf:langchange', () => {
-    if (baseGlLayer) applyBaseTiles();
-  });
+  window.addEventListener('wf:langchange', () => applyMapLanguage());
 }
 
 function tripIndex(trip) {
@@ -141,7 +186,6 @@ function hasValidGeo(trip) {
     && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180;
 }
 
-/** Separa pin sovrapposti (stessa coordinata arrotondata). */
 function spreadCoords(trips) {
   const groups = new Map();
   for (const trip of trips) {
@@ -176,94 +220,148 @@ function setMapLegend(key) {
 }
 
 function fitMapToTrips(geoTrips) {
-  if (!map || !geoTrips.length) {
-    map?.setView([30, 10], 2);
+  if (!map) return;
+  if (!geoTrips.length) {
+    map.easeTo({ center: [10, 30], zoom: 1.2, duration: 0 });
     return;
   }
   if (geoTrips.length === 1) {
-    const [lat, lon] = [Number(geoTrips[0].lat), Number(geoTrips[0].lon)];
-    map.setView([lat, lon], 8);
+    const lat = Number(geoTrips[0].lat);
+    const lon = Number(geoTrips[0].lon);
+    map.easeTo({ center: [lon, lat], zoom: 8, duration: 0 });
     return;
   }
-  const bounds = L.latLngBounds(geoTrips.map(t => [Number(t.lat), Number(t.lon)]));
-  map.fitBounds(bounds, { padding: [40, 40], maxZoom: 10 });
+  const bounds = new maplibregl.LngLatBounds();
+  geoTrips.forEach(trip => bounds.extend([Number(trip.lon), Number(trip.lat)]));
+  map.fitBounds(bounds, { padding: 40, maxZoom: 10, duration: 0 });
+}
+
+function popupHtml(trip) {
+  return `
+    <div class="lp-dest">${esc(tripDest(trip))}</div>
+    <div class="lp-meta">${esc(joinParts(tripCountry(trip), monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
+    <button type="button" class="lp-btn" data-trip="${trip.id}">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      ${t('map.openGallery')}
+    </button>`;
+}
+
+function bindPopupActions(popup, tripId) {
+  popup.on('open', () => {
+    popup.getElement()?.querySelector('.lp-btn')?.addEventListener('click', () => {
+      map?.getPopup()?.remove();
+      openGallery(tripId);
+    });
+  });
+}
+
+function clearMarkers() {
+  markers.forEach(m => m.remove());
+  markers = [];
+}
+
+function addTripMarker(trip, lat, lon) {
+  const el = document.createElement('div');
+  el.className = 'lf-pin-wrap';
+  el.innerHTML = `<div class="lf-pin">${tripPinNumber(trip)}</div>`;
+
+  const popup = new maplibregl.Popup({
+    offset: 28,
+    maxWidth: '220px',
+    className: 'wf-map-popup',
+    closeButton: true,
+  }).setHTML(popupHtml(trip));
+
+  bindPopupActions(popup, trip.id);
+
+  const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    .setLngLat([lon, lat])
+    .setPopup(popup)
+    .addTo(map);
+
+  markers.push(marker);
+}
+
+async function ensureMap() {
+  if (map) return;
+  if (mapReadyPromise) {
+    await mapReadyPromise;
+    return;
+  }
+
+  mapReadyPromise = (async () => {
+    if (!mapsAvailable()) return;
+    ensureWorker();
+    const container = document.getElementById('leafletMap');
+    if (!container) return;
+
+    const theme = mapTheme();
+    const opts = await resolveBaseStyle(theme, getLang());
+    setMapThemeAttr(theme);
+
+    map = new maplibregl.Map({
+      container,
+      style: opts.style,
+      transformRequest: opts.transformRequest,
+      center: [10, 30],
+      zoom: 1.2,
+      minZoom: 0.5,
+      maxZoom: 18,
+      attributionControl: false,
+      projection: 'globe',
+    });
+
+    map.on('style.load', onStyleReady);
+    map.on('load', () => {
+      onStyleReady();
+      map.resize();
+    });
+
+    watchMapTheme();
+    watchMapLang();
+  })();
+
+  await mapReadyPromise;
 }
 
 export function renderMap() {
   const geoTrips = state.trips.filter(hasValidGeo);
   const coords = spreadCoords(geoTrips);
 
-  if (!map) {
-    map = L.map('leafletMap', {
-      zoomControl: false,
-      attributionControl: false,
-      scrollWheelZoom: true,
-      dragging: true,
-      touchZoom: true,
-      doubleClickZoom: true,
-    });
-    map.setView([30, 10], 2);
-    applyBaseTiles();
-    watchMapTheme();
-    watchMapLang();
-    layer = L.layerGroup().addTo(map);
-  }
+  ensureMap().then(() => {
+    if (!map) return;
 
-  layer.clearLayers();
+    clearMarkers();
 
-  if (geoTrips.length) {
     geoTrips.forEach(trip => {
       const [lat, lon] = coords.get(trip.id);
-      const icon = L.divIcon({
-        className: 'lf-pin-wrap leaflet-div-icon',
-        html: `<div class="lf-pin">${tripPinNumber(trip)}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 30],
-        popupAnchor: [0, -28],
-      });
-
-      const marker = L.marker([lat, lon], { icon }).addTo(layer);
-      marker.bindPopup(`
-        <div class="lp-dest">${esc(tripDest(trip))}</div>
-        <div class="lp-meta">${esc(joinParts(tripCountry(trip), monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
-        <button class="lp-btn" data-trip="${trip.id}">
-          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-          ${t('map.openGallery')}
-        </button>`, { maxWidth: 220, minWidth: 180 });
-
-      marker.on('popupopen', e => {
-        e.popup.getElement().querySelector('.lp-btn')?.addEventListener('click', () => {
-          map.closePopup();
-          openGallery(trip.id);
-        });
-      });
+      addTripMarker(trip, lat, lon);
     });
-  }
 
-  setMapLegend(
-    geoTrips.length
-      ? 'map.legend'
-      : (state.trips.length ? 'map.noGeo' : 'map.addTrip')
-  );
+    setMapLegend(
+      geoTrips.length
+        ? 'map.legend'
+        : (state.trips.length ? 'map.noGeo' : 'map.addTrip')
+    );
 
-  buildRouteList();
+    buildRouteList();
+    warmTripLabels(geoTrips, { onUpdate: () => renderMap() });
 
-  warmTripLabels(geoTrips, { onUpdate: () => renderMap() });
-
-  requestAnimationFrame(() => {
-    map.invalidateSize();
-    fitMapToTrips(geoTrips);
-    setTimeout(() => {
-      map.invalidateSize();
+    requestAnimationFrame(() => {
+      map.resize();
       fitMapToTrips(geoTrips);
-    }, 120);
+      setTimeout(() => {
+        map.resize();
+        fitMapToTrips(geoTrips);
+      }, 120);
+    });
   });
 }
 
 async function openGallery(id) {
   const trip = getTrip(id);
   if (!trip) return;
-  map?.closePopup();
+  map?.getPopup()?.remove();
   if (!trip.photoCount) {
     showToast(t('gal.noPhotos'), 'neutral');
     return;
@@ -276,7 +374,12 @@ function buildRouteList() {
   renderJourneyList(document.getElementById('routeList'), state.trips, {
     onTripClick: trip => {
       if (hasValidGeo(trip) && map) {
-        map.flyTo([Number(trip.lat), Number(trip.lon)], Math.max(map.getZoom(), 6), { duration: 0.6 });
+        const zoom = Math.max(map.getZoom(), 6);
+        map.flyTo({
+          center: [Number(trip.lon), Number(trip.lat)],
+          zoom,
+          duration: 600,
+        });
       }
       openGallery(trip.id);
     },

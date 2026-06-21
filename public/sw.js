@@ -9,7 +9,7 @@
  *    SKIP_WAITING (vedi public/js/pwa.js), evitando reload durante l'uso.
  */
 
-const CACHE_NAME = 'wayfold-shell-v24';
+const CACHE_NAME = 'wayfold-shell-v25';
 const OFFLINE_URL = '/offline.html';
 const LOGIN_URL = '/login';
 
@@ -23,12 +23,9 @@ const APP_SHELL = [
   '/img/icon-192.png',
   '/img/icon-512.png',
   '/manifest.webmanifest',
-  '/vendor/leaflet/leaflet.css',
-  '/vendor/leaflet/leaflet.js',
   '/vendor/maplibre/maplibre-gl.css',
   '/vendor/maplibre/maplibre-gl-csp.js',
   '/vendor/maplibre/maplibre-gl-csp-worker.js',
-  '/vendor/maplibre/leaflet-maplibre-gl.js',
 ];
 
 self.addEventListener('install', (event) => {

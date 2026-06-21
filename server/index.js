@@ -63,8 +63,13 @@ app.use(helmet({
         'https://c.basemaps.cartocdn.com',
         'https://d.basemaps.cartocdn.com',
         'https://tiles.openfreemap.org',
+        'https://api.mapbox.com',
+        'https://a.tiles.mapbox.com',
+        'https://b.tiles.mapbox.com',
+        'https://c.tiles.mapbox.com',
+        'https://d.tiles.mapbox.com',
       ],
-      connectSrc: ["'self'", 'https://tiles.openfreemap.org'],
+      connectSrc: ["'self'", 'https://tiles.openfreemap.org', 'https://api.mapbox.com'],
       workerSrc: ["'self'", 'blob:'],
       objectSrc: ["'none'"],
       frameAncestors: ["'none'"],
@@ -197,6 +202,7 @@ app.use(express.static(config.PUBLIC_DIR, {
 
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/status', require('./routes/status'));
+app.use('/api/map', require('./routes/map'));
 app.use('/api/trips', require('./routes/trips'));
 app.use('/api/photos', require('./routes/photos'));
 app.use('/api/shares', require('./routes/shares'));

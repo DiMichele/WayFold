@@ -55,4 +55,7 @@ module.exports = {
     .split(',')
     .map(s => s.trim())
     .filter(Boolean),
+
+  // Mappa (Mapbox GL — token pubblico con restrizioni URL su mapbox.com)
+  MAPBOX_TOKEN: (process.env.MAPBOX_TOKEN || '').trim(),
 };
