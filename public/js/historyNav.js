@@ -8,11 +8,18 @@
 
 import { state, getTrip } from './state.js';
 import { applyView } from './router.js';
+import { showToast } from './ui/toast.js';
+import { t } from './i18n.js';
 
 const VIEWS = new Set(['road', 'gallery', 'map', 'account']);
+const EXIT_CONFIRM_MS = 2500;
 
 let restoring = false;
 let ready = false;
+let lastSnap = null;
+let exitConfirmPending = false;
+let exitConfirmTimer = null;
+let exitingApp = false;
 
 function isLightboxOpen() {
   return document.getElementById('lb')?.classList.contains('open');
@@ -24,6 +31,53 @@ function isModalOpen() {
 
 function isPaletteOpen() {
   return document.getElementById('palette')?.classList.contains('open');
+}
+
+function isHomeSnap(snap) {
+  const s = normalizeSnap(snap);
+  return s.view === 'road' && !s.overlay;
+}
+
+function disarmExitConfirm() {
+  exitConfirmPending = false;
+  clearTimeout(exitConfirmTimer);
+  exitConfirmTimer = null;
+}
+
+function armExitConfirm() {
+  exitConfirmPending = true;
+  clearTimeout(exitConfirmTimer);
+  exitConfirmTimer = setTimeout(() => { exitConfirmPending = false; }, EXIT_CONFIRM_MS);
+}
+
+function snapUrl(snap) {
+  return `${location.pathname}${location.search}${toHash(snap)}`;
+}
+
+function ensureExitBuffer() {
+  if (!ready || restoring || !isHomeSnap(history.state)) return;
+  if (history.state?.exitBuffer) return;
+  const snap = { ...normalizeSnap(history.state), exitBuffer: true };
+  history.pushState(snap, '', snapUrl(snap));
+  lastSnap = snap;
+}
+
+function handleHomeExitAttempt(toSnap) {
+  if (exitConfirmPending) {
+    disarmExitConfirm();
+    exitingApp = true;
+    lastSnap = toSnap;
+    restoring = false;
+    history.back();
+    return;
+  }
+
+  showToast(t('nav.pressBackAgainToExit'), 'neutral');
+  armExitConfirm();
+  const buffered = { ...normalizeSnap(toSnap), exitBuffer: true };
+  history.pushState(buffered, '', snapUrl(buffered));
+  lastSnap = buffered;
+  void applySnap(toSnap).finally(() => { restoring = false; });
 }
 
 function emptySnap() {
@@ -149,19 +203,27 @@ async function applySnap(snap) {
 
 function pushSnap(snap, { replace = false } = {}) {
   const s = normalizeSnap(snap);
-  const url = `${location.pathname}${location.search}${toHash(s)}`;
+  const url = snapUrl(s);
 
   if (replace) {
     history.replaceState(s, '', url);
   } else {
     const prev = history.state;
     if (prev && snapEquals(normalizeSnap(prev), s)) {
-      applySnap(s);
+      void applySnap(s).then(() => {
+        lastSnap = s;
+        if (isHomeSnap(s)) ensureExitBuffer();
+        else disarmExitConfirm();
+      });
       return;
     }
     history.pushState(s, '', url);
   }
-  applySnap(s);
+  void applySnap(s).then(() => {
+    lastSnap = s;
+    if (!restoring && isHomeSnap(s)) ensureExitBuffer();
+    else if (!isHomeSnap(s)) disarmExitConfirm();
+  });
 }
 
 export function navigate(snap) {
@@ -206,15 +268,34 @@ export function initAppHistory() {
   if (ready) return;
   ready = true;
 
-  window.addEventListener('popstate', (e) => {
+  window.addEventListener('popstate', () => {
+    if (exitingApp) {
+      exitingApp = false;
+      return;
+    }
+
     restoring = true;
-    const snap = e.state ? normalizeSnap(e.state) : (parseHash() || emptySnap());
-    applySnap(snap).finally(() => { restoring = false; });
+    const toSnap = history.state ? normalizeSnap(history.state) : (parseHash() || emptySnap());
+    const fromSnap = lastSnap;
+
+    if (isHomeSnap(fromSnap) && isHomeSnap(toSnap)) {
+      handleHomeExitAttempt(toSnap);
+      return;
+    }
+
+    disarmExitConfirm();
+    void applySnap(toSnap).finally(() => {
+      lastSnap = history.state ? normalizeSnap(history.state) : toSnap;
+      if (isHomeSnap(lastSnap)) ensureExitBuffer();
+      restoring = false;
+    });
   });
 
   const initial = parseHash() || emptySnap();
   restoring = true;
   pushSnap(initial, { replace: true });
+  lastSnap = history.state ? normalizeSnap(history.state) : initial;
+  if (isHomeSnap(lastSnap)) ensureExitBuffer();
   restoring = false;
 }
 
