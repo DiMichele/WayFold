@@ -33,6 +33,65 @@ let _touchStartX = 0;
 let _touchStartY = 0;
 let _touchStartT = 0;
 let _suppressStoryClick = false;
+
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 4;
+let _zoom = { scale: 1, x: 0, y: 0 };
+let _pinchStartDist = 0;
+let _pinchStartScale = 1;
+let _panStart = null;
+let _isPinching = false;
+
+function isZoomed() {
+  return _zoom.scale > 1.02;
+}
+
+function touchDist(touches) {
+  const dx = touches[0].clientX - touches[1].clientX;
+  const dy = touches[0].clientY - touches[1].clientY;
+  return Math.hypot(dx, dy);
+}
+
+function clampPan() {
+  if (!isZoomed()) {
+    _zoom.x = 0;
+    _zoom.y = 0;
+    return;
+  }
+  const img = el('lbImg');
+  const box = el('lbBox');
+  if (!img?.offsetWidth || !box) return;
+  const maxX = Math.max(0, (img.offsetWidth * _zoom.scale - box.clientWidth) / 2);
+  const maxY = Math.max(0, (img.offsetHeight * _zoom.scale - box.clientHeight) / 2);
+  _zoom.x = Math.min(maxX, Math.max(-maxX, _zoom.x));
+  _zoom.y = Math.min(maxY, Math.max(-maxY, _zoom.y));
+}
+
+function applyZoom() {
+  const img = el('lbImg');
+  const box = el('lbBox');
+  const stage = el('lbStage');
+  if (!img) return;
+  if (_zoom.scale <= ZOOM_MIN) {
+    _zoom.scale = ZOOM_MIN;
+    _zoom.x = 0;
+    _zoom.y = 0;
+  }
+  img.style.transform = _zoom.scale > ZOOM_MIN
+    ? `translate(${_zoom.x}px, ${_zoom.y}px) scale(${_zoom.scale})`
+    : '';
+  const active = isZoomed() || _isPinching;
+  img.classList.toggle('lb-zoomed', isZoomed());
+  box?.classList.toggle('lb-zoomed', isZoomed());
+  stage?.classList.toggle('lb-zoom-active', active);
+}
+
+function resetZoom() {
+  _zoom = { scale: 1, x: 0, y: 0 };
+  _panStart = null;
+  _isPinching = false;
+  applyZoom();
+}
 const SHARE_SVG = '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
 const DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
 
@@ -80,6 +139,7 @@ function flashStoryTap(side) {
 }
 
 function handleStoryTap(clientX, target) {
+  if (isZoomed()) return;
   if (!isStoryNavDevice() || _photos.length <= 1) return;
   if (target?.closest?.('button, textarea, input, a, .lb-meta, .lb-note-wrap, .lb-top, .lb-toolbar, .lb-tool, .lb-side, #lbToolbar, #lbActions')) return;
 
@@ -141,13 +201,59 @@ export function initLightbox() {
 
   stage.addEventListener('touchstart', e => {
     if (!el('lb').classList.contains('open')) return;
+    if (e.touches.length === 2) {
+      _isPinching = true;
+      _panStart = null;
+      _pinchStartDist = touchDist(e.touches);
+      _pinchStartScale = _zoom.scale;
+      applyZoom();
+      return;
+    }
+    if (isZoomed()) {
+      _panStart = { x: e.touches[0].clientX - _zoom.x, y: e.touches[0].clientY - _zoom.y };
+    } else {
+      _panStart = null;
+    }
     _touchStartX = e.touches[0].clientX;
     _touchStartY = e.touches[0].clientY;
     _touchStartT = Date.now();
   }, { passive: true });
 
+  stage.addEventListener('touchmove', e => {
+    if (!el('lb').classList.contains('open')) return;
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      _isPinching = true;
+      const dist = touchDist(e.touches);
+      if (_pinchStartDist > 0) {
+        _zoom.scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, _pinchStartScale * (dist / _pinchStartDist)));
+        clampPan();
+        applyZoom();
+      }
+      return;
+    }
+    if (isZoomed() && _panStart && e.touches.length === 1) {
+      e.preventDefault();
+      _zoom.x = e.touches[0].clientX - _panStart.x;
+      _zoom.y = e.touches[0].clientY - _panStart.y;
+      clampPan();
+      applyZoom();
+    }
+  }, { passive: false });
+
   stage.addEventListener('touchend', e => {
     if (!el('lb').classList.contains('open')) return;
+    const wasPinching = _isPinching;
+    if (e.touches.length < 2) {
+      if (_isPinching && _zoom.scale < 1.05) resetZoom();
+      _isPinching = false;
+      _pinchStartDist = 0;
+    }
+    if (e.touches.length === 0) _panStart = null;
+    applyZoom();
+
+    if (wasPinching || isZoomed()) return;
+
     const dx = e.changedTouches[0].clientX - _touchStartX;
     const dy = e.changedTouches[0].clientY - _touchStartY;
     const dt = Date.now() - _touchStartT;
@@ -180,6 +286,7 @@ export function openLightbox(trip, photos, idx = 0, { onChanged = null, onClose 
 export function closeLightbox() {
   el('lb').classList.remove('open');
   const img = el('lbImg');
+  resetZoom();
   img.style.display = 'none';
   img.removeAttribute('src');
   delete img.dataset.photoId;
@@ -218,6 +325,7 @@ function render() {
     cv.style.display = 'none';
     img.style.display = '';
     if (img.dataset.photoId !== String(ph.id)) {
+      resetZoom();
       img.dataset.photoId = String(ph.id);
       mountImage(img, { tripId: ph.tripId, photoId: ph.id, url: ph.url, encrypted: ph.encrypted, mime: ph.mime });
     }
