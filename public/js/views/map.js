@@ -1,5 +1,5 @@
 /**
- * views/map.js — Mappa MapLibre GL (Mapbox) con proiezione globo e pin viaggi
+ * views/map.js — Mappa MapLibre GL (OpenFreeMap / Mapbox opz.) con globo e pin viaggi
  */
 
 import { state, getTrip } from '../state.js';
@@ -108,6 +108,7 @@ async function resolveBaseStyle(theme, lang) {
 function applyGlobe() {
   if (!map?.setProjection) return;
   map.setProjection({ type: 'globe' });
+  if (map.setRenderWorldCopies) map.setRenderWorldCopies(false);
   if (!map.setFog) return;
   const dark = mapTheme() === 'dark';
   map.setFog(dark ? {
@@ -222,7 +223,7 @@ function setMapLegend(key) {
 function fitMapToTrips(geoTrips) {
   if (!map) return;
   if (!geoTrips.length) {
-    map.easeTo({ center: [10, 30], zoom: 1.2, duration: 0 });
+    map.easeTo({ center: [10, 20], zoom: 1.4, duration: 0 });
     return;
   }
   if (geoTrips.length === 1) {
@@ -233,7 +234,7 @@ function fitMapToTrips(geoTrips) {
   }
   const bounds = new maplibregl.LngLatBounds();
   geoTrips.forEach(trip => bounds.extend([Number(trip.lon), Number(trip.lat)]));
-  map.fitBounds(bounds, { padding: 40, maxZoom: 10, duration: 0 });
+  map.fitBounds(bounds, { padding: 40, minZoom: 1, maxZoom: 10, duration: 0 });
 }
 
 function popupHtml(trip) {
@@ -303,12 +304,13 @@ async function ensureMap() {
       container,
       style: opts.style,
       transformRequest: opts.transformRequest,
-      center: [10, 30],
-      zoom: 1.2,
-      minZoom: 0.5,
+      center: [10, 20],
+      zoom: 1.4,
+      minZoom: 1,
       maxZoom: 18,
       attributionControl: false,
       projection: 'globe',
+      renderWorldCopies: false,
     });
 
     map.on('style.load', onStyleReady);
