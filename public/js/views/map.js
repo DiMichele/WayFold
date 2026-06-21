@@ -109,6 +109,8 @@ function applyGlobe() {
   if (!map?.setProjection) return;
   map.setProjection({ type: 'globe' });
   if (map.setRenderWorldCopies) map.setRenderWorldCopies(false);
+  if (map.getPitch() !== 0) map.setPitch(0);
+  if (map.getBearing() !== 0) map.setBearing(0);
   if (!map.setFog) return;
   const dark = mapTheme() === 'dark';
   map.setFog(dark ? {
@@ -152,8 +154,17 @@ async function applyBaseStyle() {
 
 function onStyleReady() {
   applyGlobe();
-  applyMapLanguage();
+  if (usingMapbox && map?.setLanguage) map.setLanguage(getLang());
   setMapThemeAttr(mapTheme());
+}
+
+function configureMapInteraction() {
+  if (!map) return;
+  map.dragRotate.disable();
+  map.touchPitch.disable();
+  map.keyboard.disableRotation();
+  map.touchZoomRotate?.disableRotation?.();
+  map.getCanvas()?.addEventListener('contextmenu', e => e.preventDefault());
 }
 
 function watchMapTheme() {
@@ -223,7 +234,7 @@ function setMapLegend(key) {
 function fitMapToTrips(geoTrips) {
   if (!map) return;
   if (!geoTrips.length) {
-    map.easeTo({ center: [10, 20], zoom: 1.4, duration: 0 });
+    map.easeTo({ center: [10, 20], zoom: 1, pitch: 0, bearing: 0, duration: 0 });
     return;
   }
   if (geoTrips.length === 1) {
@@ -234,7 +245,7 @@ function fitMapToTrips(geoTrips) {
   }
   const bounds = new maplibregl.LngLatBounds();
   geoTrips.forEach(trip => bounds.extend([Number(trip.lon), Number(trip.lat)]));
-  map.fitBounds(bounds, { padding: 40, minZoom: 1, maxZoom: 10, duration: 0 });
+  map.fitBounds(bounds, { padding: 40, minZoom: 0.8, maxZoom: 10, duration: 0 });
 }
 
 function popupHtml(trip) {
@@ -305,16 +316,23 @@ async function ensureMap() {
       style: opts.style,
       transformRequest: opts.transformRequest,
       center: [10, 20],
-      zoom: 1.4,
-      minZoom: 1,
+      zoom: 1,
+      minZoom: 0.8,
       maxZoom: 18,
+      pitch: 0,
+      bearing: 0,
       attributionControl: false,
-      projection: 'globe',
+      projection: { type: 'globe' },
       renderWorldCopies: false,
+      dragRotate: false,
+      pitchWithRotate: false,
+      touchPitch: false,
     });
 
+    configureMapInteraction();
     map.on('style.load', onStyleReady);
     map.on('load', () => {
+      configureMapInteraction();
       onStyleReady();
       map.resize();
     });
@@ -380,6 +398,8 @@ function buildRouteList() {
         map.flyTo({
           center: [Number(trip.lon), Number(trip.lat)],
           zoom,
+          pitch: 0,
+          bearing: 0,
           duration: 600,
         });
       }
