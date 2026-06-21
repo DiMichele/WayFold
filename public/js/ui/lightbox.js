@@ -336,9 +336,16 @@ export function initLightbox() {
     }
 
     if (Math.abs(dx) < 14 && Math.abs(dy) < 14 && dt < 400) {
-      _suppressStoryClick = true;
-      handleStoryTap(e.changedTouches[0].clientX, e.target);
-      setTimeout(() => { _suppressStoryClick = false; }, 350);
+      const tapX = e.changedTouches[0].clientX;
+      const tapY = e.changedTouches[0].clientY;
+      const tapTarget = e.target;
+      if (tryDoubleTap(tapX, tapY, tapTarget)) {
+        clearSingleTapTimer();
+        _suppressStoryClick = true;
+        setTimeout(() => { _suppressStoryClick = false; }, 350);
+        return;
+      }
+      scheduleStoryTap(tapX, tapTarget);
     }
   }, { passive: true });
 }
