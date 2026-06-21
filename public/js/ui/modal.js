@@ -17,6 +17,7 @@ import { bindTripPlaceSuggest } from './placeSuggest.js';
 import {
   t, getLang, getMonthValues, getMonthLabels, getTripTypeValues, displayTripType,
 } from '../i18n.js';
+import { pushOverlay, notifyOverlayClosed, isRestoringHistory } from '../historyNav.js';
 
 
 
@@ -48,6 +49,10 @@ export function initModal() {
 
 
 
+export function isModalOpen() {
+  return document.getElementById('modal').classList.contains('open');
+}
+
 export function openModal({ title, body, onClose = null }) {
 
   _onClose = onClose;
@@ -64,17 +69,23 @@ export function openModal({ title, body, onClose = null }) {
 
   document.body.classList.add('modal-open');
 
+  if (!isRestoringHistory()) pushOverlay('modal');
+
 }
 
 
 
-export function closeModal() {
+export function closeModal(fromHistory = false, { skipHistory = false } = {}) {
+
+  if (!isModalOpen()) return;
 
   document.getElementById('modal').classList.remove('open');
 
   document.body.classList.remove('modal-open');
 
   if (_onClose) { const fn = _onClose; _onClose = null; fn(); }
+
+  if (!fromHistory && !skipHistory) notifyOverlayClosed();
 
 }
 

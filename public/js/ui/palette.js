@@ -7,11 +7,13 @@
 
 import { state } from '../state.js';
 import { switchView } from '../router.js';
+import { goToGallery } from '../historyNav.js';
 import { reloadTrips } from '../data.js';
 import { openTripForm } from './modal.js';
 import { joinParts, monthYear, esc } from '../utils.js';
 import { mountCover } from './photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
+import { pushOverlay, notifyOverlayClosed, isRestoringHistory } from '../historyNav.js';
 
 const el = id => document.getElementById(id);
 
@@ -62,6 +64,10 @@ export function initPalette() {
   });
 }
 
+export function isPaletteOpen() {
+  return el('palette').classList.contains('open');
+}
+
 export function openPalette() {
   if (state.syncBlocked) return;
   const input = el('paletteInput');
@@ -75,11 +81,14 @@ export function openPalette() {
     input.focus({ preventScroll: true });
     renderResults('');
   }, 60);
+  if (!isRestoringHistory()) pushOverlay('palette');
 }
 
-export function closePalette() {
+export function closePalette(fromHistory = false) {
+  if (!isPaletteOpen()) return;
   el('palette').classList.remove('open');
   el('paletteInput').blur();
+  if (!fromHistory) notifyOverlayClosed();
 }
 
 // ─── Matching ──────────────────────────────────────────────────────────────
@@ -206,8 +215,7 @@ function pick(i) {
   if (!item) return;
   closePalette();
   if (item.type === 'trip') {
-    state.galTripId = item.trip.id;
-    switchView('gallery');
+    goToGallery(item.trip.id);
   } else {
     item.run();
   }

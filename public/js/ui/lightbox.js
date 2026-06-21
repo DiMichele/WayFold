@@ -12,6 +12,7 @@ import { reloadTrips } from '../data.js';
 import { shareSinglePhoto, downloadSinglePhoto, isMobileShareDevice } from './sharePhotos.js';
 import { mountImage } from './photoDisplay.js';
 import { t } from '../i18n.js';
+import { pushOverlay, notifyOverlayClosed, isRestoringHistory } from '../historyNav.js';
 
 let _trip = null;
 let _photos = [];
@@ -36,11 +37,16 @@ let _suppressStoryClick = false;
 
 const ZOOM_MIN = 1;
 const ZOOM_MAX = 4;
+const DOUBLE_TAP_ZOOM = 2.5;
+const DOUBLE_TAP_MS = 300;
+const DOUBLE_TAP_DIST = 28;
 let _zoom = { scale: 1, x: 0, y: 0 };
 let _pinchStartDist = 0;
 let _pinchStartScale = 1;
 let _panStart = null;
 let _isPinching = false;
+let _lastTap = { x: 0, y: 0, t: 0 };
+let _singleTapTimer = null;
 
 function isZoomed() {
   return _zoom.scale > 1.02;
@@ -90,7 +96,65 @@ function resetZoom() {
   _zoom = { scale: 1, x: 0, y: 0 };
   _panStart = null;
   _isPinching = false;
+  _lastTap.t = 0;
+  clearSingleTapTimer();
   applyZoom();
+}
+
+function clearSingleTapTimer() {
+  if (_singleTapTimer) {
+    clearTimeout(_singleTapTimer);
+    _singleTapTimer = null;
+  }
+}
+
+function isBlockedZoomTarget(target) {
+  return target?.closest?.('button, textarea, input, a, .lb-meta, .lb-note-wrap, .lb-top, .lb-toolbar, .lb-tool, .lb-side, #lbToolbar, #lbActions');
+}
+
+function zoomAtPoint(clientX, clientY, newScale) {
+  const img = el('lbImg');
+  if (!img?.offsetWidth || img.style.display === 'none') return;
+  const rect = img.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  const ratio = newScale / _zoom.scale;
+  const dx = clientX - cx;
+  const dy = clientY - cy;
+  _zoom.x = dx - dx * ratio + _zoom.x * ratio;
+  _zoom.y = dy - dy * ratio + _zoom.y * ratio;
+  _zoom.scale = newScale;
+  clampPan();
+  applyZoom();
+}
+
+function handleDoubleTap(clientX, clientY, target) {
+  if (isBlockedZoomTarget(target)) return false;
+  if (isZoomed()) resetZoom();
+  else zoomAtPoint(clientX, clientY, DOUBLE_TAP_ZOOM);
+  return true;
+}
+
+function tryDoubleTap(clientX, clientY, target) {
+  const now = Date.now();
+  const dx = clientX - _lastTap.x;
+  const dy = clientY - _lastTap.y;
+  if (_lastTap.t && now - _lastTap.t < DOUBLE_TAP_MS && Math.hypot(dx, dy) < DOUBLE_TAP_DIST) {
+    _lastTap.t = 0;
+    return handleDoubleTap(clientX, clientY, target);
+  }
+  _lastTap = { x: clientX, y: clientY, t: now };
+  return false;
+}
+
+function scheduleStoryTap(clientX, target) {
+  clearSingleTapTimer();
+  _suppressStoryClick = true;
+  _singleTapTimer = setTimeout(() => {
+    _singleTapTimer = null;
+    handleStoryTap(clientX, target);
+    setTimeout(() => { _suppressStoryClick = false; }, 50);
+  }, DOUBLE_TAP_MS);
 }
 const SHARE_SVG = '<svg viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>';
 const DOWNLOAD_SVG = '<svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>';
@@ -199,6 +263,14 @@ export function initLightbox() {
     handleStoryTap(e.clientX, e.target);
   });
 
+  stage.addEventListener('dblclick', e => {
+    if (!el('lb').classList.contains('open')) return;
+    e.preventDefault();
+    clearSingleTapTimer();
+    _lastTap.t = 0;
+    handleDoubleTap(e.clientX, e.clientY, e.target);
+  });
+
   stage.addEventListener('touchstart', e => {
     if (!el('lb').classList.contains('open')) return;
     if (e.touches.length === 2) {
@@ -271,7 +343,11 @@ export function initLightbox() {
   }, { passive: true });
 }
 
-export function openLightbox(trip, photos, idx = 0, { onChanged = null, onClose = null, canWrite = true } = {}) {
+export function isLightboxOpen() {
+  return el('lb').classList.contains('open');
+}
+
+export function openLightbox(trip, photos, idx = 0, { onChanged = null, onClose = null, canWrite = true, fromHistory = false } = {}) {
   if (!photos.length) return;
   _trip = trip;
   _photos = photos;
@@ -281,9 +357,13 @@ export function openLightbox(trip, photos, idx = 0, { onChanged = null, onClose 
   _idx = Math.min(Math.max(0, idx), photos.length - 1);
   el('lb').classList.add('open');
   render();
+  if (!fromHistory && !isRestoringHistory()) {
+    pushOverlay('lightbox', { lbTripId: trip.id, lbIdx: _idx });
+  }
 }
 
-export function closeLightbox() {
+export function closeLightbox(fromHistory = false) {
+  if (!isLightboxOpen()) return;
   el('lb').classList.remove('open');
   const img = el('lbImg');
   resetZoom();
@@ -298,6 +378,7 @@ export function closeLightbox() {
     _onClose = null;
     fn();
   }
+  if (!fromHistory) notifyOverlayClosed();
 }
 
 function prev() { _idx = (_idx - 1 + _photos.length) % _photos.length; render(); }

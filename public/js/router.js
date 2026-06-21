@@ -9,13 +9,13 @@ import { renderMap } from './views/map.js';
 import { renderAccount } from './views/account.js';
 import { refreshJourneyScrollsInView } from './ui/journeyScroll.js';
 
-export function switchView(name) {
+/** Applica la vista senza toccare la history (usato da historyNav). */
+export function applyView(name) {
   if (state.syncBlocked) return;
   state.view = name;
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   const view = document.getElementById('view-' + name);
   view.classList.add('active');
-  // Riavvia l'animazione di ingresso della vista
   view.classList.remove('entering');
   void view.offsetWidth;
   view.classList.add('entering');
@@ -25,6 +25,21 @@ export function switchView(name) {
   window.scrollTo({ top: 0, behavior: 'instant' });
   renderCurrentView();
   refreshJourneyScrollsInView(name);
+}
+
+export function switchView(name) {
+  if (state.syncBlocked) return;
+  import('./historyNav.js').then(h => {
+    if (h.isRestoringHistory()) {
+      applyView(name);
+      return;
+    }
+    h.navigate({
+      view: name,
+      galTripId: state.galTripId,
+      overlay: null,
+    });
+  });
 }
 
 export function renderCurrentView() {

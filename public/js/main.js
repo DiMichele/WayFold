@@ -23,6 +23,7 @@ import { initPasswordToggle, refreshPasswordToggleLabels } from './ui/passwordTo
 import { initJourneyScrolls, refreshJourneyScrollsInView } from './ui/journeyScroll.js';
 import { initTooltips } from './ui/tooltip.js';
 import { initPwa, syncPwaInstall } from './pwa.js';
+import { initAppHistory } from './historyNav.js';
 import { clearPlaceLabels, warmTripLabels } from './places.js';
 import { cryptoAutoUnlock, cryptoOnLogout } from './crypto/authCrypto.js';
 import { prefetchTripKeys } from './crypto/keyStore.js';
@@ -40,8 +41,12 @@ function initNav() {
       openTripForm({
         onSaved: async saved => {
           await reloadTrips({ silent: true, render: false });
-          if (state.view === 'gallery') state.galTripId = saved.id;
-          renderCurrentView();
+          if (state.view === 'gallery') {
+            const { goToGallery } = await import('./historyNav.js');
+            goToGallery(saved.id);
+          } else {
+            renderCurrentView();
+          }
         },
       });
       btn.blur();
@@ -154,8 +159,7 @@ async function startApp(user) {
 
   await cryptoAutoUnlock(user);
   await reloadTrips({ silent: true, render: false });
-  renderCurrentView();
-  refreshJourneyScrollsInView(state.view);
+  initAppHistory();
   updateSyncGate();
   prefetchTripKeys(state.trips).catch(() => {});
 

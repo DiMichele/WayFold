@@ -5,6 +5,7 @@
 import { state, getTrip, visibleTrips } from '../state.js';
 import { joinParts, monthYear, esc, tripDest, tripCountry, mountPhotoEmptyThumb } from '../utils.js';
 import { switchView } from '../router.js';
+import { goToGallery } from '../historyNav.js';
 import { reloadTrips } from '../data.js';
 import { openTripForm } from '../ui/modal.js';
 import { confirmDeleteTrip } from '../ui/tripDelete.js';
@@ -20,8 +21,7 @@ export function initRoad() {
   el('heroEl').addEventListener('click', () => {
     const trip = state.trips[state.heroIdx];
     if (!trip) return;
-    state.galTripId = trip.id;
-    switchView('gallery');
+    goToGallery(trip.id);
   });
 
   el('heroPrev').addEventListener('click', e => {
@@ -41,8 +41,7 @@ export function initRoad() {
 
   el('dboxGal').addEventListener('click', () => {
     if (state.selTripId === null) return;
-    state.galTripId = state.selTripId;
-    switchView('gallery');
+    goToGallery(state.selTripId);
   });
 
   el('dboxMap').addEventListener('click', () => switchView('map'));
@@ -224,8 +223,7 @@ function buildJourneyList() {
     onTripClick: trip => {
       const idx = state.trips.findIndex(tr => tr.id === trip.id);
       if (idx >= 0) state.heroIdx = idx;
-      state.galTripId = trip.id;
-      switchView('gallery');
+      goToGallery(trip.id);
     },
   });
 }

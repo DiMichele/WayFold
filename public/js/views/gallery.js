@@ -17,6 +17,7 @@ import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 import { mountImage, mountCover } from '../ui/photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
+import { goToGallery, historyBack } from '../historyNav.js';
 
 const el = id => document.getElementById(id);
 
@@ -51,7 +52,7 @@ function photosToLightboxItems(trip, photos) {
 }
 
 /** Apre il lightbox direttamente (es. dalla mappa) senza passare dal picker galleria. */
-export async function openTripPhotosFromMap(trip, { idx = 0, onClose = null } = {}) {
+export async function openTripPhotosFromMap(trip, { idx = 0, onClose = null, fromHistory = false } = {}) {
   if (!trip?.photoCount) return false;
   let photos;
   try {
@@ -65,6 +66,7 @@ export async function openTripPhotosFromMap(trip, { idx = 0, onClose = null } = 
     onChanged: () => reloadTrips({ silent: true, render: false }),
     canWrite: tripCanUpload(trip),
     onClose,
+    fromHistory,
   });
   return true;
 }
@@ -100,11 +102,11 @@ function openAlbumShareSheet(trip, onShareAlbum) {
       <button type="button" class="modal-btn s gal-share-sheet-btn" id="galSharePhotos">${esc(t('gal.shareAlbum'))}</button>
     </div>`;
   body.querySelector('#galShareInvite').addEventListener('click', () => {
-    closeModal();
+    closeModal(false, { skipHistory: true });
     openShareModal(trip);
   });
   body.querySelector('#galSharePhotos').addEventListener('click', () => {
-    closeModal();
+    closeModal(false, { skipHistory: true });
     onShareAlbum();
   });
   openModal({ title: t('gal.share'), body });
@@ -368,7 +370,7 @@ function buildPicker(c) {
       </div>
       <span class="gal-pick-flag">${rowTrip.flag || ''}</span>`);
 
-    row.onclick = () => { state.galTripId = rowTrip.id; renderGallery(); };
+    row.onclick = () => goToGallery(rowTrip.id);
     list.appendChild(row);
   });
 
@@ -387,8 +389,7 @@ async function redeemCode(raw) {
     }
     await reloadTrips({ silent: true, render: false });
     showToast(result.alreadyMember ? t('gal.redeemAlready') : t('gal.redeemOk'));
-    state.galTripId = result.trip.id;
-    renderGallery();
+    goToGallery(result.trip.id);
   } catch (e) {
     if (e.status === 400) showToast(t('gal.redeemOwn'), 'error');
     else showToast(e.message || t('gal.redeemFail'), 'error');
@@ -418,7 +419,7 @@ async function buildPhotos(c, trip) {
   const back = document.createElement('button');
   back.className = 'gal-back';
   back.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>';
-  back.onclick = () => { state.galTripId = null; renderGallery(); };
+  back.onclick = () => historyBack();
   headMain.appendChild(back);
 
   const tw = document.createElement('div');
@@ -529,10 +530,7 @@ async function buildPhotos(c, trip) {
     setTip(delBtn, t('trip.delete'), { position: 'top' });
     delBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg><span>${t('trip.delete')}</span>`;
     delBtn.onclick = () => confirmDeleteTrip(trip, {
-      onDeleted: () => {
-        state.galTripId = null;
-        renderGallery();
-      },
+      onDeleted: () => goToGallery(null),
     });
     toolbar.appendChild(delBtn);
   }
