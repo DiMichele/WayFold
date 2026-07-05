@@ -3,11 +3,11 @@
  */
 
 import { state, getTrip } from '../state.js';
-import { tripDest } from '../utils.js';
+import { joinParts, monthYear, esc, tripDest, tripCountry } from '../utils.js';
 import { openTripPhotosFromMap } from './gallery.js';
 import { renderJourneyList } from './journeyList.js';
 import { showToast } from '../ui/toast.js';
-import { t, getLang } from '../i18n.js';
+import { t, formatDays, getLang } from '../i18n.js';
 import { warmTripLabels } from '../places.js';
 
 let map = null;
@@ -253,6 +253,28 @@ function clearMarkers() {
   markers = [];
 }
 
+function closeMapPopups() {
+  markers.forEach(m => m.getPopup()?.remove());
+}
+
+function buildPopupContent(trip, popup) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = `
+    <div class="lp-dest">${esc(tripDest(trip))}</div>
+    <div class="lp-meta">${esc(joinParts(tripCountry(trip), monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
+    <button type="button" class="lp-btn">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+      ${t('map.openGallery')}
+    </button>`;
+  wrap.querySelector('.lp-btn')?.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    popup.remove();
+    openGallery(trip.id);
+  });
+  return wrap;
+}
+
 function addTripMarker(trip, lat, lon) {
   const el = document.createElement('button');
   el.type = 'button';
@@ -260,18 +282,35 @@ function addTripMarker(trip, lat, lon) {
   el.setAttribute('aria-label', tripDest(trip));
   el.innerHTML = `<div class="lf-pin">${tripPinNumber(trip)}</div>`;
 
+  const popup = new maplibregl.Popup({
+    offset: 28,
+    maxWidth: '220px',
+    className: 'wf-map-popup',
+    closeButton: true,
+    closeOnClick: true,
+  });
+
+  popup.setDOMContent(buildPopupContent(trip, popup));
+
+  popup.on('open', () => {
+    markers.forEach(m => {
+      if (m.getPopup() && m.getPopup() !== popup) m.getPopup().remove();
+    });
+  });
+
+  const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+    .setLngLat([lon, lat])
+    .setPopup(popup)
+    .addTo(map);
+
   const stopMap = e => e.stopPropagation();
   el.addEventListener('mousedown', stopMap);
   el.addEventListener('touchstart', stopMap, { passive: true });
   el.addEventListener('click', e => {
     e.preventDefault();
     e.stopPropagation();
-    openGallery(trip.id);
+    marker.togglePopup();
   });
-
-  const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-    .setLngLat([lon, lat])
-    .addTo(map);
 
   markers.push(marker);
 }
@@ -363,6 +402,7 @@ export function renderMap() {
 async function openGallery(id) {
   const trip = getTrip(id);
   if (!trip) return;
+  closeMapPopups();
   if (!trip.photoCount) {
     showToast(t('gal.noPhotos'), 'neutral');
     return;
