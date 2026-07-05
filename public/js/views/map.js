@@ -363,7 +363,6 @@ export function renderMap() {
 async function openGallery(id) {
   const trip = getTrip(id);
   if (!trip) return;
-  map?.getPopup()?.remove();
   if (!trip.photoCount) {
     showToast(t('gal.noPhotos'), 'neutral');
     return;
