@@ -1932,7 +1932,8 @@ body.sync-blocked .tab,body.sync-blocked .side-link,body.sync-blocked .nav-new-t
 /* pin mappa */
 .lf-pin-wrap{
   width:30px;height:30px;
-  cursor:pointer;
+  padding:0;border:none;background:none;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
 }
 .lf-pin-wrap{background:none;border:none}
 .lf-pin{

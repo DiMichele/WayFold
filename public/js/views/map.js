@@ -3,11 +3,11 @@
  */
 
 import { state, getTrip } from '../state.js';
-import { joinParts, monthYear, esc, tripDest, tripCountry } from '../utils.js';
+import { tripDest } from '../utils.js';
 import { openTripPhotosFromMap } from './gallery.js';
 import { renderJourneyList } from './journeyList.js';
 import { showToast } from '../ui/toast.js';
-import { t, formatDays, getLang } from '../i18n.js';
+import { t, getLang } from '../i18n.js';
 import { warmTripLabels } from '../places.js';
 
 let map = null;
@@ -248,47 +248,24 @@ function fitMapToTrips(geoTrips) {
   map.fitBounds(bounds, { padding: 40, minZoom: 0.8, maxZoom: 10, duration: 0 });
 }
 
-function popupHtml(trip) {
-  return `
-    <div class="lp-dest">${esc(tripDest(trip))}</div>
-    <div class="lp-meta">${esc(joinParts(tripCountry(trip), monthYear(trip), trip.days ? formatDays(trip.days) : null))}</div>
-    <button type="button" class="lp-btn" data-trip="${trip.id}">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
-      ${t('map.openGallery')}
-    </button>`;
-}
-
-function bindPopupActions(popup, tripId) {
-  popup.on('open', () => {
-    popup.getElement()?.querySelector('.lp-btn')?.addEventListener('click', () => {
-      map?.getPopup()?.remove();
-      openGallery(tripId);
-    });
-  });
-}
-
-function clearMarkers() {
-  markers.forEach(m => m.remove());
-  markers = [];
-}
-
 function addTripMarker(trip, lat, lon) {
-  const el = document.createElement('div');
+  const el = document.createElement('button');
+  el.type = 'button';
   el.className = 'lf-pin-wrap';
+  el.setAttribute('aria-label', tripDest(trip));
   el.innerHTML = `<div class="lf-pin">${tripPinNumber(trip)}</div>`;
 
-  const popup = new maplibregl.Popup({
-    offset: 28,
-    maxWidth: '220px',
-    className: 'wf-map-popup',
-    closeButton: true,
-  }).setHTML(popupHtml(trip));
-
-  bindPopupActions(popup, trip.id);
+  const stopMap = e => e.stopPropagation();
+  el.addEventListener('mousedown', stopMap);
+  el.addEventListener('touchstart', stopMap, { passive: true });
+  el.addEventListener('click', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    openGallery(trip.id);
+  });
 
   const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
     .setLngLat([lon, lat])
-    .setPopup(popup)
     .addTo(map);
 
   markers.push(marker);
