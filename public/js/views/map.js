@@ -248,6 +248,11 @@ function fitMapToTrips(geoTrips) {
   map.fitBounds(bounds, { padding: 40, minZoom: 0.8, maxZoom: 10, duration: 0 });
 }
 
+function clearMarkers() {
+  markers.forEach(m => m.remove());
+  markers = [];
+}
+
 function addTripMarker(trip, lat, lon) {
   const el = document.createElement('button');
   el.type = 'button';
