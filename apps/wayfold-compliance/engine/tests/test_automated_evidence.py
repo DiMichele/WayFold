@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from engine.api import Handler
+from engine.automated_evidence import pages as auto_ev_pages
 from engine.automated_evidence.adapters import ProwlerJsonAdapter
 from engine.automated_evidence.demo import run_demo_ingest, seed_demo_connector
 from engine.automated_evidence.domain import (
@@ -23,6 +24,7 @@ from engine.automated_evidence.domain import (
 from engine.automated_evidence.service import AutomatedEvidenceService
 from engine.automated_evidence.store import AutomatedEvidenceStore
 from engine.program_loader import load_program_snapshot
+from engine.ui_shell import WAYFOLD_CSS
 
 FIXTURES = ROOT / "engine" / "fixtures"
 PROWLER_FIXTURE = FIXTURES / "automated_evidence" / "prowler-aws-sample.json"
@@ -218,6 +220,18 @@ class AutomatedEvidenceTests(unittest.TestCase):
         out = run_demo_ingest(self.store, program=self.program)
         self.assertGreaterEqual(out["first"].created, 1)
         self.assertGreaterEqual(out["second"].skipped_duplicate, 1)
+
+    def test_pages_use_wayfold_ui_shell(self):
+        html = auto_ev_pages.connectors_page([], "superuser=1")
+        self.assertIn("WayFold", html)
+        self.assertIn("--acc:#d97b5c", html)
+        self.assertIn("Jost", html)
+        self.assertIn(WAYFOLD_CSS[:40], html)
+        self.assertNotIn("Segoe UI", html)
+        self.assertNotIn("#f6f7f9", html)
+        ev_html = auto_ev_pages.evidence_page([], "superuser=1")
+        self.assertIn("WayFold", ev_html)
+        self.assertIn("--acc:#d97b5c", ev_html)
 
 
 if __name__ == "__main__":

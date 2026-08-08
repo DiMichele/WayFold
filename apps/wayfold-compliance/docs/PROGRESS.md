@@ -7,8 +7,8 @@
 **Phase 3 CLOSED (verification PASS)** — vedi `PHASE3-VERIFICATION.md`.  
 **Phase 4 CLOSED (verification PASS)** — vedi `PHASE4-VERIFICATION.md`.  
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
-**PHASE 6 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION.**  
-Non dichiarare Phase 6 COMPLETE fino a PASS + tag orchestratore.
+**Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
+Prossima azione: orchestratore FINAL REGRESSION GATE + merge su main (tag `phase-6-complete` post PASS indipendente).
 
 ## Completato
 
@@ -20,15 +20,14 @@ Non dichiarare Phase 6 COMPLETE fino a PASS + tag orchestratore.
 - Phase 3 Consultant UX verified (`PHASE3-VERIFICATION.md` → **PASS**)
 - Phase 4 Regulatory Intelligence verified (`PHASE4-VERIFICATION.md` → **PASS**)
 - Phase 5 AI Assistance verified (`PHASE5-VERIFICATION.md` → **PASS**)
-  - `AIProvider` + human review; tenant AI default off
-  - Fix verification: no cross-tenant program context on regulatory AI suggest
-- Phase 6 Automated Evidence implemented in `engine/automated_evidence/`:
+- Phase 6 Automated Evidence verified (`PHASE6-VERIFICATION.md` → **PASS**)
   - `ProwlerJsonAdapter` (fixture-compatible; live scan ENVIRONMENT BLOCKER on Windows)
   - Connector config, normalize finding, map → canonical control (SUPPORTING)
   - `AutomatedEvidenceRecord` with provenance + human review
   - Idempotent ingest / stale on change; scanner failure isolated
   - Technical PASS does **not** mutate AppliedControl / readiness
-  - tests: 9 OK (`test_automated_evidence`)
+  - UI pages su `engine/ui_shell.py` (fix verification: no generic admin shell)
+  - tests: 10 OK (`test_automated_evidence`)
 - Docs: `unified-compliance.md`, `consultant-ux.md`, `regulatory-watcher.md`, `ai-assistance.md`, `automated-evidence.md`, `data-model.md`
 
 ## Cosa funziona
@@ -39,15 +38,15 @@ Non dichiarare Phase 6 COMPLETE fino a PASS + tag orchestratore.
 - Isolation portfolio + regulatory impact per actor tenant
 - Regulatory demo cycle v1→v2 senza rete esterna
 - AI suggest endpoints con gate tenant + AI disabled-by-default
-- Auto-evidence ingest da fixture Prowler + review umana
+- Auto-evidence ingest da fixture Prowler + review umana + shell WayFold
 
 ## Cosa non funziona / gate aperti
 
-- Phase 6 non ancora chiusa da verification report indipendente
 - Live Prowler scan non eseguibile in questo ambiente Windows (path length) — fixture adapter by design
 - Provider LLM reale non configurato (heuristic locale by design overnight)
 - Optimistic locking integer `version` su AppliedControl assente nel core (warning Phase 1)
 - PDF/RSS/API adapters tipizzati ma senza parser specializzati (estendibili)
+- Bridge post-APPROVED → CISO EvidenceRevision deferito
 
 ## Stato DB
 
@@ -99,6 +98,5 @@ python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
 
 ## Prossimo step consigliato
 
-1. Orchestratore: tag `phase-5-complete` post PASS Phase 5  
-2. Independent VERIFY Phase 6 (`close-phase-06` / verification prompt)  
-3. Non dichiarare Phase 6 COMPLETE fino a PASS indipendente
+1. Orchestratore: FINAL REGRESSION GATE + tag `phase-6-complete` + merge su main  
+2. Non sviluppare Phase 7 in questa pipeline di close
