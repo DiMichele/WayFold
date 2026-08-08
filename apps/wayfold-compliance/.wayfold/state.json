@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
   "project": "wayfold-compliance",
-  "lastClosedPhase": 0,
-  "implementedPhase": 1,
-  "nextTransition": "1_TO_2",
-  "status": "VERIFYING",
+  "lastClosedPhase": 1,
+  "implementedPhase": 2,
+  "nextTransition": "2_TO_3",
+  "status": "READY",
   "verificationAttempts": 0,
   "maxAutomaticFixAttempts": 3,
   "maxPhase": 6,
@@ -16,8 +16,8 @@
   "branch": "automation/wayfold-compliance",
   "mode": "LOCAL_OVERNIGHT",
   "startedAt": "2026-08-08T22:55:01.467299+00:00",
-  "updatedAt": "2026-08-08T22:58:45.689663+00:00",
-  "lastResultPath": null,
+  "updatedAt": "2026-08-08T23:07:55.284972+00:00",
+  "lastResultPath": "apps/wayfold-compliance/.wayfold/results/transition-1-to-2-20260809-005845.json",
   "lastError": null,
   "history": [
     {
@@ -26,6 +26,11 @@
     },
     {
       "event": "RESUME_AFTER_STDIN_FIX"
+    },
+    {
+      "event": "TRANSITION_PASS",
+      "transition": "1_TO_2",
+      "closedPhase": 1
     }
   ],
   "notes": "Phase 0 closed via architecture/DECISIONS. Phase 1 Working Core is subject to independent verification on first overnight transition (1_TO_2). PROGRESS.md may lag; do not treat Phase 1 as COMPLETE until verification PASS + tag."
