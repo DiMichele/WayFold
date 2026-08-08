@@ -1,10 +1,10 @@
-# Architecture — WayFold Compliance (Phase 0)
+# Architecture — WayFold Compliance (Phase 2)
 
 ## Selected core
 
-**CISO Assistant Community** — Django/DRF backend + SvelteKit frontend + PostgreSQL (compose ufficiale).
+**CISO Assistant Community** — Django/DRF backend + SvelteKit frontend + PostgreSQL (compose ufficiale; locale demo anche SQLite).
 
-Dominio previsto: `compliance.wayfold.xyz` (ingress da definire in Phase 1+; non deployato in Phase 0).
+Dominio previsto: `compliance.wayfold.xyz` (non deployato da questa pipeline).
 
 ## Strategy B
 
@@ -13,7 +13,7 @@ compliance.wayfold.xyz
         │
         ▼
 ┌───────────────────────┐
-│ Compliance UI         │  CISO frontend (+ future Wayfold consultant views)
+│ Compliance UI         │  CISO frontend (+ WayFold checklist UI :8092)
 └───────────┬───────────┘
             │
             ▼
@@ -28,27 +28,30 @@ compliance.wayfold.xyz
 │ Evidence / Tasks      │
 │ IAM / RBAC            │
 └───────────┬───────────┘
-            │ REST/OpenAPI
+            │ REST/OpenAPI (prod) / ORM bridge (local demo)
             ▼
 ┌───────────────────────┐
-│ WAYFOLD ENGINE        │  Custom (future phases)
-│ Regulatory sources    │
-│ Snapshots / Diff      │
-│ Client impact         │
-│ Mapping intelligence  │
-│ Optional OpenCRE      │
-│ Control ROI           │
+│ WAYFOLD ENGINE        │  apps/wayfold-compliance/engine
+│ Unified checklist     │  Phase 2
+│ Mapping FULL/PARTIAL/ │
+│   SUPPORTING + delta  │
+│ Framework readiness   │
+│ Control impact / ROI  │
+│ Tenant access gate    │
+│ Regulatory (Phase 4+) │
+│ AI assist (Phase 5)   │
 └───────────────────────┘
 ```
 
 ## Database boundaries
 
 - **Core DB:** PostgreSQL gestito da CISO (unico source of truth GRC operativo).
-- **Wayfold Engine DB:** database separato per regulatory snapshots/diff/impact (Phase 4+); niente silent mutation delle library pubblicate nel core.
+- **Wayfold Engine:** overlay JSON / future DB for mapping intelligence + regulatory snapshots (Phase 4+); niente silent mutation delle library pubblicate nel core.
 
 ## API boundaries
 
-- Wayfold Engine **legge/scrive** il core solo tramite API documentata (DRF).
+- Wayfold Engine in produzione **legge/scrive** il core solo tramite API documentata (DRF).
+- Local overnight: `ciso_bridge.py` può leggere l'ORM CISO per export snapshot (non muta library pubblicate).
 - Nessun accesso diretto al DB core dal regulatory engine in produzione.
 - OpenCRE (se usato) è servizio read-oriented per suggerimenti mapping; approvazione umana obbligatoria.
 
@@ -60,7 +63,7 @@ compliance.wayfold.xyz
 ## Deployment (target)
 
 - Stack CISO via Docker Compose dietro reverse proxy verso `compliance.wayfold.xyz`.
-- Wayfold Engine come servizio aggiuntivo (compose profile o host separato) quando Phase 4 inizia.
+- Wayfold Engine come servizio aggiuntivo (compose profile o host separato); checklist UI locale `:8092` in Phase 2.
 - Pattern operativo simile a Bills (`apps/wayfold-bills/deploy/`) ma **separato** dal deploy viaggi.
 
 ## Semantic map (do not rename in DB)
@@ -74,6 +77,9 @@ compliance.wayfold.xyz
 | Requirement | RequirementNode |
 | Framework Version | LoadedLibrary.version (+ Framework.library pin) |
 
-## Phase 0 constraint
+## Phase 2 engine notes
 
-Questa architettura è documentata **prima** del run locale del core; la demo Michele deve validare il fit, non solo il bootstrap Docker.
+- Canonical reuse: `ReferenceControl` / `canonical_control_ref` — no duplicate control tables in core.
+- Req↔Control coverage relations live in WayFold `MappingRecord` overlay (CISO `RequirementMapping` remains req↔req).
+- Client implementations, evidence, tasks stay in CISO.
+- See `docs/unified-compliance.md` and `docs/data-model.md`.

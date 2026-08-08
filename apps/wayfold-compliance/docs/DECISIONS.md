@@ -45,3 +45,25 @@ Alternative considerate:
 
 Rivedere se:
 - Phase 2 unified mapping richiede CRE graph operativo.
+
+---
+
+## [2026-08-09] Phase 2 mapping overlay outside CISO DB
+
+Scelto:
+- WayFold `MappingRecord` (FULL / PARTIAL / SUPPORTING + `uncovered_delta` + review_status) come overlay JSON / `ProgramSnapshot` nel package `apps/wayfold-compliance/engine/`.
+- Checklist/readiness/impact come application services puri + bridge opzionale ORM CISO.
+- UI Phase 2 minima: tabella HTML/JSON su `engine.api` (porta 8092), senza fork del frontend SvelteKit.
+
+Motivazione:
+- CISO espone già `ReferenceControl`/`AppliedControl` e req↔req `RequirementMapping` (FULL/PARTIAL), ma non il modello req↔canonical con SUPPORTING + delta richiesto da WayFold §19/§34.
+- Strategy B: estendere via engine esterno evita fork del core e duplicazione auth/evidence/tasks.
+- UI consultant densa completa è Phase 3; Phase 2 consegna la capability + vista professionale minima.
+
+Alternative considerate:
+- Patch diretta ai modelli Django CISO (fork) — scartata per costo upgrade.
+- Solo `RequirementMapping` req↔req — insufficiente per checklist basata su CanonicalControl.
+
+Rivedere se:
+- CISO introduce nativamente req↔control coverage con SUPPORTING;
+- serve persistenza DB dedicata engine prima di Phase 4.

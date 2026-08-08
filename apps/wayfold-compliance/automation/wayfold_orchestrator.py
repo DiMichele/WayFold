@@ -69,6 +69,17 @@ def stamp() -> str:
     return datetime.now().strftime("%Y%m%d-%H%M%S")
 
 
+def _safe_print(text: str) -> None:
+    """Print without crashing on Windows cp1252 consoles."""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+        sys.stdout.write(text.encode(encoding, errors="replace").decode(encoding, errors="replace"))
+        sys.stdout.write("\n")
+
+
+
 def run_cmd(
     args: list[str],
     cwd: Path,
@@ -614,7 +625,7 @@ def run_cursor_agent(ctx: Context, prompt: str, log_name: str) -> tuple[int, Pat
         output = (cp.stdout or b"").decode("utf-8", errors="replace")
         log_path.write_text(output, encoding="utf-8")
         if output:
-            print(output[-5000:])
+            _safe_print(output[-5000:])
         return cp.returncode, log_path
     except subprocess.TimeoutExpired as exc:
         output = exc.stdout or b""
