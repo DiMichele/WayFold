@@ -1,4 +1,4 @@
-"""WayFold Unified Compliance engine (Phase 2).
+"""WayFold Compliance engine (Phase 2 Unified Compliance + Phase 3 Consultant UX).
 
 Pure application-layer services that reuse CISO semantic entities
 (ReferenceControl, AppliedControl, RequirementNode, Framework) without

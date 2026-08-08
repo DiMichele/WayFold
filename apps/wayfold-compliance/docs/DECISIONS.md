@@ -67,3 +67,62 @@ Alternative considerate:
 Rivedere se:
 - CISO introduce nativamente req↔control coverage con SUPPORTING;
 - serve persistenza DB dedicata engine prima di Phase 4.
+
+---
+
+## [2026-08-09] Phase 2 authz default-deny on engine endpoints
+
+Scelto:
+- API (`engine.api`) e CLI richiedono esplicitamente `--superuser` / `superuser=1` **oppure** `actor_tenants` / `--actor-tenants`.
+- Empty actor set non implica più superuser.
+
+Motivazione:
+- Verification Phase 2: il bypass `is_superuser or not actor_tenants` violava tenant isolation + RBAC sui nuovi endpoint.
+
+Alternative considerate:
+- Token sessioni CISO pass-through subito — deferito; overlay gate resta fino a integrazione prod API.
+
+Rivedere se:
+- l'engine viene esposto dietro lo stesso IAM CISO in produzione.
+
+---
+
+## [2026-08-09] Phase 3 Consultant UX on engine HTML/JSON (not CISO fork)
+
+Scelto:
+- Portfolio / Client / Gaps / Owners / Deadlines / Evidence / Tasks / Reports come servizi + dense HTML su `engine.api` (:8092), riusando checklist/readiness/impact Phase 2 e snapshot programmi (Michele + Alfa registry).
+
+Motivazione:
+- Strategy B: UX consulente quotidiana senza fork del frontend SvelteKit; evidence/tasks/owners restano semanticamente quelli del core.
+- Filtri e report operano su dati pinned del programma, non su KB globale.
+
+Alternative considerate:
+- Patch UI CISO (fork) — scartata per costo upgrade.
+- Nuovo SPA separato — overkill per Phase 3 MVP giornaliero.
+
+Rivedere se:
+- serve embedding ufficiale nel frontend CISO o autenticazione SSO condivisa.
+
+---
+
+## [2026-08-09] Nessun credential di accesso prodotto (temporaneo)
+
+Scelto:
+- **Per il momento** WayFold Compliance **non** deve richiedere / introdurre dati di accesso utente di prodotto (login proprietario WayFold, password utente finali, SSO, invite email, secret di onboarding cliente).
+- L’automazione e lo sviluppo delle fasi devono procedere **senza** chiedere all’operatore nuove credenziali di accesso all’app.
+- Restano ammessi solo:
+  - auth tecnica già esistente del **core CISO locale** per demo/dev (es. admin demo sulla macchina);
+  - auth Cursor / Git già configurate per l’overnight (non sono login prodotto Compliance).
+
+Motivazione:
+- Evitare blocchi overnight e scope creep su identity prima che il prodotto sia stabile.
+- Phase 1–3 devono concentrarsi su GRC / unified compliance / UX consulente, non su un nuovo IdP WayFold.
+
+Vietato per ora:
+- inventare o richiedere password/utenti di produzione;
+- aggiungere flussi di registrazione/login WayFold obbligatori;
+- bloccare una fase perché “mancano le credenziali di accesso Compliance”.
+
+Rivedere quando:
+- si introduce un ambiente condiviso o `compliance.wayfold.xyz` con utenti reali;
+- serve RBAC multi-consulente oltre al modello CISO già riusato.

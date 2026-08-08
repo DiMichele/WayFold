@@ -56,8 +56,10 @@ apps/wayfold-compliance/engine/
 cd apps/wayfold-compliance
 python -m engine.tests.test_unified_compliance
 python -m engine --superuser --format text
+# oppure: python -m engine --actor-tenants=tenant-michele --format text
 python -m engine.api
-# browser: http://127.0.0.1:8092/checklist
+# browser (auth esplicita obbligatoria): http://127.0.0.1:8092/checklist?superuser=1
+# oppure: .../checklist?actor_tenants=tenant-michele
 ```
 
 Live CISO export (backend container, engine mounted):

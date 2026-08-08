@@ -39,9 +39,21 @@ def main(argv: list[str] | None = None) -> int:
 
     program = load_program_snapshot(args.program)
     actor_tenants = {t.strip() for t in args.actor_tenants.split(",") if t.strip()}
+    # Default deny: omitting --actor-tenants must NOT imply superuser.
+    if not args.superuser and not actor_tenants:
+        print(
+            json.dumps(
+                {
+                    "error": "authentication_required",
+                    "hint": "pass --superuser or --actor-tenants=<tenant-id>",
+                    "tenant_id": program.tenant_id,
+                }
+            )
+        )
+        return 2
     decision = assert_tenant_access(
         actor_tenant_ids=actor_tenants,
-        is_superuser=args.superuser or not actor_tenants,
+        is_superuser=args.superuser,
         target_tenant_id=program.tenant_id,
     )
     if not decision.allowed:

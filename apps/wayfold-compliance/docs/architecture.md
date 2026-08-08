@@ -1,4 +1,4 @@
-# Architecture — WayFold Compliance (Phase 2)
+# Architecture — WayFold Compliance (Phase 3)
 
 ## Selected core
 
@@ -13,7 +13,7 @@ compliance.wayfold.xyz
         │
         ▼
 ┌───────────────────────┐
-│ Compliance UI         │  CISO frontend (+ WayFold checklist UI :8092)
+│ Compliance UI         │  CISO frontend (+ WayFold consultant UX :8092)
 └───────────┬───────────┘
             │
             ▼
@@ -38,6 +38,9 @@ compliance.wayfold.xyz
 │ Framework readiness   │
 │ Control impact / ROI  │
 │ Tenant access gate    │
+│ Portfolio / Client UX │  Phase 3
+│ Gap / Owner / Deadline│
+│ Evidence / Task / Rpt │
 │ Regulatory (Phase 4+) │
 │ AI assist (Phase 5)   │
 └───────────────────────┘
@@ -77,9 +80,10 @@ compliance.wayfold.xyz
 | Requirement | RequirementNode |
 | Framework Version | LoadedLibrary.version (+ Framework.library pin) |
 
-## Phase 2 engine notes
+## Phase 2–3 engine notes
 
 - Canonical reuse: `ReferenceControl` / `canonical_control_ref` — no duplicate control tables in core.
 - Req↔Control coverage relations live in WayFold `MappingRecord` overlay (CISO `RequirementMapping` remains req↔req).
-- Client implementations, evidence, tasks stay in CISO.
-- See `docs/unified-compliance.md` and `docs/data-model.md`.
+- Client implementations, evidence, tasks stay in CISO; Phase 3 views aggregate snapshot counts.
+- Consultant UX: dense HTML/JSON on `:8092` (not a CISO frontend fork).
+- See `docs/unified-compliance.md`, `docs/consultant-ux.md`, `docs/data-model.md`.

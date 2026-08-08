@@ -3,41 +3,49 @@
 ## Fase corrente
 
 **Phase 1 CLOSED (verification PASS).**  
-**Phase 2 — Unified Compliance: IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION.**  
-Non dichiarare Phase 2 COMPLETE fino a PASS + tag orchestratore.
+**Phase 2 CLOSED (verification PASS)** — vedi `PHASE2-VERIFICATION.md`.  
+**Phase 3 — Consultant UX: IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION.**  
+Non dichiarare Phase 3 COMPLETE fino a PASS + tag orchestratore.
 
 ## Completato
 
 - Scaffold `apps/wayfold-compliance/`
 - Phase -1 discovery + scorecard (`open-source-evaluation.md`)
 - Phase 0 decision gate: core **CISO Assistant Community**, Strategy B
-- Phase 1 Working Core verified independently (`PHASE1-VERIFICATION.md` → **PASS**)
-- Phase 2 engine Unified Compliance in `apps/wayfold-compliance/engine/`:
+- Phase 1 Working Core verified (`PHASE1-VERIFICATION.md` → **PASS**)
+- Phase 2 Unified Compliance verified (`PHASE2-VERIFICATION.md` → **PASS**)
   - checklist / readiness / control impact
   - mapping FULL / PARTIAL / SUPPORTING + uncovered_delta
-  - tenant gate (`authz`)
-  - CLI + HTTP UI table (`engine.api` :8092)
-  - CISO ORM bridge (`ciso_bridge.py`)
-  - unit tests (9) green
-- Docs: `unified-compliance.md`, `data-model.md`
+  - tenant gate default-deny (API/CLI)
+  - tests: 13 OK
+- Phase 3 Consultant UX in `apps/wayfold-compliance/engine/`:
+  - Portfolio + Client dashboard
+  - Gap Assessment filtrabile
+  - Owner / Deadline / Evidence / Task views
+  - Report HTML print-friendly + CSV
+  - Multi-client registry (Michele + Alfa)
+  - tests: 8 OK (`test_consultant_ux`)
+- Docs: `unified-compliance.md`, `consultant-ux.md`, `data-model.md`
 
 ## Cosa funziona
 
-- Core CISO Docker locale: health OK, Michele demo seed idempotente
-- Tenant isolation live (Michele viewer ↛ Alfa evidence/controls)
-- Unified checklist su fixture Michele Phase 2 (3 FW, shared CTRL-IAM-001, PARTIAL+delta, SUPPORTING, UNMAPPED≥2, stati misti)
-- Export live da CISO via bridge (opzionale)
+- Core CISO Docker locale (Phase 1)
+- Unified checklist / readiness / impact (Phase 2)
+- Consultant UX locale `:8092` con auth esplicita
+- Isolation portfolio: actor su Michele non vede Alfa
+- Report e filtri gap su program snapshot pinned
 
 ## Cosa non funziona / gate aperti
 
-- Phase 2 non ancora chiusa da verification report indipendente
-- UI consultant completa (filtri avanzati / portfolio) → Phase 3
+- Phase 3 non ancora chiusa da verification report indipendente
+- Regulatory watcher → Phase 4
+- AI assist → Phase 5
 - Optimistic locking integer `version` su AppliedControl assente nel core (warning Phase 1)
 
 ## Stato DB
 
 - Core: SQLite locale compose (`vendor/.../db/`, gitignored)
-- WayFold mappings: overlay JSON / ProgramSnapshot (non nel DB core)
+- WayFold mappings + portfolio registry: overlay JSON (non nel DB core)
 
 ## Migrazioni recenti
 
@@ -46,18 +54,11 @@ Non dichiarare Phase 2 COMPLETE fino a PASS + tag orchestratore.
 ## Comandi di avvio
 
 ```powershell
-# Core CISO
-cd apps/wayfold-compliance/vendor/ciso-assistant-community
-# usare docker compose ufficiale del vendor
-
-# Phase 2 engine
 cd apps/wayfold-compliance
 python -m engine.tests.test_unified_compliance
+python -m engine.tests.test_consultant_ux
 python -m engine --superuser --format text
-python -m engine.api   # http://127.0.0.1:8092/checklist
-
-# Demo seed core
-docker exec -w /code -e PYTHONPATH=/code backend /code/.venv/bin/python /code/db/michele_demo_seed.py
+python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
 ```
 
 ## Git
@@ -69,15 +70,16 @@ docker exec -w /code -e PYTHONPATH=/code backend /code/.venv/bin/python /code/db
 ## Problemi aperti
 
 - Auth Cursor Agent CLI per unattended overnight (operativo)
-- Phase 2 awaiting independent verification
+- Phase 3 awaiting independent verification
 
 ## Technical debt
 
-- Dedup coverage su export CISO con assessment duplicati — gestito in checklist; pulizia DB demo opzionale
+- Dedup coverage su export CISO con assessment duplicati — gestito in checklist/readiness
 - pytest assente nell'immagine runtime CISO (test engine host-side)
+- UX HTML locale (non fork SvelteKit CISO) — integrazione UI core deferibile
 
 ## Prossimo step consigliato
 
-1. Orchestratore: tag `phase-1-complete` post PASS  
-2. Independent VERIFY Phase 2 (`2_TO_3`)  
-3. Non iniziare Phase 3 finché Phase 2 non ha PASS
+1. Orchestratore: tag `phase-2-complete` post PASS Phase 2  
+2. Independent VERIFY Phase 3 (`3_TO_4`)  
+3. Non iniziare Phase 4 finché Phase 3 non ha PASS

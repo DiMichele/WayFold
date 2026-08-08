@@ -70,10 +70,14 @@ def framework_readiness(
 
     unmapped_ids = {u.requirement_id for u in checklist.unmapped}
     by_fw: dict[str, dict] = {}
+    seen_req: set[str] = set()
 
     for req in program.requirements:
         if not (req.assessable and req.is_leaf):
             continue
+        if req.id in seen_req:
+            continue
+        seen_req.add(req.id)
         fw_key = req.framework_id
         bucket = by_fw.setdefault(
             fw_key,

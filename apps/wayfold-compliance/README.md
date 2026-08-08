@@ -4,9 +4,10 @@ Applicativo privato GRC multi-framework per consulenza cybersecurity.
 
 - Dominio previsto: `compliance.wayfold.xyz`
 - Repository: [DiMichele/WayFold-Compliance](https://github.com/DiMichele/WayFold-Compliance)
-- Stato: **Phase 1 PASS** · **Phase 2 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION**
+- Stato: **Phase 1–2 PASS** · **Phase 3 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION**
 - Raccomandazione: [`docs/PHASE0-RECOMMENDATION.md`](docs/PHASE0-RECOMMENDATION.md)
 - Unified Compliance: [`docs/unified-compliance.md`](docs/unified-compliance.md)
+- Consultant UX: [`docs/consultant-ux.md`](docs/consultant-ux.md)
 - Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md)
 
 ## Decisione Phase 0
@@ -19,7 +20,7 @@ Applicativo privato GRC multi-framework per consulenza cybersecurity.
 ```text
 .
   docs/         stato, decisioni, evaluation, architecture, recommendation
-  engine/       WayFold Unified Compliance (Phase 2)
+  engine/       Unified Compliance (P2) + Consultant UX (P3)
   automation/   orchestratore fasi (overnight)
   prompts/      prompt Cursor per fasi 1–6
   vendor/       clone OSS (gitignored) — solo macchina locale

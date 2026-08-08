@@ -1,19 +1,28 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
+from dataclasses import replace
 from pathlib import Path
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
+from engine.api import Handler
 from engine.authz import assert_tenant_access
 from engine.checklist import build_unified_checklist
+from engine.cli import main as cli_main
+from engine.domain import (
+    CoverageRelation,
+    ImplementationStatus,
+    RequirementCoverage,
+)
 from engine.impact import rank_control_impact
 from engine.program_loader import load_program_snapshot
-from engine.readiness import framework_readiness
-from engine.domain import CoverageRelation, ImplementationStatus, RequirementCoverage
+from engine.readiness import framework_readiness, _requirement_coverage
 
 
 FIXTURE = Path(__file__).resolve().parents[1] / "fixtures" / "michele_phase2_program.json"
@@ -95,6 +104,85 @@ class UnifiedComplianceTests(unittest.TestCase):
     def test_counts(self):
         self.assertEqual(self.checklist.raw_requirement_count, 8)
         self.assertEqual(self.checklist.unified_control_count, 3)
+
+    def test_not_applicable_coverage(self):
+        cov = _requirement_coverage(
+            CoverageRelation.FULL,
+            ImplementationStatus.IMPLEMENTED,
+            "not_applicable",
+        )
+        self.assertEqual(cov, RequirementCoverage.NOT_APPLICABLE)
+        program = replace(
+            self.program,
+            requirements=[
+                replace(self.program.requirements[0], result="not_applicable"),
+                *self.program.requirements[1:],
+            ],
+        )
+        checklist = build_unified_checklist(program)
+        ready = framework_readiness(program, checklist)
+        fw_a = next(r for r in ready if r.framework_id == "fw-a")
+        self.assertEqual(
+            fw_a.requirement_breakdown["req-a-01"],
+            RequirementCoverage.NOT_APPLICABLE,
+        )
+        self.assertGreaterEqual(fw_a.not_applicable, 1)
+
+    def test_cli_default_deny_without_auth(self):
+        code = cli_main(["--format", "json"])
+        self.assertEqual(code, 2)
+
+    def test_cli_cross_tenant_denied(self):
+        code = cli_main(["--actor-tenants", "tenant-other", "--format", "json"])
+        self.assertEqual(code, 2)
+
+    def test_api_auth_default_deny_and_rbac(self):
+        captured: dict = {}
+
+        class FakeHandler(Handler):
+            def __init__(self, path: str):
+                self.path = path
+                self.wfile = mock.Mock()
+                self.wfile.write = lambda b: captured.setdefault("body", b)
+                captured.clear()
+                captured["status"] = None
+                captured["headers"] = {}
+
+            def send_response(self, code, message=None):  # noqa: ARG002
+                captured["status"] = code
+
+            def send_header(self, key, value):
+                captured["headers"][key] = value
+
+            def end_headers(self):
+                return None
+
+            def address_string(self):
+                return "test"
+
+        # No credentials → 401
+        FakeHandler(f"/api/unified-checklist?program={FIXTURE.as_posix()}").do_GET()
+        self.assertEqual(captured["status"], 401)
+        self.assertIn("authentication_required", captured["body"].decode())
+
+        # Wrong tenant → 403
+        FakeHandler(
+            f"/api/unified-checklist?program={FIXTURE.as_posix()}"
+            "&actor_tenants=tenant-other"
+        ).do_GET()
+        self.assertEqual(captured["status"], 403)
+
+        # Correct tenant → 200 with checklist service payload
+        FakeHandler(
+            f"/api/unified-checklist?program={FIXTURE.as_posix()}"
+            "&actor_tenants=tenant-michele"
+        ).do_GET()
+        self.assertEqual(captured["status"], 200)
+        payload = json.loads(captured["body"].decode())
+        self.assertIn("checklist", payload)
+        self.assertIn("readiness", payload)
+        self.assertIn("impact", payload)
+        self.assertGreaterEqual(len(payload["checklist"]["unmapped"]), 2)
 
 
 if __name__ == "__main__":
