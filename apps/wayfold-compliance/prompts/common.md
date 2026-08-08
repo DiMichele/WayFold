@@ -28,7 +28,7 @@ Prima di fare qualunque cosa:
 - Nessun avanzamento automatico alla fase successiva oltre lo scope del prompt di transizione corrente.
 - Non creare tag `phase-N-complete`: lo crea l'orchestratore dopo un PASS indipendente.
 - Non modificare `apps/wayfold-compliance/.wayfold/state.json` direttamente.
-- Non fare deploy production / DNS / DB production.
+- Non fare deploy production manuale ad-hoc: il deploy su `compliance.wayfold.xyz` è gestito dall'orchestratore (`autoDeploy`) dopo merge su main via `deploy/deploy-compliance.ps1`. Non cambiare DNS a mano.
 - Non usare force push, reset --hard, clean -fd distruttivi.
 - Migration distruttive su dati esistenti → BLOCKED / segnala HUMAN_REVIEW (non eseguirle).
 - Aggiorna `PROGRESS.md` e `DECISIONS.md` solo quando necessario e coerentemente con lo stato reale.

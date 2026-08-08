@@ -194,16 +194,25 @@ class Context:
             "autoPush",
             "autoTag",
             "autoMergeMain",
+            "autoDeploy",
         ):
             if key not in self.config:
                 raise OrchestratorError(f"config.json missing {key}")
-        if self.config.get("autoDeploy"):
-            raise OrchestratorError("autoDeploy is forbidden")
+        if self.config.get("autoDeployProductionDns"):
+            raise OrchestratorError("autoDeployProductionDns is forbidden (use deploy scripts)")
 
     def save_state(self) -> None:
         self.state["updatedAt"] = now_iso()
         # Mirror config toggles into state for machine-readable audit
-        for key in ("autoCommit", "autoPush", "autoTag", "autoMergeMain", "maxAutomaticFixAttempts", "maxPhase"):
+        for key in (
+            "autoCommit",
+            "autoPush",
+            "autoTag",
+            "autoMergeMain",
+            "autoDeploy",
+            "maxAutomaticFixAttempts",
+            "maxPhase",
+        ):
             if key in self.config:
                 self.state[key] = self.config[key]
         validate_state(self.state)
@@ -1061,6 +1070,45 @@ def _final_regression_checks(ctx: Context) -> bool:
     return True
 
 
+def deploy_production(ctx: Context) -> None:
+    """Deploy Compliance to VPS (compliance.wayfold.xyz)."""
+    if not ctx.config.get("autoDeploy", False):
+        print("autoDeploy disabled — skipping production deploy")
+        return
+    script = ctx.repo / APP_REL / "deploy" / "deploy-compliance.ps1"
+    if not script.exists():
+        raise OrchestratorError(f"Missing deploy script: {script}")
+    setup_tls = bool(ctx.config.get("autoDeploySetupTls", True))
+    args = [
+        "powershell",
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        str(script),
+    ]
+    if setup_tls:
+        args.append("-SetupTls")
+    print(f"\n=== Production deploy ===\n{' '.join(args)}\n")
+    cp = subprocess.run(args, cwd=str(ctx.repo), text=True, capture_output=True)
+    log = (cp.stdout or "") + (cp.stderr or "")
+    logs = ctx.repo / LOGS_REL
+    logs.mkdir(parents=True, exist_ok=True)
+    (logs / f"deploy-{stamp()}.log").write_text(log, encoding="utf-8")
+    _safe_print(log[-4000:] if log else "")
+    if cp.returncode != 0:
+        raise OrchestratorError(f"Production deploy failed (exit {cp.returncode})")
+    # Smoke check
+    try:
+        import urllib.request
+
+        url = str(ctx.config.get("productionUrl", "https://compliance.wayfold.xyz/api/health/"))
+        with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310
+            body = resp.read().decode("utf-8", errors="replace")
+            print(f"Production health: HTTP {resp.status} {body[:200]}")
+    except Exception as exc:
+        raise OrchestratorError(f"Deploy finished but health check failed: {exc}") from exc
+
+
 def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
     if not ctx.config.get("autoMergeMain", True):
         ctx.state["status"] = "HUMAN_REVIEW_REQUIRED"
@@ -1076,10 +1124,11 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
     if dry:
         ctx.state = apply_complete(ctx.state)
         ctx.save_state()
-        append_report(ctx, f"## Merge\nPASS (dry-run)\n## origin/{main}\n(dry-run)\n## Final Status\nCOMPLETE\n")
+        append_report(ctx, f"## Merge\nPASS (dry-run)\n## Deploy\nSKIPPED (dry-run)\n## Final Status\nCOMPLETE\n")
         return "DONE"
 
-    # Ensure branch pushed + tags
+    # Checkpoint compliance work before leaving the branch
+    commit_changes(ctx, "chore(compliance): pre-merge checkpoint")
     try:
         push_branch(ctx)
         run_cmd(["git", "push", "origin", "--tags"], ctx.repo)
@@ -1088,7 +1137,16 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
         ctx.save_state()
         return "STOP"
 
-    # Update local main
+    # Stash unrelated dirty paths so switch to main can succeed
+    dirty = git_dirty(ctx.repo)
+    stashed = False
+    if dirty:
+        cp = run_cmd(
+            ["git", "stash", "push", "-u", "-m", "wayfold-compliance-pre-merge-stash"],
+            ctx.repo,
+        )
+        stashed = cp.returncode == 0
+
     cp = run_cmd(["git", "fetch", "origin", main], ctx.repo)
     if cp.returncode != 0:
         ctx.state = apply_blocked(ctx.state, [{"severity": "BLOCKING", "description": f"fetch {main} failed"}])
@@ -1099,7 +1157,12 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
     if cp.returncode != 0:
         cp = run_cmd(["git", "checkout", main], ctx.repo)
     if cp.returncode != 0:
-        ctx.state = apply_blocked(ctx.state, [{"severity": "BLOCKING", "description": f"cannot switch to {main}"}])
+        if stashed:
+            run_cmd(["git", "stash", "pop"], ctx.repo)
+        ctx.state = apply_blocked(
+            ctx.state,
+            [{"severity": "BLOCKING", "description": f"cannot switch to {main}: {(cp.stderr or cp.stdout)[:300]}"}],
+        )
         ctx.save_state()
         return "STOP"
 
@@ -1107,13 +1170,17 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
     if cp.returncode != 0:
         print("ff-only pull failed; continuing with merge attempt")
 
-    cp = run_cmd(["git", "merge", "--no-ff", branch, "-m", f"merge: wayfold compliance automation ({branch})"], ctx.repo)
+    cp = run_cmd(
+        ["git", "merge", "--no-ff", branch, "-m", f"merge: wayfold compliance automation ({branch})"],
+        ctx.repo,
+    )
     if cp.returncode != 0:
         run_cmd(["git", "merge", "--abort"], ctx.repo)
         ctx.state = apply_merge_conflict(ctx.state, cp.stderr or cp.stdout or "merge failed")
         ctx.save_state()
-        # Return to automation branch
         run_cmd(["git", "switch", branch], ctx.repo)
+        if stashed:
+            run_cmd(["git", "stash", "pop"], ctx.repo)
         commit_changes(ctx, "chore(compliance): merge conflict requires human review")
         try:
             push_branch(ctx)
@@ -1121,7 +1188,6 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
             pass
         return "STOP"
 
-    # Post-merge checks on main
     if not _final_regression_checks(ctx):
         ctx.state["status"] = "HUMAN_REVIEW_REQUIRED"
         ctx.state["blockingIssues"] = [{"severity": "BLOCKING", "description": "Post-merge checks failed"}]
@@ -1137,18 +1203,38 @@ def merge_to_main(ctx: Context, *, dry: bool = False) -> str:
 
     remote_main = run_cmd(["git", "rev-parse", f"origin/{main}"], ctx.repo).stdout.strip()
     local_main = git_head(ctx.repo)
+
+    deploy_status = "SKIPPED"
+    if ctx.config.get("autoDeploy", False):
+        try:
+            deploy_production(ctx)
+            deploy_status = "PASS"
+        except OrchestratorError as exc:
+            ctx.state["status"] = "HUMAN_REVIEW_REQUIRED"
+            ctx.state["blockingIssues"] = [{"severity": "BLOCKING", "description": str(exc)}]
+            ctx.state["lastError"] = str(exc)
+            ctx.save_state()
+            append_report(
+                ctx,
+                f"## Merge\nPASS\n## Deploy\nFAIL\n{exc}\nStatus: HUMAN_REVIEW_REQUIRED\n",
+            )
+            commit_changes(ctx, "chore(compliance): deploy failed after merge")
+            run_cmd(["git", "push", "origin", main], ctx.repo)
+            return "STOP"
+
     ctx.state = apply_complete(ctx.state)
     ctx.save_state()
-    # Switch back note: state lives on compliance paths; commit on main
     commit_changes(ctx, "chore(compliance): mark automation COMPLETE")
     run_cmd(["git", "push", "origin", main], ctx.repo)
     append_report(
         ctx,
-        f"## Merge\nPASS\n## origin/{main}\n{remote_main or local_main}\n## Final Status\nCOMPLETE\n",
+        f"## Merge\nPASS\n## Deploy\n{deploy_status}\n## origin/{main}\n{remote_main or local_main}\n"
+        f"## Production\nhttps://compliance.wayfold.xyz\n## Final Status\nCOMPLETE\n",
     )
-    # Push report if committed on main
     run_cmd(["git", "push", "origin", main], ctx.repo)
-    print(f"COMPLETE - origin/{main}={local_main}")
+    if stashed:
+        run_cmd(["git", "stash", "pop"], ctx.repo)
+    print(f"COMPLETE - origin/{main}={local_main} deploy={deploy_status}")
     return "DONE"
 
 

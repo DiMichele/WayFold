@@ -908,10 +908,15 @@ class Handler(BaseHTTPRequestHandler):
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
 
 
-def main():
-    host, port = "127.0.0.1", 8092
-    httpd = ThreadingHTTPServer((host, port), Handler)
-    print(f"WayFold Consultant UX listening on http://{host}:{port}")
+def main(argv: list[str] | None = None):
+    import argparse
+
+    parser = argparse.ArgumentParser(description="WayFold Compliance consultant HTTP API")
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8092)
+    args = parser.parse_args(argv)
+    httpd = ThreadingHTTPServer((args.host, args.port), Handler)
+    print(f"WayFold Consultant UX listening on http://{args.host}:{args.port}")
     httpd.serve_forever()
 
 

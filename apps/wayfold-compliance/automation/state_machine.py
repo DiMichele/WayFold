@@ -271,4 +271,14 @@ def resume_status(state: dict[str, Any]) -> dict[str, Any]:
     if out.get("status") in {"INTERRUPTED", "FIXING", "VERIFYING", "DEVELOPING", "AWAITING_VERIFICATION"}:
         if out.get("nextTransition") or out.get("status") == "FIXING":
             out["status"] = "READY"
+    # Recover merge/deploy after Phase 6 closed but merge was blocked (dirty tree, etc.)
+    if (
+        out.get("status") in {"BLOCKED", "HUMAN_REVIEW_REQUIRED", "MERGING"}
+        and int(out.get("lastClosedPhase", -1)) >= 6
+        and out.get("nextTransition") is None
+        and any(h.get("event") == "FINAL_REGRESSION_PASS" for h in (out.get("history") or []))
+    ):
+        out["status"] = "FINAL_REGRESSION"
+        out["blockingIssues"] = []
+        out["lastError"] = None
     return out

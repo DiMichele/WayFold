@@ -171,6 +171,25 @@ Rivedere se:
 
 ---
 
+## [2026-08-09] Production deploy in overnight pipeline
+
+Scelto:
+- Dopo Phase 6 PASS + final regression + merge su `main`, l’overnight esegue **autoDeploy** su VPS:
+  - host `wayfold@167.233.121.159`
+  - path `/home/wayfold/apps/wayfold-compliance`
+  - dominio `https://compliance.wayfold.xyz`
+  - script `deploy/deploy-compliance.ps1` (+ nginx/TLS via `setup-nginx-tls.sh`)
+- Stack: immagini ufficiali CISO (ghcr) + engine WayFold su `:18092` dietro `/wayfold/`
+- Nessun deploy del prodotto viaggi (`deploy/deploy.ps1`) da questa pipeline.
+
+Motivazione:
+- DNS già punta al VPS; senza deploy+cert il browser mostra `ERR_CERT_COMMON_NAME_INVALID` (cert di bills).
+
+Rivedere se:
+- si separa un repo/deploy host dedicato.
+
+---
+
 ## [2026-08-09] Visual language — allineamento ecosistema WayFold (Bills)
 
 Scelto:
