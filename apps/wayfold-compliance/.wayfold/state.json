@@ -16,7 +16,7 @@
   "branch": "automation/wayfold-compliance",
   "mode": "LOCAL_OVERNIGHT",
   "startedAt": "2026-08-08T22:55:01.467299+00:00",
-  "updatedAt": "2026-08-08T23:07:55.284972+00:00",
+  "updatedAt": "2026-08-08T23:08:18.003565+00:00",
   "lastResultPath": "apps/wayfold-compliance/.wayfold/results/transition-1-to-2-20260809-005845.json",
   "lastError": null,
   "history": [
