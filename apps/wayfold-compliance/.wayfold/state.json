@@ -4,7 +4,7 @@
   "lastClosedPhase": 6,
   "implementedPhase": 6,
   "nextTransition": null,
-  "status": "MERGING",
+  "status": "HUMAN_REVIEW_REQUIRED",
   "verificationAttempts": 0,
   "maxAutomaticFixAttempts": 3,
   "maxPhase": 6,
@@ -12,13 +12,18 @@
   "autoPush": true,
   "autoTag": true,
   "autoMergeMain": true,
-  "blockingIssues": [],
+  "blockingIssues": [
+    {
+      "severity": "BLOCKING",
+      "description": "Production deploy failed (exit 1)"
+    }
+  ],
   "branch": "automation/wayfold-compliance",
   "mode": "LOCAL_OVERNIGHT",
   "startedAt": "2026-08-08T22:55:01.467299+00:00",
-  "updatedAt": "2026-08-08T23:35:01.266005+00:00",
+  "updatedAt": "2026-08-08T23:45:57.294982+00:00",
   "lastResultPath": "apps/wayfold-compliance/.wayfold/results/transition-close-6-20260809-012904.json",
-  "lastError": null,
+  "lastError": "Production deploy failed (exit 1)",
   "history": [
     {
       "event": "INVALID_AGENT_OUTPUT",

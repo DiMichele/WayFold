@@ -73,3 +73,10 @@ PASS
 
 ## Final Regression
 PASS
+
+## Merge
+PASS
+## Deploy
+FAIL
+Production deploy failed (exit 1)
+Status: HUMAN_REVIEW_REQUIRED
