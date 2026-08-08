@@ -1,0 +1,34 @@
+name: WayFold Compliance Automation Guard
+
+on:
+  push:
+    paths:
+      - 'apps/wayfold-compliance/**'
+      - '.github/workflows/wayfold-compliance-automation.yml'
+  pull_request:
+    paths:
+      - 'apps/wayfold-compliance/**'
+      - '.github/workflows/wayfold-compliance-automation.yml'
+  workflow_dispatch:
+
+jobs:
+  automation-contract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile orchestrator modules
+        run: |
+          python -m py_compile \
+            apps/wayfold-compliance/automation/wayfold_orchestrator.py \
+            apps/wayfold-compliance/automation/state_machine.py \
+            apps/wayfold-compliance/automation/validate_setup.py \
+            apps/wayfold-compliance/automation/test_orchestrator.py
+      - name: Validate prompt/state contract
+        run: python apps/wayfold-compliance/automation/validate_setup.py
+      - name: State machine unit tests
+        run: python apps/wayfold-compliance/automation/test_orchestrator.py
+      - name: Dry-run simulation
+        run: python apps/wayfold-compliance/automation/wayfold_orchestrator.py dry-run

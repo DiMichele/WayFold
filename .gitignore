@@ -13,6 +13,40 @@ sessions/
 # Strumenti scaricati (cloudflared ecc.)
 tools/
 
+# Estensioni (artefatti di build)
+apps/**/.store-staging/
+apps/**/*-chrome-store.zip
+apps/wayfold-relay/node_modules/
+apps/wayfold-relay/dist/
+apps/wayfold-relay/WayFold-Relay-offline.zip
+apps/wayfold-relay/.offline-staging/
+apps/wayfold-relay/offline/certs/*.pem
+
+# Wayfold Bills
+apps/wayfold-bills/.env
+apps/wayfold-bills/.env.*
+!apps/wayfold-bills/.env.example
+apps/wayfold-bills/node_modules/
+apps/wayfold-bills/**/node_modules/
+apps/wayfold-bills/**/.next/
+apps/wayfold-bills/data/
+apps/wayfold-bills/scripts/data/
+apps/wayfold-bills/debug/
+apps/wayfold-bills/artifacts/
+apps/wayfold-bills/sessions/
+apps/wayfold-bills/storage-state/
+apps/wayfold-bills/connector-bundles/
+apps/wayfold-bills/**/dist/
+
+# WayFold Compliance — clone OSS locali
+apps/wayfold-compliance/vendor/
+
+# WayFold Compliance — runtime automation
+apps/wayfold-compliance/.wayfold/logs/
+apps/wayfold-compliance/.wayfold/orchestrator.lock
+apps/wayfold-compliance/.wayfold/*.tmp
+
+
 # Sistema
 .DS_Store
 Thumbs.db
