@@ -48,9 +48,21 @@ Persisted under `engine/data/regulatory/` (not CISO DB):
 | `FrameworkUpdateSuggestion` | Human workflow `CLONE_DRAFT` — no auto-publish |
 | `ClientImpactReport` | Projection onto pinned programs via mappings (advisory) |
 
+## WayFold AI store (Phase 5)
+
+Persisted under `engine/data/ai/` (not CISO DB):
+
+| Concept | Role |
+|---|---|
+| `TenantAISettings` | `ai_processing_enabled` default **false** |
+| `AISuggestion` | Mapping / regulatory diff / impact / gap explanation with `AI_SUGGESTED` → human `APPROVED`/`REJECTED` |
+
+AI never publishes frameworks, never auto-approves mappings, never mutates pinned baselines, never marks clients compliant.
+
 ## Boundaries
 
 - Global KB (libraries, reference controls, published frameworks) ≠ client workspace (applied controls, evidence, tasks).  
 - Engine reads core via ORM bridge or API; does not silently mutate published libraries.  
 - Tenant isolation enforced in core IAM and re-checked by `engine.authz` before checklist responses.
 - Regulatory watcher never silently changes framework data or client baselines.
+- AI assistance is optional per tenant and always human-reviewed.

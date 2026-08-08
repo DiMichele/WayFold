@@ -45,9 +45,14 @@ from engine.regulatory.domain import ChangeStatus
 from engine.regulatory.pipeline import check_source, impact_for_change, review_change
 from engine.regulatory.store import RegulatoryStore
 from engine.regulatory import pages as reg_pages
+from engine.ai.domain import SuggestionReviewStatus
+from engine.ai.service import AIAssistanceService, AIProcessingDisabled
+from engine.ai.store import AIStore
+from engine.ai import pages as ai_pages
 
 DEFAULT_PROGRAM = ROOT / "engine" / "fixtures" / "michele_phase2_program.json"
 _REG_STORE: RegulatoryStore | None = None
+_AI_SERVICE: AIAssistanceService | None = None
 
 
 def _reg_store() -> RegulatoryStore:
@@ -57,6 +62,15 @@ def _reg_store() -> RegulatoryStore:
         if not _REG_STORE.list_sources():
             seed_demo_source(_REG_STORE)
     return _REG_STORE
+
+
+def _ai_service() -> AIAssistanceService:
+    global _AI_SERVICE
+    if _AI_SERVICE is None:
+        _AI_SERVICE = AIAssistanceService(
+            store=AIStore(), regulatory_store=_reg_store()
+        )
+    return _AI_SERVICE
 
 
 def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
@@ -267,6 +281,7 @@ class Handler(BaseHTTPRequestHandler):
             auth = self._gate(qs)
             if auth is None:
                 return
+            actor_tenants, is_super = auth
             store = _reg_store()
             nav = _nav_qs(qs)
 
@@ -320,7 +335,12 @@ class Handler(BaseHTTPRequestHandler):
                 change = store.get_change(change_id)
                 if change is None:
                     return self._deny(404, "change_not_found")
-                impact = impact_for_change(change_id, store)
+                impact = impact_for_change(
+                    change_id,
+                    store,
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                )
                 if path == "/change":
                     return self._send(
                         200,
@@ -361,6 +381,179 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(
                     200,
                     json.dumps(to_jsonable(change), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+        # Phase 5 — AI Assistance (suggest only; human review required)
+        if path in {
+            "/ai/suggestions",
+            "/api/ai/suggestions",
+            "/ai/settings",
+            "/api/ai/settings",
+            "/api/ai/mapping-suggest",
+            "/api/ai/regulatory-summary",
+            "/api/ai/impact-suggest",
+            "/api/ai/gap-explain",
+            "/api/ai/review",
+        }:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            ai = _ai_service()
+            nav = _nav_qs(qs)
+
+            if path in {"/ai/suggestions", "/api/ai/suggestions"}:
+                items = ai.list_suggestions(
+                    actor_tenant_ids=actor_tenants, is_superuser=is_super
+                )
+                if path == "/ai/suggestions":
+                    return self._send(
+                        200,
+                        ai_pages.suggestions_page(items, nav).encode("utf-8"),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"suggestions": to_jsonable(items)}, ensure_ascii=False
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path in {"/ai/settings", "/api/ai/settings"}:
+                tenant_id = qs.get("tenant_id", [""])[0]
+                if not tenant_id:
+                    return self._deny(400, "tenant_id_required")
+                if not is_super:
+                    decision = assert_tenant_access(
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                        target_tenant_id=tenant_id,
+                    )
+                    if not decision.allowed:
+                        return self._deny(403, decision.reason)
+                enabled_raw = qs.get("enabled", [None])[0]
+                if enabled_raw is not None:
+                    settings = ai.set_ai_processing(
+                        tenant_id, enabled_raw.lower() in {"1", "true", "yes"}
+                    )
+                else:
+                    settings = ai.tenant_settings(tenant_id)
+                if path == "/ai/settings":
+                    return self._send(
+                        200,
+                        ai_pages.settings_page(settings, nav).encode("utf-8"),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(settings), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path == "/api/ai/review":
+                sid = qs.get("suggestion_id", [""])[0]
+                status_raw = qs.get("status", [""])[0].upper()
+                try:
+                    status = SuggestionReviewStatus(status_raw)
+                except ValueError:
+                    return self._deny(400, "invalid_status")
+                try:
+                    sug = ai.review_suggestion(
+                        sid,
+                        status=status,
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                    )
+                except KeyError:
+                    return self._deny(404, "suggestion_not_found")
+                except PermissionError as exc:
+                    return self._deny(403, str(exc))
+                except ValueError as exc:
+                    return self._deny(400, str(exc))
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(sug), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+            # Suggest endpoints need a program or change context
+            try:
+                program = _resolve_program(qs)
+            except Exception as exc:  # noqa: BLE001
+                program = None
+                program_err = str(exc)
+            else:
+                program_err = ""
+
+            if path in {
+                "/api/ai/mapping-suggest",
+                "/api/ai/gap-explain",
+            }:
+                if program is None:
+                    return self._deny(404, f"program_not_found: {program_err}")
+                decision = assert_tenant_access(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    target_tenant_id=program.tenant_id,
+                )
+                if not decision.allowed:
+                    return self._deny(403, decision.reason)
+                req_id = qs.get("requirement_id", [""])[0]
+                if not req_id:
+                    return self._deny(400, "requirement_id_required")
+                try:
+                    if path == "/api/ai/mapping-suggest":
+                        sug = ai.suggest_mapping(program, req_id)
+                    else:
+                        sug = ai.explain_gap(program, req_id)
+                except AIProcessingDisabled as exc:
+                    return self._deny(403, str(exc))
+                except KeyError as exc:
+                    return self._deny(404, str(exc))
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(sug), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path in {"/api/ai/regulatory-summary", "/api/ai/impact-suggest"}:
+                change_id = qs.get("change_id", [""])[0]
+                if not change_id:
+                    return self._deny(400, "change_id_required")
+                tenant_id = qs.get("tenant_id", [""])[0]
+                if not tenant_id and program is not None:
+                    tenant_id = program.tenant_id
+                if not tenant_id:
+                    return self._deny(400, "tenant_id_required")
+                if not is_super:
+                    decision = assert_tenant_access(
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                        target_tenant_id=tenant_id,
+                    )
+                    if not decision.allowed:
+                        return self._deny(403, decision.reason)
+                try:
+                    if path == "/api/ai/regulatory-summary":
+                        sug = ai.summarize_regulatory_change(
+                            change_id, tenant_id=tenant_id, program=program
+                        )
+                    else:
+                        sug = ai.suggest_impact(
+                            change_id,
+                            tenant_id=tenant_id,
+                            actor_tenant_ids=actor_tenants,
+                            is_superuser=is_super,
+                        )
+                except AIProcessingDisabled as exc:
+                    return self._deny(403, str(exc))
+                except KeyError as exc:
+                    return self._deny(404, str(exc))
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(sug), ensure_ascii=False).encode("utf-8"),
                     "application/json",
                 )
 

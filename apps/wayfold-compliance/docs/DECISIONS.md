@@ -128,6 +128,49 @@ Rivedere se:
 
 ---
 
+## [2026-08-09] Phase 5 AI via AIProvider + heuristic default
+
+Scelto:
+- `AIAssistanceService` + protocol `AIProvider` in `engine/ai/`.
+- Default provider: `HeuristicAIProvider` (deterministico, no API key / no LLM esterno).
+- `TenantAISettings.ai_processing_enabled = false` di default.
+- Ogni output è `AISuggestion` con `AI_SUGGESTED`; approve/reject umano obbligatorio.
+- Nessuna auto-applicazione a mapping/baseline/compliance CISO.
+
+Motivazione:
+- Master plan §57–§62: AI suggerisce, umano approva; prodotto utile senza AI.
+- Overnight senza credenziali prodotto / senza secret LLM.
+- Strategy B: store AI engine-side (`engine/data/ai/`), non fork CISO.
+
+Alternative considerate:
+- Chiamate OpenAI dirette da API handler — scartate (accoppiamento + secret).
+- AI sempre on — viola default-off tenant control.
+
+Rivedere se:
+- si configura un provider LLM reale dietro lo stesso contract;
+- serve coda/worker asincrona per analisi lunghe.
+
+---
+
+## [2026-08-09] Regulatory client impact tenant-filtered
+
+Scelto:
+- Sources / Changes inbox restano KB-level autenticati (fonte normativa globale).
+- `ClientImpactReport` è filtrato server-side per `actor_tenant_ids` (fail-closed se né superuser né actor).
+
+Motivazione:
+- Verification Phase 4: senza filtro, un actor Michele poteva teoricamente vedere row Alfa su source multi-tenant.
+- Allineato a tenant isolation Phase 2–3 senza trasformare le fonti ufficiali in dati per-tenant.
+
+Alternative considerate:
+- Nascondere l’intera inbox regulatory ai non-superuser — troppo restrittivo per il workflow consulente.
+- Fidarsi del fatto che i link source colpiscano un solo tenant — insufficiente.
+
+Rivedere se:
+- le Sources diventano tenant-owned (multi-tenant SaaS pubblico).
+
+---
+
 ## [2026-08-09] Nessun credential di accesso prodotto (temporaneo)
 
 Scelto:

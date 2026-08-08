@@ -1,2 +1,3 @@
-# Runtime regulatory store (engine DB overlay) — keep directory, ignore contents
+# Runtime engine stores — keep directory, ignore contents
 regulatory/
+ai/

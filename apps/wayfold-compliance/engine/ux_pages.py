@@ -32,6 +32,7 @@ def _shell(title: str, nav_qs: str, body: str) -> str:
   <a href="/checklist?{nav_qs}">Checklist</a>
   <a href="/sources?{nav_qs}">Sources</a>
   <a href="/changes?{nav_qs}">Reg Changes</a>
+  <a href="/ai/suggestions?{nav_qs}">AI</a>
 </nav>"""
     return f"""<!doctype html>
 <html lang="it"><head><meta charset="utf-8">

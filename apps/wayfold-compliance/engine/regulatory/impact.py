@@ -16,10 +16,13 @@ def project_client_impact(
     store: RegulatoryStore | None = None,  # noqa: ARG001 — reserved for future
     registry_path: Path | None = None,
     extra_programs: list | None = None,
+    actor_tenant_ids: set[str] | None = None,
+    is_superuser: bool = False,
 ) -> ClientImpactReport:
     """Deterministic impact: source links → requirements/controls → pinned programs.
 
     Does NOT migrate client baselines. Indication only.
+    Tenant isolation: non-superuser actors only see programs in actor_tenant_ids.
     """
     req_ids = set(change.potentially_impacted_requirement_ids or source.linked_requirement_ids)
     fw_ids = set(source.linked_framework_ids)
@@ -31,6 +34,10 @@ def project_client_impact(
         programs.extend(extra_programs)
     else:
         programs.extend(p for p, _ in load_portfolio_programs(registry_path or DEFAULT_REGISTRY))
+
+    if not is_superuser:
+        allowed = set(actor_tenant_ids or ())
+        programs = [p for p in programs if p.tenant_id in allowed]
 
     rows: list[ClientImpactRow] = []
     for program in programs:

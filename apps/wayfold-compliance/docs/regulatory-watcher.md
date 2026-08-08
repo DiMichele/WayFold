@@ -54,7 +54,7 @@ engine/regulatory/
 
 ```powershell
 cd apps/wayfold-compliance
-python -c "from pathlib import Path; from engine.regulatory.store import RegulatoryStore; from engine.regulatory.demo import run_demo_change_cycle; from engine.regulatory.pipeline import review_change, impact_for_change; from engine.regulatory.domain import ChangeStatus; s=RegulatoryStore(Path('_tmp_reg')); c=run_demo_change_cycle(s); print(c); ch=c['changed'].change_id; print(impact_for_change(ch,s)); print(review_change(ch,s,status=ChangeStatus.ACCEPTED))"
+python -c "from pathlib import Path; from engine.regulatory.store import RegulatoryStore; from engine.regulatory.demo import run_demo_change_cycle; from engine.regulatory.pipeline import review_change, impact_for_change; from engine.regulatory.domain import ChangeStatus; s=RegulatoryStore(Path('_tmp_reg')); c=run_demo_change_cycle(s); print(c); ch=c['changed'].change_id; print(impact_for_change(ch,s,is_superuser=True)); print(review_change(ch,s,status=ChangeStatus.ACCEPTED))"
 python -m engine.tests.test_regulatory
 ```
 
@@ -72,9 +72,11 @@ Fixture files: `engine/fixtures/regulatory/demo-nis2/v1.html` → `v2.html` (sub
 | FW suggestions | `/suggestions` |
 
 Auth: `superuser=1` or `actor_tenants=…` (same engine gate as Phase 2–3).
+Client impact rows are filtered by actor tenants (fail-closed if neither superuser nor actor set).
 
 ## Boundaries
 
 - Never writes CISO `LoadedLibrary` / published FrameworkVersion.
 - Client programs remain pinned; impact is advisory.
+- Sources/Changes inbox is global KB-level (authenticated); client impact is tenant-scoped.
 - AI semantic analysis deferred to Phase 5.

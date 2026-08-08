@@ -4,7 +4,7 @@
   "lastClosedPhase": 3,
   "implementedPhase": 4,
   "nextTransition": "4_TO_5",
-  "status": "READY",
+  "status": "HUMAN_REVIEW_REQUIRED",
   "verificationAttempts": 0,
   "maxAutomaticFixAttempts": 3,
   "maxPhase": 6,
@@ -12,13 +12,18 @@
   "autoPush": true,
   "autoTag": true,
   "autoMergeMain": true,
-  "blockingIssues": [],
+  "blockingIssues": [
+    {
+      "severity": "BLOCKING",
+      "description": "Invalid agent output: Invalid JSON in C:\\Users\\digen\\Desktop\\WayFold\\apps\\wayfold-compliance\\.wayfold\\results\\transition-4-to-5-20260809-011828.json: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)"
+    }
+  ],
   "branch": "automation/wayfold-compliance",
   "mode": "LOCAL_OVERNIGHT",
   "startedAt": "2026-08-08T22:55:01.467299+00:00",
-  "updatedAt": "2026-08-08T23:18:23.975817+00:00",
-  "lastResultPath": "apps/wayfold-compliance/.wayfold/results/transition-3-to-4-20260809-011325.json",
-  "lastError": null,
+  "updatedAt": "2026-08-08T23:23:06.476562+00:00",
+  "lastResultPath": "apps/wayfold-compliance/.wayfold/results/transition-4-to-5-20260809-011828.json",
+  "lastError": "Invalid JSON in C:\\Users\\digen\\Desktop\\WayFold\\apps\\wayfold-compliance\\.wayfold\\results\\transition-4-to-5-20260809-011828.json: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)",
   "history": [
     {
       "event": "INVALID_AGENT_OUTPUT",
@@ -41,6 +46,10 @@
       "event": "TRANSITION_PASS",
       "transition": "3_TO_4",
       "closedPhase": 3
+    },
+    {
+      "event": "INVALID_AGENT_OUTPUT",
+      "error": "Invalid JSON in C:\\Users\\digen\\Desktop\\WayFold\\apps\\wayfold-compliance\\.wayfold\\results\\transition-4-to-5-20260809-011828.json: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)"
     }
   ],
   "notes": "Phase 0 closed via architecture/DECISIONS. Phase 1 Working Core is subject to independent verification on first overnight transition (1_TO_2). PROGRESS.md may lag; do not treat Phase 1 as COMPLETE until verification PASS + tag."

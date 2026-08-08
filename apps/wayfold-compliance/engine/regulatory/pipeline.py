@@ -239,7 +239,12 @@ def review_change(
 
 
 def impact_for_change(
-    change_id: str, store: RegulatoryStore, **kwargs
+    change_id: str,
+    store: RegulatoryStore,
+    *,
+    actor_tenant_ids: set[str] | None = None,
+    is_superuser: bool = False,
+    **kwargs,
 ):
     change = store.get_change(change_id)
     if change is None:
@@ -247,7 +252,14 @@ def impact_for_change(
     source = store.get_source(change.source_id)
     if source is None:
         raise KeyError(f"source_not_found:{change.source_id}")
-    return project_client_impact(change, source, store=store, **kwargs)
+    return project_client_impact(
+        change,
+        source,
+        store=store,
+        actor_tenant_ids=actor_tenant_ids,
+        is_superuser=is_superuser,
+        **kwargs,
+    )
 
 
 def _suffix_for(content_type: str) -> str:
