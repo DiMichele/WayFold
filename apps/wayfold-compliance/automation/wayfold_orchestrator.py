@@ -1097,16 +1097,38 @@ def deploy_production(ctx: Context) -> None:
     _safe_print(log[-4000:] if log else "")
     if cp.returncode != 0:
         raise OrchestratorError(f"Production deploy failed (exit {cp.returncode})")
-    # Smoke check
+    # Prefer public URL; fall back to VPS localhost health via SSH
+    remote = str(ctx.config.get("deployRemote", "wayfold@167.233.121.159"))
+    public_ok = False
     try:
         import urllib.request
+        import ssl
 
         url = str(ctx.config.get("productionUrl", "https://compliance.wayfold.xyz/api/health/"))
-        with urllib.request.urlopen(url, timeout=30) as resp:  # noqa: S310
+        ctx_ssl = ssl.create_default_context()
+        with urllib.request.urlopen(url, timeout=30, context=ctx_ssl) as resp:  # noqa: S310
             body = resp.read().decode("utf-8", errors="replace")
             print(f"Production health: HTTP {resp.status} {body[:200]}")
+            public_ok = True
     except Exception as exc:
-        raise OrchestratorError(f"Deploy finished but health check failed: {exc}") from exc
+        print(f"Public HTTPS health not ready yet: {exc}")
+    if not public_ok:
+        cp = run_cmd(
+            ["ssh", "-o", "BatchMode=yes", remote, "curl -fsS http://127.0.0.1:18000/api/health/"],
+            ctx.repo,
+            timeout=60,
+        )
+        if cp.returncode != 0:
+            raise OrchestratorError(
+                "Deploy finished but neither public HTTPS nor VPS localhost health passed. "
+                "If Docker is up, run once: sudo bash /home/wayfold/apps/wayfold-compliance/deploy/setup-nginx-tls.sh"
+            )
+        print(f"VPS localhost health OK: {(cp.stdout or '').strip()}")
+        print(
+            "NOTE: Public TLS needs one root command on VPS "
+            "(passwordless sudo not available): "
+            "sudo bash /home/wayfold/apps/wayfold-compliance/deploy/setup-nginx-tls.sh"
+        )
 
 
 def merge_to_main(ctx: Context, *, dry: bool = False) -> str:

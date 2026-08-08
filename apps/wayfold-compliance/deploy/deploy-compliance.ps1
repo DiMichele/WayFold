@@ -70,12 +70,28 @@ bash deploy/update-remote.sh
 "@
 }
 
+$tlsOk = $false
 if ($SetupTls) {
     Write-Host "-> Nginx + Let's Encrypt for compliance.wayfold.xyz"
-    ssh $Remote "sudo bash $RemoteDir/deploy/setup-nginx-tls.sh"
-    if ($LASTEXITCODE -ne 0) { throw "TLS setup failed" }
+    ssh $Remote "sudo -n bash $RemoteDir/deploy/setup-nginx-tls.sh"
+    if ($LASTEXITCODE -eq 0) {
+        $tlsOk = $true
+    } else {
+        Write-Host "WARN: TLS/nginx setup requires passwordless sudo on VPS."
+        Write-Host "      App stack is up on localhost. Run once as root:"
+        Write-Host "      sudo bash $RemoteDir/deploy/setup-nginx-tls.sh"
+    }
 }
 
+# Local health on VPS (does not depend on public TLS)
+ssh $Remote "curl -fsS http://127.0.0.1:18000/api/health/"
+if ($LASTEXITCODE -ne 0) { throw "Local backend health failed on VPS" }
+
 Write-Host ""
-Write-Host "Deploy completato: https://compliance.wayfold.xyz"
-Write-Host "WayFold engine:    https://compliance.wayfold.xyz/wayfold/"
+if ($tlsOk) {
+    Write-Host "Deploy completato: https://compliance.wayfold.xyz"
+    Write-Host "WayFold engine:    https://compliance.wayfold.xyz/wayfold/"
+} else {
+    Write-Host "Deploy app OK (Docker). Public HTTPS pending root TLS setup."
+    Write-Host "Local API: http://127.0.0.1:18000/api/health/ on VPS"
+}
