@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "project": "wayfold-compliance",
+  "lastClosedPhase": 0,
+  "implementedPhase": 1,
+  "nextTransition": "1_TO_2",
+  "status": "READY",
+  "verificationAttempts": 0,
+  "maxAutomaticFixAttempts": 3,
+  "maxPhase": 6,
+  "autoCommit": true,
+  "autoPush": true,
+  "autoTag": true,
+  "autoMergeMain": true,
+  "blockingIssues": [],
+  "branch": "automation/wayfold-compliance",
+  "mode": "LOCAL_OVERNIGHT",
+  "startedAt": "2026-08-08T22:55:01.467299+00:00",
+  "updatedAt": "2026-08-08T22:56:21.802090+00:00",
+  "lastResultPath": null,
+  "lastError": null,
+  "history": [
+    {
+      "event": "INVALID_AGENT_OUTPUT",
+      "error": "Agent did not write result JSON"
+    },
+    {
+      "event": "RESUME_AFTER_STDIN_FIX"
+    }
+  ],
+  "notes": "Phase 0 closed via architecture/DECISIONS. Phase 1 Working Core is subject to independent verification on first overnight transition (1_TO_2). PROGRESS.md may lag; do not treat Phase 1 as COMPLETE until verification PASS + tag."
+}
