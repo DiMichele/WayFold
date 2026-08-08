@@ -395,27 +395,47 @@ def tag_phase(ctx: Context, phase: int) -> None:
 # --- Cursor agent ---------------------------------------------------------
 
 
+def _windows_agent_node_argv(local_dir: Path) -> list[str] | None:
+    """Resolve node.exe + index.js so stdin/UTF-8 work (avoid cmd.ps1 wrappers)."""
+    versions = local_dir / "versions"
+    if not versions.is_dir():
+        return None
+    dirs = [p for p in versions.iterdir() if p.is_dir()]
+    if not dirs:
+        return None
+
+    def sort_key(p: Path) -> tuple:
+        # Names like 2026.08.04-aaa8809 or 2026.08.04-12-00-00-aaa8809
+        return p.name
+
+    for version_dir in sorted(dirs, key=sort_key, reverse=True):
+        node = version_dir / "node.exe"
+        index = version_dir / "index.js"
+        if node.exists() and index.exists():
+            return [str(node), str(index)]
+    return None
+
+
 def resolve_cursor_command(config: dict[str, Any]) -> list[str]:
     """Return a subprocess-safe argv for the Cursor Agent CLI."""
     local_dir = Path(os.environ.get("LOCALAPPDATA", "")) / "cursor-agent"
-    # Windows installer ships agent.cmd (CreateProcess cannot exec .cmd directly).
+    # Prefer direct node entry on Windows for reliable stdin piping.
     if os.name == "nt":
-        for name in ("agent.cmd", "cursor-agent.cmd"):
-            cmd_path = local_dir / name
-            if cmd_path.exists():
-                return ["cmd", "/c", str(cmd_path)]
-        which_cmd = shutil.which("agent.cmd") or shutil.which("agent")
-        if which_cmd and which_cmd.lower().endswith((".cmd", ".bat")):
-            return ["cmd", "/c", which_cmd]
+        node_argv = _windows_agent_node_argv(local_dir)
+        if node_argv:
+            return node_argv
 
     candidates: list[list[str]] = []
     raw = str(config.get("cursorCommand", "agent")).strip()
-    if raw:
+    if raw and raw not in {"agent", "cursor-agent"}:
         candidates.append(shlex.split(raw, posix=(os.name != "nt")))
     for name in ("agent", "cursor-agent"):
         path = shutil.which(name)
         if path:
-            candidates.append([path])
+            if os.name == "nt" and path.lower().endswith((".cmd", ".bat")):
+                candidates.append(["cmd", "/c", path])
+            else:
+                candidates.append([path])
     for exe in ("agent.exe", "cursor-agent.exe"):
         local = local_dir / exe
         if local.exists():
@@ -578,23 +598,26 @@ def run_cursor_agent(ctx: Context, prompt: str, log_name: str) -> tuple[int, Pat
     print(f"\n=== Cursor Agent ===\nLog: {log_path.relative_to(ctx.repo)}")
     print(f"Prompt file: {prompt_path.relative_to(ctx.repo)} ({len(prompt)} chars via stdin)\n")
 
+    env = os.environ.copy()
+    env.setdefault("PYTHONIOENCODING", "utf-8")
+    env.setdefault("LANG", "C.UTF-8")
     try:
         cp = subprocess.run(
             args,
             cwd=str(ctx.repo),
-            text=True,
-            input=prompt,
+            input=prompt.encode("utf-8"),
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=timeout,
-            env=os.environ.copy(),
+            env=env,
         )
-        log_path.write_text(cp.stdout or "", encoding="utf-8")
-        if cp.stdout:
-            print(cp.stdout[-5000:])
+        output = (cp.stdout or b"").decode("utf-8", errors="replace")
+        log_path.write_text(output, encoding="utf-8")
+        if output:
+            print(output[-5000:])
         return cp.returncode, log_path
     except subprocess.TimeoutExpired as exc:
-        output = exc.stdout or ""
+        output = exc.stdout or b""
         if isinstance(output, bytes):
             output = output.decode("utf-8", errors="replace")
         log_path.write_text(output + "\nTIMEOUT\n", encoding="utf-8")
