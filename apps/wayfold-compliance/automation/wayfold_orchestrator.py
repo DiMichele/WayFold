@@ -110,7 +110,8 @@ def find_repo_root(start: Path | None = None) -> Path:
 
 def read_json(path: Path) -> dict[str, Any]:
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
+        # utf-8-sig tolerates BOM occasionally written by Windows/agents
+        return json.loads(path.read_text(encoding="utf-8-sig"))
     except FileNotFoundError as exc:
         raise OrchestratorError(f"Missing required file: {path}") from exc
     except json.JSONDecodeError as exc:
