@@ -11,6 +11,7 @@ from .domain import ImplementationStatus, ProgramSnapshot
 from .gap_assessment import build_gap_rows
 from .impact import rank_control_impact
 from .readiness import framework_readiness
+from .ui_shell import render_shell
 
 
 def build_report_context(
@@ -66,7 +67,9 @@ def build_report_context(
     }
 
 
-def report_html(program: ProgramSnapshot, *, as_of: date | None = None) -> str:
+def report_html(
+    program: ProgramSnapshot, *, as_of: date | None = None, nav_qs: str = ""
+) -> str:
     ctx = build_report_context(program, as_of=as_of)
     ready_rows = "".join(
         "<tr>"
@@ -105,27 +108,14 @@ def report_html(program: ProgramSnapshot, *, as_of: date | None = None) -> str:
         f"<li>{u.framework_name} {u.code}: {u.title}</li>" for u in ctx["unmapped"]
     ) or "<li>None</li>"
 
-    return f"""<!doctype html>
-<html lang="it"><head><meta charset="utf-8">
-<title>Report — {ctx['client']} / {ctx['program']}</title>
-<style>
-body{{font-family:Segoe UI,sans-serif;margin:1.5rem;color:#111;background:#fff}}
-h1{{font-size:1.35rem;margin:0 0 .25rem}}
-h2{{font-size:1.05rem;margin:1.4rem 0 .5rem;border-bottom:1px solid #ccc;padding-bottom:.2rem}}
-.meta{{color:#444;margin-bottom:1rem}}
-table{{border-collapse:collapse;width:100%;font-size:.9rem}}
-th,td{{border:1px solid #ccc;padding:.35rem .5rem;text-align:left}}
-th{{background:#f0f0f0}}
-ul{{margin:.25rem 0 .75rem 1.2rem}}
-@media print{{body{{margin:.8rem}} a{{color:inherit;text-decoration:none}}}}
-</style></head><body>
-<h1>WayFold Compliance Report</h1>
+    body = f"""
+<h1>Compliance Report</h1>
 <p class="meta">
 <strong>{ctx['client']}</strong> · {ctx['program']}<br>
 Assessment date: {ctx['assessment_date']} · Scope: {ctx['scope']}
 </p>
 <h2>Executive overview</h2>
-<ul>
+<ul class="compact">
 <li>Unified controls: {ctx['checklist'].unified_control_count}</li>
 <li>Unmapped requirements: {len(ctx['unmapped'])}</li>
 <li>Critical gaps (HIGH / NOT_IMPLEMENTED): {len(ctx['critical_gaps'])}</li>
@@ -137,13 +127,18 @@ Assessment date: {ctx['assessment_date']} · Scope: {ctx['scope']}
 <th>Framework</th><th>Version</th><th>Readiness</th>
 <th>FULLY</th><th>PARTIAL</th><th>NOT</th><th>UNMAPPED</th><th>N/A</th>
 </tr></thead><tbody>{ready_rows}</tbody></table>
-<h2>Critical gaps</h2><ul>{crit}</ul>
-<h2>High-priority gaps</h2><ul>{high}</ul>
-<h2>Controls in progress</h2><ul>{progress}</ul>
-<h2>Overdue</h2><ul>{overdue}</ul>
-<h2>Upcoming deadlines</h2><ul>{upcoming}</ul>
-<h2>Unmapped requirements</h2><ul>{unmapped}</ul>
-</body></html>"""
+<h2>Critical gaps</h2><ul class="compact">{crit}</ul>
+<h2>High-priority gaps</h2><ul class="compact">{high}</ul>
+<h2>Controls in progress</h2><ul class="compact">{progress}</ul>
+<h2>Overdue</h2><ul class="compact">{overdue}</ul>
+<h2>Upcoming deadlines</h2><ul class="compact">{upcoming}</ul>
+<h2>Unmapped requirements</h2><ul class="compact">{unmapped}</ul>
+"""
+    return render_shell(
+        f"Report — {ctx['client']} / {ctx['program']}",
+        nav_qs,
+        body,
+    )
 
 
 def report_csv(program: ProgramSnapshot, *, as_of: date | None = None) -> str:

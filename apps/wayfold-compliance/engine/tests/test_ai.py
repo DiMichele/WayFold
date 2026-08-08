@@ -161,6 +161,66 @@ class AIAssistanceTests(unittest.TestCase):
             sug = fn()
             self.assertEqual(sug.review_status, SuggestionReviewStatus.AI_SUGGESTED)
 
+    def test_cross_tenant_review_denied(self):
+        self.svc.set_ai_processing(self.program.tenant_id, True)
+        sug = self.svc.suggest_mapping(self.program, "req-a-99")
+        with self.assertRaises(PermissionError):
+            self.svc.review_suggestion(
+                sug.id,
+                status=SuggestionReviewStatus.APPROVED,
+                actor_tenant_ids={"tenant-alfa"},
+                is_superuser=False,
+            )
+
+    def test_regulatory_summary_drops_mismatched_program_context(self):
+        """Alfa tenant must not receive Michele requirement IDs via default program."""
+        import engine.api as api_mod
+
+        self.svc.set_ai_processing("tenant-alfa", True)
+        cycle = run_demo_change_cycle(self.reg_store, fixture_root=REG_FIXTURES)
+        change_id = cycle["changed"].change_id
+        assert change_id
+        michele_req_ids = {r.id for r in self.program.requirements}
+
+        original = api_mod._ai_service
+        api_mod._ai_service = lambda: self.svc
+        try:
+            captured: dict = {}
+
+            class FakeHandler(Handler):
+                def __init__(self, path: str):
+                    self.path = path
+                    self.wfile = mock.Mock()
+                    self.wfile.write = lambda b: captured.__setitem__("body", b)
+                    captured["status"] = None
+
+                def send_response(self, code, message=None):  # noqa: ARG002
+                    captured["status"] = code
+
+                def send_header(self, key, value):
+                    return None
+
+                def end_headers(self):
+                    return None
+
+                def address_string(self):
+                    return "test"
+
+            # No program_id: must not inject default Michele program reqs into Alfa AI payload.
+            # Global source-linked IDs (e.g. req-b-01) may still appear — that is KB-level, not a leak.
+            FakeHandler(
+                f"/api/ai/regulatory-summary?actor_tenants=tenant-alfa"
+                f"&tenant_id=tenant-alfa&change_id={change_id}"
+            ).do_GET()
+            self.assertEqual(captured["status"], 200)
+            body = json.loads(captured["body"].decode())
+            impacted = set(body["payload"].get("potentially_impacted_requirement_ids") or [])
+            program_only = michele_req_ids - {"req-b-01"}  # req-b-01 is also source-linked globally
+            self.assertFalse(impacted & program_only)
+            self.assertNotIn("req-a-99", impacted)
+        finally:
+            api_mod._ai_service = original
+
 
 if __name__ == "__main__":
     unittest.main()

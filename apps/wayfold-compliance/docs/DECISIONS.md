@@ -171,6 +171,49 @@ Rivedere se:
 
 ---
 
+## [2026-08-09] Visual language — allineamento ecosistema WayFold (Bills)
+
+Scelto:
+- L’UI WayFold Compliance (engine HTML consultant) **deve** usare la stessa visual language di `apps/wayfold-bills`:
+  - palette charcoal `#1A242B` · sage `#98A9A2` · terracotta `#D97B5C` · sand `#D9C5A0` · bg `#F7F6F3`
+  - tipografia **Jost** (display) / **Inter** (UI) / **DM Mono** (label)
+  - shell condiviso in `engine/ui_shell.py`
+- Vietato introdurre temi generici “admin blue/gray”, purple-on-white, o stili CISO grezzi sulle superfici WayFold.
+- Il frontend CISO upstream può restare invariato; le viste WayFold (portfolio/checklist/regulatory/AI) passano dallo shell brand.
+
+Motivazione:
+- Coerenza di prodotto nell’ecosistema WayFold (viaggi / bills / compliance).
+
+Rivedere se:
+- nasce un design-system package condiviso a livello monorepo.
+
+---
+
+## [2026-08-09] Phase 6 Automated Evidence via Prowler JSON adapter + fixture
+
+Scelto:
+- Package `engine/automated_evidence/` con boundary `ScannerAdapter` → `NormalizedFinding` → mapping SUPPORTING → `AutomatedEvidenceRecord`.
+- Adapter **Prowler JSON** (fixture-compatible). Live Prowler scan non eseguito qui (ENVIRONMENT BLOCKER Windows path length, già in open-source-evaluation).
+- Evidence type semantico `EXTERNAL_REFERENCE` con provenance; store engine-side `engine/data/automated_evidence/`.
+- Human review obbligatoria; technical PASS **non** muta `AppliedControl` / readiness / baseline.
+- Credenziali solo come `credential_ref` (nome env var), mai inline nel codice/store.
+
+Motivazione:
+- DECISIONS precedenti: Prowler = Phase 6 specialized component, non core.
+- Master plan §98 + phase-06-develop: non inventare un nuovo CSPM; non trasformare la fase in progetto cloud-security infinito.
+- Strategy B: riuso concetto Evidence del core senza fork DB; overnight senza secret cloud.
+
+Alternative considerate:
+- Eseguire Prowler live in CI overnight — bloccato da environment Windows.
+- Scrivere findings direttamente nelle tabelle Evidence CISO — scartato (coupling + silent mutate).
+- Auto-set status IMPLEMENTED su PASS tecnico — viola Unified Compliance (SUPPORTING only).
+
+Rivedere se:
+- ambiente Linux/CI consente export Prowler reale sullo stesso adapter;
+- serve bridge API CISO per materializzare EvidenceRevision dopo APPROVED.
+
+---
+
 ## [2026-08-09] Nessun credential di accesso prodotto (temporaneo)
 
 Scelto:

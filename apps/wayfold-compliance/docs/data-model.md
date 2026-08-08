@@ -59,6 +59,19 @@ Persisted under `engine/data/ai/` (not CISO DB):
 
 AI never publishes frameworks, never auto-approves mappings, never mutates pinned baselines, never marks clients compliant.
 
+## WayFold Automated Evidence store (Phase 6)
+
+Persisted under `engine/data/automated_evidence/` (not CISO DB):
+
+| Concept | Role |
+|---|---|
+| `ConnectorConfig` | Tenant-scoped scanner connector (`PROWLER_JSON` / fixture); `credential_ref` = env name only |
+| `NormalizedFinding` | Provider-agnostic technical check |
+| `CheckControlMapping` | check_id → canonical control (default relation **SUPPORTING**) |
+| `AutomatedEvidenceRecord` | `EXTERNAL_REFERENCE` evidence suggestion with provenance; `PENDING_REVIEW` → `APPROVED`/`REJECTED`/`STALE` |
+
+Technical PASS never auto-sets AppliedControl IMPLEMENTED or framework readiness.
+
 ## Boundaries
 
 - Global KB (libraries, reference controls, published frameworks) ≠ client workspace (applied controls, evidence, tasks).  
@@ -66,3 +79,4 @@ AI never publishes frameworks, never auto-approves mappings, never mutates pinne
 - Tenant isolation enforced in core IAM and re-checked by `engine.authz` before checklist responses.
 - Regulatory watcher never silently changes framework data or client baselines.
 - AI assistance is optional per tenant and always human-reviewed.
+- Automated evidence is SUPPORTING technical signal; human-reviewed; does not replace CISO Evidence engine writes in this phase (engine-side overlay + advisory counts).

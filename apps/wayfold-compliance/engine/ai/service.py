@@ -125,6 +125,9 @@ class AIAssistanceService:
         source = self.regulatory_store.get_source(change.source_id)
         if source is None:
             raise KeyError(f"source_not_found:{change.source_id}")
+        # Never feed another tenant's program requirements into the suggestion payload
+        if program is not None and program.tenant_id != tenant_id:
+            program = None
         known = [r.id for r in program.requirements] if program else []
         out = provider.summarize_regulatory_diff(
             change, source, known_requirement_ids=known

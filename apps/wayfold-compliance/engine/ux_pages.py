@@ -1,9 +1,11 @@
-"""Dense consultant HTML pages (Phase 3) — no marketing chrome."""
+"""Dense consultant HTML pages (Phase 3) — WayFold ecosystem visual language."""
 
 from __future__ import annotations
 
 from html import escape
 from urllib.parse import parse_qsl, urlencode
+
+from engine.ui_shell import render_shell
 
 
 def _with_program(nav_qs: str, program_id: str) -> str:
@@ -19,51 +21,7 @@ def _with_control(nav_qs: str, control_ref: str) -> str:
 
 
 def _shell(title: str, nav_qs: str, body: str) -> str:
-    nav = f"""
-<nav class="nav">
-  <a href="/portfolio?{nav_qs}">Portfolio</a>
-  <a href="/client?{nav_qs}">Client</a>
-  <a href="/gaps?{nav_qs}">Gaps</a>
-  <a href="/owners?{nav_qs}">Owners</a>
-  <a href="/deadlines?{nav_qs}">Deadlines</a>
-  <a href="/evidence?{nav_qs}">Evidence</a>
-  <a href="/tasks?{nav_qs}">Tasks</a>
-  <a href="/report?{nav_qs}">Report</a>
-  <a href="/checklist?{nav_qs}">Checklist</a>
-  <a href="/sources?{nav_qs}">Sources</a>
-  <a href="/changes?{nav_qs}">Reg Changes</a>
-  <a href="/ai/suggestions?{nav_qs}">AI</a>
-</nav>"""
-    return f"""<!doctype html>
-<html lang="it"><head><meta charset="utf-8">
-<title>{escape(title)}</title>
-<style>
-:root{{--bg:#f4f5f7;--fg:#15202b;--line:#c9ced6;--head:#e8ebef;--accent:#0b3d5c}}
-body{{font-family:"Segoe UI",Tahoma,sans-serif;margin:0;background:var(--bg);color:var(--fg)}}
-.nav{{display:flex;flex-wrap:wrap;gap:.75rem;padding:.65rem 1.25rem;background:#0b3d5c;position:sticky;top:0;z-index:2}}
-.nav a{{color:#e8f1f6;text-decoration:none;font-size:.88rem}}
-.nav a:hover{{text-decoration:underline}}
-main{{padding:1rem 1.25rem 2.5rem}}
-h1{{font-size:1.25rem;margin:.2rem 0 .35rem}}
-h2{{font-size:1.05rem;margin:1.25rem 0 .4rem}}
-.meta,.hint{{color:#445;font-size:.9rem;margin-bottom:.8rem}}
-table{{border-collapse:collapse;width:100%;background:#fff;font-size:.86rem}}
-th,td{{border:1px solid #cfd6dd;padding:.38rem .48rem;vertical-align:top}}
-th{{background:var(--head);text-align:left;position:sticky;top:2.4rem;z-index:1}}
-tr:nth-child(even){{background:#fafbfc}}
-.filters{{display:flex;flex-wrap:wrap;gap:.5rem;margin:0 0 1rem;align-items:end}}
-.filters label{{display:flex;flex-direction:column;font-size:.75rem;color:#445;gap:.15rem}}
-.filters input,.filters select{{font:inherit;padding:.28rem .4rem;min-width:7rem}}
-.filters button{{padding:.35rem .7rem;font:inherit;cursor:pointer}}
-.badge{{display:inline-block;padding:.05rem .35rem;border:1px solid #99a;border-radius:2px;font-size:.75rem}}
-.overdue{{color:#8a1f1f;font-weight:600}}
-ul.compact{{margin:.2rem 0 .8rem 1.1rem;padding:0}}
-code{{background:#eef2f6;padding:0 .25rem}}
-</style></head><body>
-{nav}
-<main>
-{body}
-</main></body></html>"""
+    return render_shell(title, nav_qs, body)
 
 
 def portfolio_page(rows, nav_qs: str) -> str:

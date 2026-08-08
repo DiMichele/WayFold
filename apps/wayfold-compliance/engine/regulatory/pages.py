@@ -4,34 +4,19 @@ from __future__ import annotations
 
 from html import escape
 
+from engine.ui_shell import render_shell
+
+_NAV = (
+    ("Portfolio", "/portfolio"),
+    ("Sources", "/sources"),
+    ("Reg Changes", "/changes"),
+    ("FW Suggestions", "/suggestions"),
+    ("AI", "/ai/suggestions"),
+)
+
 
 def _shell(title: str, nav_qs: str, body: str) -> str:
-    nav = f"""
-<nav class="nav">
-  <a href="/portfolio?{nav_qs}">Portfolio</a>
-  <a href="/sources?{nav_qs}">Sources</a>
-  <a href="/changes?{nav_qs}">Regulatory Changes</a>
-  <a href="/suggestions?{nav_qs}">FW Suggestions</a>
-</nav>"""
-    return f"""<!doctype html>
-<html lang="it"><head><meta charset="utf-8">
-<title>{escape(title)}</title>
-<style>
-body{{font-family:"Segoe UI",Tahoma,sans-serif;margin:0;background:#f4f5f7;color:#15202b}}
-.nav{{display:flex;flex-wrap:wrap;gap:.75rem;padding:.65rem 1.25rem;background:#1f3d2f}}
-.nav a{{color:#e8f6ee;text-decoration:none;font-size:.88rem}}
-main{{padding:1rem 1.25rem 2.5rem}}
-h1{{font-size:1.25rem;margin:.2rem 0 .35rem}}
-h2{{font-size:1.05rem;margin:1.1rem 0 .4rem}}
-.meta{{color:#445;font-size:.9rem}}
-table{{border-collapse:collapse;width:100%;background:#fff;font-size:.86rem}}
-th,td{{border:1px solid #cfd6dd;padding:.38rem .48rem;vertical-align:top}}
-th{{background:#e8ebef;text-align:left}}
-.badge{{display:inline-block;padding:.05rem .35rem;border:1px solid #99a;font-size:.75rem}}
-pre.diff{{background:#111;color:#d8e0d8;padding:.75rem;overflow:auto;max-height:22rem;font-size:.75rem}}
-</style></head><body>
-{nav}
-<main>{body}</main></body></html>"""
+    return render_shell(title, nav_qs, body, nav_items=_NAV)
 
 
 def sources_page(sources, nav_qs: str) -> str:

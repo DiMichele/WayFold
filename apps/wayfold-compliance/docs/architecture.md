@@ -1,4 +1,4 @@
-# Architecture — WayFold Compliance (Phase 5)
+# Architecture — WayFold Compliance (Phase 6)
 
 ## Selected core
 
@@ -45,13 +45,14 @@ compliance.wayfold.xyz
 │ Snapshots / Diff      │
 │ Change inbox / Impact │
 │ AIProvider + assist   │  Phase 5 (suggest only)
+│ Automated evidence    │  Phase 6 (Prowler/fixture → SUPPORTING)
 └───────────────────────┘
 ```
 
 ## Database boundaries
 
 - **Core DB:** PostgreSQL gestito da CISO (unico source of truth GRC operativo).
-- **Wayfold Engine:** overlay JSON for mapping intelligence + `engine/data/regulatory/` for Source/Snapshot/Change + `engine/data/ai/` for suggestions/settings; niente silent mutation delle library pubblicate nel core.
+- **Wayfold Engine:** overlay JSON for mapping intelligence + `engine/data/regulatory/` for Source/Snapshot/Change + `engine/data/ai/` for suggestions/settings + `engine/data/automated_evidence/` for connectors/findings; niente silent mutation delle library pubblicate nel core.
 
 ## API boundaries
 
@@ -63,6 +64,7 @@ compliance.wayfold.xyz
 ## Storage
 
 - Evidence files: storage CISO (EvidenceRevision attachments).
+- Automated technical evidence (Phase 6): engine store + EXTERNAL_REFERENCE provenance; bridge to CISO EvidenceRevision deferibile post-APPROVED.
 - Regulatory raw snapshots: object storage / filesystem del Wayfold Engine (futuro).
 
 ## Deployment (target)
@@ -82,7 +84,7 @@ compliance.wayfold.xyz
 | Requirement | RequirementNode |
 | Framework Version | LoadedLibrary.version (+ Framework.library pin) |
 
-## Phase 2–5 engine notes
+## Phase 2–6 engine notes
 
 - Canonical reuse: `ReferenceControl` / `canonical_control_ref` — no duplicate control tables in core.
 - Req↔Control coverage relations live in WayFold `MappingRecord` overlay (CISO `RequirementMapping` remains req↔req).
@@ -90,4 +92,5 @@ compliance.wayfold.xyz
 - Consultant UX: dense HTML/JSON on `:8092` (not a CISO frontend fork).
 - Phase 4 regulatory pipeline is engine-local; framework suggestions never auto-publish into CISO.
 - Phase 5 AI goes only through `AIAssistanceService` / `AIProvider`; tenant default AI off; human review mandatory.
-- See `docs/unified-compliance.md`, `docs/consultant-ux.md`, `docs/regulatory-watcher.md`, `docs/ai-assistance.md`, `docs/data-model.md`.
+- Phase 6 automated evidence uses `ScannerAdapter` (Prowler JSON/fixture); SUPPORTING signals only; human review; no auto-compliance.
+- See `docs/unified-compliance.md`, `docs/consultant-ux.md`, `docs/regulatory-watcher.md`, `docs/ai-assistance.md`, `docs/automated-evidence.md`, `docs/data-model.md`.

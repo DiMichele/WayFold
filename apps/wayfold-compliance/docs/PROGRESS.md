@@ -6,8 +6,9 @@
 **Phase 2 CLOSED (verification PASS)** — vedi `PHASE2-VERIFICATION.md`.  
 **Phase 3 CLOSED (verification PASS)** — vedi `PHASE3-VERIFICATION.md`.  
 **Phase 4 CLOSED (verification PASS)** — vedi `PHASE4-VERIFICATION.md`.  
-**PHASE 5 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION.**  
-Non dichiarare Phase 5 COMPLETE fino a PASS + tag orchestratore.
+**Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
+**PHASE 6 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION.**  
+Non dichiarare Phase 6 COMPLETE fino a PASS + tag orchestratore.
 
 ## Completato
 
@@ -18,17 +19,17 @@ Non dichiarare Phase 5 COMPLETE fino a PASS + tag orchestratore.
 - Phase 2 Unified Compliance verified (`PHASE2-VERIFICATION.md` → **PASS**)
 - Phase 3 Consultant UX verified (`PHASE3-VERIFICATION.md` → **PASS**)
 - Phase 4 Regulatory Intelligence verified (`PHASE4-VERIFICATION.md` → **PASS**)
-  - Sources + adapters, immutable snapshots + SHA-256, deterministic diff
-  - RegulatoryChange inbox + FrameworkUpdateSuggestion CLONE_DRAFT
-  - Client impact tenant-filtered; tests: 10 OK
-- Phase 5 AI Assistance implemented in `engine/ai/`:
-  - `AIProvider` abstraction + `HeuristicAIProvider` (no external LLM keys)
-  - Mapping suggestions, regulatory diff summaries, impact suggestions, gap explanations
-  - Human review obbligatoria (`AI_SUGGESTED` → APPROVED/REJECTED)
-  - `TenantAISettings.ai_processing_enabled` default **false**
-  - No auto-approve mapping/impact; no compliance auto-close
-  - tests: 8 OK (`test_ai`)
-- Docs: `unified-compliance.md`, `consultant-ux.md`, `regulatory-watcher.md`, `ai-assistance.md`, `data-model.md`
+- Phase 5 AI Assistance verified (`PHASE5-VERIFICATION.md` → **PASS**)
+  - `AIProvider` + human review; tenant AI default off
+  - Fix verification: no cross-tenant program context on regulatory AI suggest
+- Phase 6 Automated Evidence implemented in `engine/automated_evidence/`:
+  - `ProwlerJsonAdapter` (fixture-compatible; live scan ENVIRONMENT BLOCKER on Windows)
+  - Connector config, normalize finding, map → canonical control (SUPPORTING)
+  - `AutomatedEvidenceRecord` with provenance + human review
+  - Idempotent ingest / stale on change; scanner failure isolated
+  - Technical PASS does **not** mutate AppliedControl / readiness
+  - tests: 9 OK (`test_automated_evidence`)
+- Docs: `unified-compliance.md`, `consultant-ux.md`, `regulatory-watcher.md`, `ai-assistance.md`, `automated-evidence.md`, `data-model.md`
 
 ## Cosa funziona
 
@@ -38,10 +39,12 @@ Non dichiarare Phase 5 COMPLETE fino a PASS + tag orchestratore.
 - Isolation portfolio + regulatory impact per actor tenant
 - Regulatory demo cycle v1→v2 senza rete esterna
 - AI suggest endpoints con gate tenant + AI disabled-by-default
+- Auto-evidence ingest da fixture Prowler + review umana
 
 ## Cosa non funziona / gate aperti
 
-- Phase 5 non ancora chiusa da verification report indipendente
+- Phase 6 non ancora chiusa da verification report indipendente
+- Live Prowler scan non eseguibile in questo ambiente Windows (path length) — fixture adapter by design
 - Provider LLM reale non configurato (heuristic locale by design overnight)
 - Optimistic locking integer `version` su AppliedControl assente nel core (warning Phase 1)
 - PDF/RSS/API adapters tipizzati ma senza parser specializzati (estendibili)
@@ -52,11 +55,12 @@ Non dichiarare Phase 5 COMPLETE fino a PASS + tag orchestratore.
 - WayFold mappings + portfolio registry: overlay JSON (non nel DB core)
 - Regulatory store: `engine/data/regulatory/` (gitignored runtime)
 - AI store: `engine/data/ai/` (gitignored runtime)
+- Automated evidence store: `engine/data/automated_evidence/` (gitignored runtime)
 
 ## Migrazioni recenti
 
 - Nessuna migration prodotto WayFold; core CISO migrations applicate nel container
-- Nessuna migration distruttiva; store regulatory/AI file-based engine-side
+- Nessuna migration distruttiva; store regulatory/AI/auto-evidence file-based engine-side
 
 ## Comandi di avvio
 
@@ -66,11 +70,12 @@ python -m engine.tests.test_unified_compliance
 python -m engine.tests.test_consultant_ux
 python -m engine.tests.test_regulatory
 python -m engine.tests.test_ai
+python -m engine.tests.test_automated_evidence
 python -m engine --superuser --format text
 python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
-# AI: /ai/suggestions?superuser=1
-#     /api/ai/settings?superuser=1&tenant_id=tenant-michele&enabled=1
-#     /api/ai/mapping-suggest?superuser=1&requirement_id=req-a-99
+# Auto evidence: /connectors?superuser=1
+#                /auto-evidence?superuser=1
+#                /api/auto-evidence/ingest?superuser=1&connector_id=conn-prowler-michele-demo
 ```
 
 ## Git
@@ -90,9 +95,10 @@ python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
 - UX HTML locale (non fork SvelteKit CISO) — integrazione UI core deferibile
 - Regulatory HTTP check on-demand (scheduler/worker persistente deferibile)
 - Heuristic AI → sostituibile con LLM provider sullo stesso contract
+- Live Prowler / cloud credentials → quando ambiente lo consente, stesso adapter boundary
 
 ## Prossimo step consigliato
 
-1. Orchestratore: tag `phase-4-complete` post PASS Phase 4  
-2. Independent VERIFY Phase 5 (`5_TO_6` quando previsto)  
-3. Non iniziare Phase 6 finché Phase 5 non ha PASS
+1. Orchestratore: tag `phase-5-complete` post PASS Phase 5  
+2. Independent VERIFY Phase 6 (`close-phase-06` / verification prompt)  
+3. Non dichiarare Phase 6 COMPLETE fino a PASS indipendente

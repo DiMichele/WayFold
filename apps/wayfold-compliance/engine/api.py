@@ -39,6 +39,7 @@ from engine.program_loader import load_program_snapshot
 from engine.readiness import framework_readiness
 from engine.reports import report_csv, report_html
 from engine.serialize import to_jsonable
+from engine.ui_shell import render_shell
 from engine import ux_pages
 from engine.regulatory.demo import seed_demo_source
 from engine.regulatory.domain import ChangeStatus
@@ -49,10 +50,16 @@ from engine.ai.domain import SuggestionReviewStatus
 from engine.ai.service import AIAssistanceService, AIProcessingDisabled
 from engine.ai.store import AIStore
 from engine.ai import pages as ai_pages
+from engine.automated_evidence.domain import EvidenceReviewStatus
+from engine.automated_evidence.demo import seed_demo_connector
+from engine.automated_evidence.service import AutomatedEvidenceService
+from engine.automated_evidence.store import AutomatedEvidenceStore
+from engine.automated_evidence import pages as auto_ev_pages
 
 DEFAULT_PROGRAM = ROOT / "engine" / "fixtures" / "michele_phase2_program.json"
 _REG_STORE: RegulatoryStore | None = None
 _AI_SERVICE: AIAssistanceService | None = None
+_AUTO_EV_SERVICE: AutomatedEvidenceService | None = None
 
 
 def _reg_store() -> RegulatoryStore:
@@ -71,6 +78,16 @@ def _ai_service() -> AIAssistanceService:
             store=AIStore(), regulatory_store=_reg_store()
         )
     return _AI_SERVICE
+
+
+def _auto_ev_service() -> AutomatedEvidenceService:
+    global _AUTO_EV_SERVICE
+    if _AUTO_EV_SERVICE is None:
+        store = AutomatedEvidenceStore()
+        if not store.list_connectors():
+            seed_demo_connector(store)
+        _AUTO_EV_SERVICE = AutomatedEvidenceService(store=store)
+    return _AUTO_EV_SERVICE
 
 
 def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
@@ -111,7 +128,7 @@ def _resolve_program(qs: dict):
     return load_program_snapshot(DEFAULT_PROGRAM)
 
 
-def _html_checklist(checklist, readiness, impact) -> str:
+def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
     rows = []
     for c in checklist.controls:
         cov = "<br>".join(
@@ -149,20 +166,8 @@ def _html_checklist(checklist, readiness, impact) -> str:
         for r in readiness
     )
     impact_items = "".join(f"<li>{i.readable_summary}</li>" for i in impact[:10])
-    return f"""<!doctype html>
-<html lang="it"><head><meta charset="utf-8">
-<title>WayFold Unified Checklist — {checklist.program_name}</title>
-<style>
-body{{font-family:Segoe UI,sans-serif;margin:2rem;background:#f6f7f9;color:#1a1a1a}}
-h1{{font-size:1.4rem;margin-bottom:.25rem}}
-.meta{{color:#444;margin-bottom:1.5rem}}
-table{{border-collapse:collapse;width:100%;background:#fff}}
-th,td{{border:1px solid #d0d5dd;padding:.45rem .55rem;vertical-align:top;font-size:.9rem}}
-th{{background:#eef2f6;text-align:left;position:sticky;top:0}}
-section{{margin:2rem 0}}
-code{{background:#eef2f6;padding:0 .25rem}}
-</style></head><body>
-<h1>WayFold — Unified Checklist</h1>
+    body = f"""
+<h1>Unified Checklist</h1>
 <p class="meta">{checklist.program_name} · raw requirements {checklist.raw_requirement_count}
  · unified controls {checklist.unified_control_count}
  · unmapped {len(checklist.unmapped)}</p>
@@ -177,7 +182,7 @@ code{{background:#eef2f6;padding:0 .25rem}}
 </section>
 <section>
 <h2>Unmapped requirements</h2>
-<ul>{unmapped or '<li>None</li>'}</ul>
+<ul class="compact">{unmapped or '<li>None</li>'}</ul>
 </section>
 <section>
 <h2>Framework readiness</h2>
@@ -188,9 +193,14 @@ code{{background:#eef2f6;padding:0 .25rem}}
 </section>
 <section>
 <h2>Control impact</h2>
-<ul>{impact_items}</ul>
+<ul class="compact">{impact_items}</ul>
 </section>
-</body></html>"""
+"""
+    return render_shell(
+        f"Unified Checklist — {checklist.program_name}",
+        nav_qs,
+        body,
+    )
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -384,6 +394,143 @@ class Handler(BaseHTTPRequestHandler):
                     "application/json",
                 )
 
+        # Phase 6 — Automated Evidence (Prowler/fixture → SUPPORTING evidence; human review)
+        if path in {
+            "/connectors",
+            "/api/auto-evidence/connectors",
+            "/auto-evidence",
+            "/api/auto-evidence",
+            "/api/auto-evidence/ingest",
+            "/api/auto-evidence/review",
+            "/api/auto-evidence/counts",
+        }:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            auto = _auto_ev_service()
+            nav = _nav_qs(qs)
+
+            if path in {"/connectors", "/api/auto-evidence/connectors"}:
+                items = auto.list_connectors(
+                    actor_tenant_ids=actor_tenants, is_superuser=is_super
+                )
+                if path == "/connectors":
+                    return self._send(
+                        200,
+                        auto_ev_pages.connectors_page(items, nav).encode("utf-8"),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"connectors": to_jsonable(items)}, ensure_ascii=False
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path in {"/auto-evidence", "/api/auto-evidence"}:
+                items = auto.list_evidence(
+                    actor_tenant_ids=actor_tenants, is_superuser=is_super
+                )
+                if path == "/auto-evidence":
+                    return self._send(
+                        200,
+                        auto_ev_pages.evidence_page(items, nav).encode("utf-8"),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"evidence": to_jsonable(items)}, ensure_ascii=False
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path == "/api/auto-evidence/ingest":
+                connector_id = qs.get("connector_id", [""])[0]
+                if not connector_id:
+                    return self._deny(400, "connector_id_required")
+                program = None
+                if qs.get("program", [None])[0] or qs.get("program_id", [None])[0]:
+                    try:
+                        program = _resolve_program(qs)
+                    except Exception as exc:  # noqa: BLE001
+                        return self._deny(404, f"program_not_found: {exc}")
+                try:
+                    result = auto.ingest_connector(
+                        connector_id,
+                        program=program,
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                    )
+                except KeyError as exc:
+                    return self._deny(404, str(exc))
+                except PermissionError as exc:
+                    return self._deny(403, str(exc))
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(result), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path == "/api/auto-evidence/review":
+                eid = qs.get("evidence_id", [""])[0]
+                status_raw = qs.get("status", [""])[0].upper()
+                try:
+                    status = EvidenceReviewStatus(status_raw)
+                except ValueError:
+                    return self._deny(400, "invalid_status")
+                try:
+                    rec = auto.review_evidence(
+                        eid,
+                        status=status,
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                    )
+                except KeyError:
+                    return self._deny(404, "evidence_not_found")
+                except PermissionError as exc:
+                    return self._deny(403, str(exc))
+                except ValueError as exc:
+                    return self._deny(400, str(exc))
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(rec), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
+            if path == "/api/auto-evidence/counts":
+                try:
+                    program = _resolve_program(qs)
+                except Exception as exc:  # noqa: BLE001
+                    return self._deny(404, f"program_not_found: {exc}")
+                decision = assert_tenant_access(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    target_tenant_id=program.tenant_id,
+                )
+                if not decision.allowed:
+                    return self._deny(403, decision.reason)
+                counts = auto.project_evidence_counts(program)
+                # Explicit: counts are advisory; implementation statuses untouched
+                return self._send(
+                    200,
+                    json.dumps(
+                        {
+                            "tenant_id": program.tenant_id,
+                            "program_id": program.program_id,
+                            "approved_auto_evidence_by_control": counts,
+                            "note": (
+                                "Advisory counts only — does not mutate AppliedControl "
+                                "status or framework readiness"
+                            ),
+                        },
+                        ensure_ascii=False,
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+
         # Phase 5 — AI Assistance (suggest only; human review required)
         if path in {
             "/ai/suggestions",
@@ -478,19 +625,26 @@ class Handler(BaseHTTPRequestHandler):
                     "application/json",
                 )
 
-            # Suggest endpoints need a program or change context
-            try:
-                program = _resolve_program(qs)
-            except Exception as exc:  # noqa: BLE001
-                program = None
-                program_err = str(exc)
-            else:
-                program_err = ""
+            # Suggest endpoints need a program or change context.
+            # Explicit program only — never inject default Michele into another tenant's AI call.
+            program = None
+            program_err = ""
+            if qs.get("program", [None])[0] or qs.get("program_id", [None])[0]:
+                try:
+                    program = _resolve_program(qs)
+                except Exception as exc:  # noqa: BLE001
+                    program_err = str(exc)
 
             if path in {
                 "/api/ai/mapping-suggest",
                 "/api/ai/gap-explain",
             }:
+                if program is None and not program_err:
+                    # Backward-compatible default only when caller omits program entirely
+                    try:
+                        program = _resolve_program(qs)
+                    except Exception as exc:  # noqa: BLE001
+                        program_err = str(exc)
                 if program is None:
                     return self._deny(404, f"program_not_found: {program_err}")
                 decision = assert_tenant_access(
@@ -535,6 +689,9 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     if not decision.allowed:
                         return self._deny(403, decision.reason)
+                # Drop mismatched program context (prevents cross-tenant req IDs in AI payload)
+                if program is not None and program.tenant_id != tenant_id:
+                    program = None
                 try:
                     if path == "/api/ai/regulatory-summary":
                         sug = ai.summarize_regulatory_change(
@@ -573,7 +730,7 @@ class Handler(BaseHTTPRequestHandler):
         impact = rank_control_impact(program, checklist)
 
         if path in {"/checklist"}:
-            body = _html_checklist(checklist, readiness, impact).encode("utf-8")
+            body = _html_checklist(checklist, readiness, impact, nav).encode("utf-8")
             return self._send(200, body, "text/html; charset=utf-8")
 
         if path == "/api/unified-checklist":
@@ -706,7 +863,7 @@ class Handler(BaseHTTPRequestHandler):
             )
 
         if path == "/report":
-            body = report_html(program).encode("utf-8")
+            body = report_html(program, nav_qs=nav).encode("utf-8")
             return self._send(200, body, "text/html; charset=utf-8")
 
         if path == "/report.csv":

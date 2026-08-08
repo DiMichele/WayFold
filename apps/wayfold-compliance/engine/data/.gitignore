@@ -1,3 +1,4 @@
 # Runtime engine stores — keep directory, ignore contents
 regulatory/
 ai/
+automated_evidence/

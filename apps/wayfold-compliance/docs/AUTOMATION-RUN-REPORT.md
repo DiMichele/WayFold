@@ -2,30 +2,33 @@
 
 Started: 2026-08-09 (LOCAL_OVERNIGHT)
 Branch: `automation/wayfold-compliance`
-Transition: `4_TO_5`
+Transition: `5_TO_6`
 
 ## Status
 
-PHASE_4_VERIFIED_PASS · PHASE_5_IMPLEMENTED_AWAITING_VERIFICATION
-
-## Phase 4
-
-Verification: **PASS** (`docs/PHASE4-VERIFICATION.md`)  
-Fix attempts: 1 (client impact tenant filter fail-closed)  
-Tag: deferred to orchestrator (`phase-4-complete`)
+PHASE_5_VERIFIED_PASS · PHASE_6_IMPLEMENTED_AWAITING_VERIFICATION
 
 ## Phase 5
 
+Verification: **PASS** (`docs/PHASE5-VERIFICATION.md`)  
+Fix attempts: 1 (regulatory AI suggest must not inject default Michele program into another tenant)  
+Tag: deferred to orchestrator (`phase-5-complete`)
+
+## Phase 6
+
 Development: **IMPLEMENTED** — awaiting independent verification  
 Artifacts:
-- `engine/ai/` (domain, provider, store, service, pages)
-- `docs/ai-assistance.md`
-- API: `/ai/suggestions`, `/api/ai/*`
+- `engine/automated_evidence/` (domain, adapters, mapping, store, service, demo, pages)
+- Fixture: `engine/fixtures/automated_evidence/prowler-aws-sample.json`
+- `docs/automated-evidence.md`
+- API: `/connectors`, `/auto-evidence`, `/api/auto-evidence/*`
 Tests:
 - `python -m engine.tests.test_unified_compliance` → 13 OK
 - `python -m engine.tests.test_consultant_ux` → 9 OK
 - `python -m engine.tests.test_regulatory` → 10 OK
-- `python -m engine.tests.test_ai` → 8 OK
+- `python -m engine.tests.test_ai` → 10 OK
+- `python -m engine.tests.test_automated_evidence` → 9 OK
+- `python -m compileall engine` → OK
 
 ## Notes
 
@@ -33,8 +36,8 @@ Tests:
 - No production deploy / DNS / DB production from this pipeline
 - `state.json` not modified by agent
 - No git tags created by agent
-- AI suggests only; human review required; tenant AI default off
-- Heuristic provider (no product login / no LLM API keys required)
+- Prowler live scan deferred (Windows path ENVIRONMENT BLOCKER); fixture adapter used
+- Technical PASS = SUPPORTING evidence only; human review required
 
 ## Phase history
 
@@ -44,27 +47,5 @@ Tests:
 | 2 | PASS | phase-2-complete (orchestrator) |
 | 3 | PASS | pending orchestrator |
 | 4 | PASS | pending orchestrator |
-| 5 | AWAITING | — |
-
-## Phase 4
-Verification: PASS
-Tag: phase-4-complete (orchestrator)
-Push: pending
-
-## Phase 5
-Development: DONE
-Verification: AWAITING INDEPENDENT VERIFICATION
-
-## Transition 4_TO_5
-Failure: invalid agent result
-Error: Invalid JSON in C:\Users\digen\Desktop\WayFold\apps\wayfold-compliance\.wayfold\results\transition-4-to-5-20260809-011828.json: Unexpected UTF-8 BOM (decode using utf-8-sig): line 1 column 1 (char 0)
-Status: HUMAN_REVIEW_REQUIRED
-
-## Phase 4
-Verification: PASS
-Tag: phase-4-complete
-Push: pending
-
-## Phase 5
-Development: DONE
-Verification: AWAITING INDEPENDENT VERIFICATION
+| 5 | PASS | pending orchestrator |
+| 6 | AWAITING | — |
