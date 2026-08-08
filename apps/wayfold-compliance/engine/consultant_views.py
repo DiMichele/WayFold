@@ -58,6 +58,82 @@ class TaskItem:
     overdue: bool
 
 
+@dataclass
+class ControlCoverageDetail:
+    framework_id: str
+    framework_name: str
+    framework_version: str
+    requirement_id: str
+    requirement_code: str
+    requirement_title: str
+    relation: str
+    uncovered_delta: str
+    rationale: str
+
+
+@dataclass
+class ControlDetail:
+    """Drill-down from Gap / Owner / Deadline: coverage, deltas, evidence, tasks."""
+
+    control_ref: str
+    name: str
+    status: str
+    owner: str | None
+    due_date: str | None
+    priority: str | None
+    evidence_count: int
+    open_task_count: int
+    gap_notes: str
+    framework_coverage: list[ControlCoverageDetail]
+    program_id: str
+    tenant_id: str
+
+
+def control_detail(
+    program: ProgramSnapshot,
+    control_ref: str,
+    checklist: UnifiedChecklist | None = None,
+) -> ControlDetail | None:
+    """Resolve a canonical control from the unified checklist (pinned program)."""
+    checklist = checklist or build_unified_checklist(program)
+    key = (control_ref or "").strip().lower()
+    if not key:
+        return None
+    req_title = {r.id: r.title for r in program.requirements}
+    for ctrl in checklist.controls:
+        ref = (ctrl.canonical_control_ref or "").strip()
+        if ref.lower() != key and (ctrl.control_key or "").lower() != key:
+            continue
+        return ControlDetail(
+            control_ref=ref or ctrl.control_key,
+            name=ctrl.name,
+            status=ctrl.status.value,
+            owner=ctrl.owner,
+            due_date=ctrl.due_date,
+            priority=ctrl.priority,
+            evidence_count=ctrl.evidence_count,
+            open_task_count=ctrl.open_task_count,
+            gap_notes=ctrl.gap_notes,
+            framework_coverage=[
+                ControlCoverageDetail(
+                    framework_id=c.framework_id,
+                    framework_name=c.framework_name,
+                    framework_version=c.framework_version,
+                    requirement_id=c.requirement_id,
+                    requirement_code=c.requirement_code,
+                    requirement_title=req_title.get(c.requirement_id, ""),
+                    relation=c.relation.value,
+                    uncovered_delta=c.uncovered_delta or "",
+                    rationale=c.rationale or "",
+                )
+                for c in ctrl.framework_coverage
+            ],
+            program_id=program.program_id,
+            tenant_id=program.tenant_id,
+        )
+    return None
+
+
 def owner_view(
     program: ProgramSnapshot, checklist: UnifiedChecklist | None = None
 ) -> dict[str, list[OwnerWorkItem]]:

@@ -10,7 +10,8 @@ Daily consultant workflow over the CISO core + Phase 2 Unified Compliance engine
 |---|---|---|
 | Portfolio | `/portfolio` | `/api/portfolio` |
 | Client dashboard | `/client?program_id=…` | `/api/client` |
-| Gap assessment | `/gaps` (+ filters) | `/api/gaps` |
+| Gap assessment | `/gaps` (+ filters incl. deadline range) | `/api/gaps` |
+| Control detail | `/control?control_ref=…` | `/api/control` |
 | Owner view | `/owners` | `/api/owners` |
 | Deadline view | `/deadlines` | `/api/deadlines` |
 | Evidence | `/evidence` | `/api/evidence` |

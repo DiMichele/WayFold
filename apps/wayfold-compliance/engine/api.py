@@ -20,7 +20,13 @@ if str(ROOT) not in sys.path:
 
 from engine.authz import assert_tenant_access
 from engine.checklist import build_unified_checklist
-from engine.consultant_views import deadline_view, evidence_view, owner_view, task_view
+from engine.consultant_views import (
+    control_detail,
+    deadline_view,
+    evidence_view,
+    owner_view,
+    task_view,
+)
 from engine.gap_assessment import GapFilter, build_gap_rows, filter_gap_rows
 from engine.impact import rank_control_impact
 from engine.portfolio import (
@@ -34,8 +40,23 @@ from engine.readiness import framework_readiness
 from engine.reports import report_csv, report_html
 from engine.serialize import to_jsonable
 from engine import ux_pages
+from engine.regulatory.demo import seed_demo_source
+from engine.regulatory.domain import ChangeStatus
+from engine.regulatory.pipeline import check_source, impact_for_change, review_change
+from engine.regulatory.store import RegulatoryStore
+from engine.regulatory import pages as reg_pages
 
 DEFAULT_PROGRAM = ROOT / "engine" / "fixtures" / "michele_phase2_program.json"
+_REG_STORE: RegulatoryStore | None = None
+
+
+def _reg_store() -> RegulatoryStore:
+    global _REG_STORE
+    if _REG_STORE is None:
+        _REG_STORE = RegulatoryStore()
+        if not _REG_STORE.list_sources():
+            seed_demo_source(_REG_STORE)
+    return _REG_STORE
 
 
 def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
@@ -229,6 +250,120 @@ class Handler(BaseHTTPRequestHandler):
             body = json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8")
             return self._send(200, body, "application/json")
 
+        # Phase 4 — Regulatory Intelligence (engine store; not program-scoped)
+        if path in {
+            "/sources",
+            "/api/sources",
+            "/changes",
+            "/api/changes",
+            "/change",
+            "/api/change",
+            "/suggestions",
+            "/api/suggestions",
+            "/api/regulatory/check",
+            "/api/regulatory/review",
+            "/api/regulatory/impact",
+        }:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            store = _reg_store()
+            nav = _nav_qs(qs)
+
+            if path == "/sources":
+                return self._send(
+                    200,
+                    reg_pages.sources_page(store.list_sources(), nav).encode("utf-8"),
+                    "text/html; charset=utf-8",
+                )
+            if path == "/api/sources":
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"sources": to_jsonable(store.list_sources())}, ensure_ascii=False
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            if path == "/changes":
+                return self._send(
+                    200,
+                    reg_pages.changes_page(store.list_changes(), nav).encode("utf-8"),
+                    "text/html; charset=utf-8",
+                )
+            if path == "/api/changes":
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"changes": to_jsonable(store.list_changes())}, ensure_ascii=False
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            if path == "/suggestions":
+                return self._send(
+                    200,
+                    reg_pages.suggestions_page(store.list_suggestions(), nav).encode(
+                        "utf-8"
+                    ),
+                    "text/html; charset=utf-8",
+                )
+            if path == "/api/suggestions":
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"suggestions": to_jsonable(store.list_suggestions())},
+                        ensure_ascii=False,
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            if path in {"/change", "/api/change", "/api/regulatory/impact"}:
+                change_id = qs.get("change_id", [""])[0]
+                change = store.get_change(change_id)
+                if change is None:
+                    return self._deny(404, "change_not_found")
+                impact = impact_for_change(change_id, store)
+                if path == "/change":
+                    return self._send(
+                        200,
+                        reg_pages.change_detail_page(change, impact, nav).encode("utf-8"),
+                        "text/html; charset=utf-8",
+                    )
+                payload = {
+                    "change": to_jsonable(change),
+                    "impact": to_jsonable(impact),
+                }
+                return self._send(
+                    200,
+                    json.dumps(payload, ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+            if path == "/api/regulatory/check":
+                source_id = qs.get("source_id", [""])[0]
+                source = store.get_source(source_id)
+                if source is None:
+                    return self._deny(404, "source_not_found")
+                result = check_source(source, store)
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(result), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+            if path == "/api/regulatory/review":
+                change_id = qs.get("change_id", [""])[0]
+                status_raw = qs.get("status", [""])[0].upper()
+                try:
+                    status = ChangeStatus(status_raw)
+                except ValueError:
+                    return self._deny(400, "invalid_status")
+                try:
+                    change = review_change(change_id, store, status=status)
+                except KeyError:
+                    return self._deny(404, "change_not_found")
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(change), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+
         # Program-scoped routes
         try:
             program = _resolve_program(qs)
@@ -273,12 +408,14 @@ class Handler(BaseHTTPRequestHandler):
                 "application/json",
             )
 
-        if path == "/gaps":
-            flt = GapFilter(
+        def _gap_filter_from_qs() -> GapFilter:
+            return GapFilter(
                 framework=qs.get("framework", [""])[0] or None,
                 status=qs.get("status", [""])[0] or None,
                 owner=qs.get("owner", [""])[0] or None,
                 priority=qs.get("priority", [""])[0] or None,
+                deadline_before=qs.get("deadline_before", [""])[0] or None,
+                deadline_after=qs.get("deadline_after", [""])[0] or None,
                 mapped=(
                     True
                     if qs.get("mapped", [""])[0] == "1"
@@ -289,6 +426,9 @@ class Handler(BaseHTTPRequestHandler):
                 missing_evidence=True if qs.get("missing_evidence", [""])[0] == "1" else None,
                 search=qs.get("search", [""])[0] or None,
             )
+
+        if path == "/gaps":
+            flt = _gap_filter_from_qs()
             rows = filter_gap_rows(build_gap_rows(program, checklist), flt)
             filter_values = {
                 "superuser": "1" if qs.get("superuser", ["0"])[0] in {"1", "true", "yes"} else "",
@@ -298,6 +438,8 @@ class Handler(BaseHTTPRequestHandler):
                 "status": qs.get("status", [""])[0],
                 "owner": qs.get("owner", [""])[0],
                 "priority": qs.get("priority", [""])[0],
+                "deadline_before": qs.get("deadline_before", [""])[0],
+                "deadline_after": qs.get("deadline_after", [""])[0],
                 "mapped": qs.get("mapped", [""])[0],
                 "missing_evidence": qs.get("missing_evidence", [""])[0],
                 "search": qs.get("search", [""])[0],
@@ -309,25 +451,32 @@ class Handler(BaseHTTPRequestHandler):
             )
 
         if path == "/api/gaps":
-            flt = GapFilter(
-                framework=qs.get("framework", [""])[0] or None,
-                status=qs.get("status", [""])[0] or None,
-                owner=qs.get("owner", [""])[0] or None,
-                priority=qs.get("priority", [""])[0] or None,
-                mapped=(
-                    True
-                    if qs.get("mapped", [""])[0] == "1"
-                    else False
-                    if qs.get("mapped", [""])[0] == "0"
-                    else None
-                ),
-                missing_evidence=True if qs.get("missing_evidence", [""])[0] == "1" else None,
-                search=qs.get("search", [""])[0] or None,
-            )
-            rows = filter_gap_rows(build_gap_rows(program, checklist), flt)
+            rows = filter_gap_rows(build_gap_rows(program, checklist), _gap_filter_from_qs())
             return self._send(
                 200,
                 json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        if path == "/control":
+            ref = qs.get("control_ref", [""])[0]
+            detail = control_detail(program, ref, checklist)
+            if detail is None:
+                return self._deny(404, "control_not_found")
+            return self._send(
+                200,
+                ux_pages.control_page(detail, nav).encode("utf-8"),
+                "text/html; charset=utf-8",
+            )
+
+        if path == "/api/control":
+            ref = qs.get("control_ref", [""])[0]
+            detail = control_detail(program, ref, checklist)
+            if detail is None:
+                return self._deny(404, "control_not_found")
+            return self._send(
+                200,
+                json.dumps(to_jsonable(detail), ensure_ascii=False).encode("utf-8"),
                 "application/json",
             )
 

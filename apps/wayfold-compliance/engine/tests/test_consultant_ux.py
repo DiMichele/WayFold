@@ -12,11 +12,18 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from engine.api import Handler
-from engine.consultant_views import deadline_view, evidence_view, owner_view, task_view
+from engine.consultant_views import (
+    control_detail,
+    deadline_view,
+    evidence_view,
+    owner_view,
+    task_view,
+)
 from engine.gap_assessment import GapFilter, build_gap_rows, filter_gap_rows
 from engine.portfolio import build_client_dashboard, build_portfolio
 from engine.program_loader import load_program_snapshot
 from engine.reports import report_csv, report_html
+from engine import ux_pages
 
 FIXTURES = Path(__file__).resolve().parents[1] / "fixtures"
 MICHELE = FIXTURES / "michele_phase2_program.json"
@@ -66,12 +73,51 @@ class ConsultantUxTests(unittest.TestCase):
         self.assertTrue(all(not r.mapped for r in unmapped))
         self.assertGreaterEqual(len(unmapped), 2)
         partial = filter_gap_rows(rows, GapFilter(search="PARTIAL"))
-        # search hits gap/notes/code — also filter by mapping via status not mapping field
+        self.assertTrue(partial)
+        self.assertTrue(all("PARTIAL" in (r.mapping or "").upper() or "partial" in (r.gap or "").lower() for r in partial))
         by_fw = filter_gap_rows(rows, GapFilter(framework="NIS2"))
         self.assertTrue(all("NIS2" in r.framework_name for r in by_fw))
         missing = filter_gap_rows(rows, GapFilter(missing_evidence=True))
         self.assertTrue(all(r.mapped and r.evidence_count <= 0 for r in missing))
         self.assertGreaterEqual(len(missing), 1)
+        by_deadline = filter_gap_rows(
+            rows, GapFilter(deadline_after="2026-09-01", deadline_before="2026-09-30")
+        )
+        self.assertTrue(by_deadline)
+        self.assertTrue(all(r.deadline and "2026-09" in r.deadline for r in by_deadline))
+
+    def test_control_detail_from_gap_drilldown(self):
+        detail = control_detail(self.michele, "CTRL-IAM-001")
+        self.assertIsNotNone(detail)
+        assert detail is not None
+        self.assertGreaterEqual(len(detail.framework_coverage), 2)
+        self.assertTrue(any(c.uncovered_delta for c in detail.framework_coverage))
+        self.assertEqual(detail.evidence_count, 1)
+        self.assertEqual(detail.open_task_count, 0)
+        html = ux_pages.control_page(detail, "superuser=1&program_id=program-cyber-demo")
+        self.assertIn("Framework coverage", html)
+        self.assertIn("CTRL-IAM-001", html)
+        gaps_html = ux_pages.gaps_page(
+            build_gap_rows(self.michele),
+            "superuser=1&program_id=program-cyber-demo",
+            {
+                "superuser": "1",
+                "program_id": "program-cyber-demo",
+                "framework": "",
+                "status": "",
+                "owner": "",
+                "priority": "",
+                "deadline_before": "",
+                "deadline_after": "",
+                "mapped": "",
+                "missing_evidence": "",
+                "search": "",
+                "actor_tenants": "",
+            },
+        )
+        self.assertIn("/control?", gaps_html)
+        self.assertIn("CTRL-IAM-001", gaps_html)
+        self.assertIn("deadline_before", gaps_html)
 
     def test_owner_deadline_evidence_task_views(self):
         owners = owner_view(self.michele)
@@ -150,6 +196,21 @@ class ConsultantUxTests(unittest.TestCase):
         gaps = json.loads(captured["body"].decode())
         self.assertTrue(gaps)
         self.assertTrue(all(g["mapping"] == "UNMAPPED" for g in gaps))
+
+        FakeHandler(
+            "/api/control?actor_tenants=tenant-michele&program_id=program-cyber-demo"
+            "&control_ref=CTRL-IAM-001"
+        ).do_GET()
+        self.assertEqual(captured["status"], 200)
+        detail = json.loads(captured["body"].decode())
+        self.assertEqual(detail["control_ref"], "CTRL-IAM-001")
+        self.assertGreaterEqual(len(detail["framework_coverage"]), 2)
+
+        FakeHandler(
+            "/api/control?actor_tenants=tenant-alfa&program_id=program-cyber-demo"
+            "&control_ref=CTRL-IAM-001"
+        ).do_GET()
+        self.assertEqual(captured["status"], 403)
 
 
 if __name__ == "__main__":

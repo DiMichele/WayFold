@@ -2,28 +2,29 @@
 
 Started: 2026-08-09 (LOCAL_OVERNIGHT)
 Branch: `automation/wayfold-compliance`
-Transition: `2_TO_3`
+Transition: `3_TO_4`
 
 ## Status
 
-PHASE_2_VERIFIED_PASS · PHASE_3_IMPLEMENTED_AWAITING_VERIFICATION
-
-## Phase 2
-
-Verification: **PASS** (`docs/PHASE2-VERIFICATION.md`)  
-Fix attempts: 1 (API/CLI authz default-deny)  
-Tag: deferred to orchestrator (`phase-2-complete`)
+PHASE_3_VERIFIED_PASS · PHASE_4_IMPLEMENTED_AWAITING_VERIFICATION
 
 ## Phase 3
 
+Verification: **PASS** (`docs/PHASE3-VERIFICATION.md`)  
+Fix attempts: 1 (control drill-down + gap deadline filters)  
+Tag: deferred to orchestrator (`phase-3-complete`)
+
+## Phase 4
+
 Development: **IMPLEMENTED** — awaiting independent verification  
 Artifacts:
-- `engine/portfolio.py`, `gap_assessment.py`, `consultant_views.py`, `reports.py`, `ux_pages.py`
-- fixtures `portfolio_registry.json`, `alfa_phase3_program.json`
-- `docs/consultant-ux.md`
+- `engine/regulatory/` (domain, fetch, normalize, hash, diff, store, pipeline, impact, demo, pages)
+- fixtures `engine/fixtures/regulatory/demo-nis2/`
+- `docs/regulatory-watcher.md`
 Tests:
 - `python -m engine.tests.test_unified_compliance` → 13 OK
-- `python -m engine.tests.test_consultant_ux` → 8 OK
+- `python -m engine.tests.test_consultant_ux` → 9 OK
+- `python -m engine.tests.test_regulatory` → 7 OK
 
 ## Notes
 
@@ -31,15 +32,13 @@ Tests:
 - No production deploy / DNS / DB production from this pipeline
 - `state.json` not modified by agent
 - No git tags created by agent
+- No AI in Phase 4; no silent mutation of CISO published libraries
 
-## Phase 1
-Verification: PASS
-Tag: phase-1-complete (orchestrator)
+## Phase history
 
-## Phase 2
-Verification: PASS
-Tag: pending orchestrator
-
-## Phase 3
-Development: DONE
-Verification: AWAITING INDEPENDENT VERIFICATION
+| Phase | Verification | Tag |
+|---|---|---|
+| 1 | PASS | phase-1-complete (orchestrator) |
+| 2 | PASS | phase-2-complete (orchestrator) |
+| 3 | PASS | pending orchestrator |
+| 4 | AWAITING | — |

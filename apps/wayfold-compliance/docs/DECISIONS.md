@@ -105,6 +105,29 @@ Rivedere se:
 
 ---
 
+## [2026-08-09] Phase 4 Regulatory store outside CISO DB
+
+Scelto:
+- Source / SourceSnapshot / RegulatoryChange / FrameworkUpdateSuggestion persistiti in `engine/data/regulatory/` (JSON + blobs) nel package WayFold Engine.
+- Pipeline deterministica `fetch → normalize → hash → compare → diff → change → impact`; review umana obbligatoria per ACCEPTED/IGNORED.
+- Cosmetic HTML (normalized hash invariato) non apre change.
+- Framework update = `FrameworkUpdateSuggestion` (CLONE_DRAFT) — mai publish/silent mutate delle library CISO.
+
+Motivazione:
+- Strategy B e confini DB: regulatory monitoring assente nel core; non forkare CISO per watcher.
+- Demo/test con `fixture://` locale evitano dipendenza da siti esterni.
+- Allineato a §52–§56 e §103.12 (watcher non muta silenziosamente framework/client).
+
+Alternative considerate:
+- Tabelle Django nel core CISO — scartate (fork + coupling).
+- Scraper CSS-selector monolitico — scartato; adapter per content-type.
+
+Rivedere se:
+- serve DB PostgreSQL dedicato engine in produzione;
+- Phase 5 AI analysis richiede coda/worker persistente oltre al check on-demand.
+
+---
+
 ## [2026-08-09] Nessun credential di accesso prodotto (temporaneo)
 
 Scelto:

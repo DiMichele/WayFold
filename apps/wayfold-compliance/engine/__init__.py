@@ -1,8 +1,9 @@
-"""WayFold Compliance engine (Phase 2 Unified Compliance + Phase 3 Consultant UX).
+"""WayFold Compliance engine (Phases 2–4).
 
 Pure application-layer services that reuse CISO semantic entities
 (ReferenceControl, AppliedControl, RequirementNode, Framework) without
-duplicating auth/evidence/task engines.
+duplicating auth/evidence/task engines. Regulatory intelligence lives in
+`engine.regulatory` (separate store; no silent CISO library mutation).
 """
 
 from .checklist import build_unified_checklist

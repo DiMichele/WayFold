@@ -36,8 +36,21 @@ Stored outside the core DB (JSON snapshots / future engine DB):
 | `FrameworkReadinessRow` | FULLY_COVERED / PARTIALLY_COVERED / NOT_COVERED / UNMAPPED / NOT_APPLICABLE counts + implementation_readiness |
 | `ControlImpactRow` | readable impact summary (requirements × frameworks × open gaps) |
 
+## WayFold Regulatory store (Phase 4)
+
+Persisted under `engine/data/regulatory/` (not CISO DB):
+
+| Concept | Role |
+|---|---|
+| `Source` | Configured monitored origin (HTML/JSON/FILE/…) + linked framework/requirement anchors |
+| `SourceSnapshot` | Fetched raw + normalized content refs + content/normalized hashes |
+| `RegulatoryChange` | Diff inbox (`NEW` → `ACCEPTED`/`IGNORED`) with relevance SUBSTANTIVE/COSMETIC |
+| `FrameworkUpdateSuggestion` | Human workflow `CLONE_DRAFT` — no auto-publish |
+| `ClientImpactReport` | Projection onto pinned programs via mappings (advisory) |
+
 ## Boundaries
 
 - Global KB (libraries, reference controls, published frameworks) ≠ client workspace (applied controls, evidence, tasks).  
 - Engine reads core via ORM bridge or API; does not silently mutate published libraries.  
 - Tenant isolation enforced in core IAM and re-checked by `engine.authz` before checklist responses.
+- Regulatory watcher never silently changes framework data or client baselines.

@@ -159,6 +159,8 @@ def filter_gap_rows(rows: list[GapRow], flt: GapFilter) -> list[GapRow]:
             or q in (r.canonical_control_ref or "").lower()
             or q in (r.control_name or "").lower()
             or q in (r.gap or "").lower()
+            or q in (r.mapping or "").lower()
+            or q in (r.notes or "").lower()
         ]
     return out
 

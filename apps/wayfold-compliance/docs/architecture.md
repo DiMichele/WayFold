@@ -1,4 +1,4 @@
-# Architecture — WayFold Compliance (Phase 3)
+# Architecture — WayFold Compliance (Phase 4)
 
 ## Selected core
 
@@ -41,7 +41,9 @@ compliance.wayfold.xyz
 │ Portfolio / Client UX │  Phase 3
 │ Gap / Owner / Deadline│
 │ Evidence / Task / Rpt │
-│ Regulatory (Phase 4+) │
+│ Regulatory Sources    │  Phase 4
+│ Snapshots / Diff      │
+│ Change inbox / Impact │
 │ AI assist (Phase 5)   │
 └───────────────────────┘
 ```
@@ -49,7 +51,7 @@ compliance.wayfold.xyz
 ## Database boundaries
 
 - **Core DB:** PostgreSQL gestito da CISO (unico source of truth GRC operativo).
-- **Wayfold Engine:** overlay JSON / future DB for mapping intelligence + regulatory snapshots (Phase 4+); niente silent mutation delle library pubblicate nel core.
+- **Wayfold Engine:** overlay JSON for mapping intelligence + `engine/data/regulatory/` for Source/Snapshot/Change; niente silent mutation delle library pubblicate nel core.
 
 ## API boundaries
 
@@ -80,10 +82,11 @@ compliance.wayfold.xyz
 | Requirement | RequirementNode |
 | Framework Version | LoadedLibrary.version (+ Framework.library pin) |
 
-## Phase 2–3 engine notes
+## Phase 2–4 engine notes
 
 - Canonical reuse: `ReferenceControl` / `canonical_control_ref` — no duplicate control tables in core.
 - Req↔Control coverage relations live in WayFold `MappingRecord` overlay (CISO `RequirementMapping` remains req↔req).
 - Client implementations, evidence, tasks stay in CISO; Phase 3 views aggregate snapshot counts.
 - Consultant UX: dense HTML/JSON on `:8092` (not a CISO frontend fork).
-- See `docs/unified-compliance.md`, `docs/consultant-ux.md`, `docs/data-model.md`.
+- Phase 4 regulatory pipeline is engine-local; framework suggestions never auto-publish into CISO.
+- See `docs/unified-compliance.md`, `docs/consultant-ux.md`, `docs/regulatory-watcher.md`, `docs/data-model.md`.

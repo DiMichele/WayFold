@@ -12,6 +12,12 @@ def _with_program(nav_qs: str, program_id: str) -> str:
     return urlencode(data)
 
 
+def _with_control(nav_qs: str, control_ref: str) -> str:
+    data = dict(parse_qsl(nav_qs, keep_blank_values=False))
+    data["control_ref"] = control_ref
+    return urlencode(data)
+
+
 def _shell(title: str, nav_qs: str, body: str) -> str:
     nav = f"""
 <nav class="nav">
@@ -24,6 +30,8 @@ def _shell(title: str, nav_qs: str, body: str) -> str:
   <a href="/tasks?{nav_qs}">Tasks</a>
   <a href="/report?{nav_qs}">Report</a>
   <a href="/checklist?{nav_qs}">Checklist</a>
+  <a href="/sources?{nav_qs}">Sources</a>
+  <a href="/changes?{nav_qs}">Reg Changes</a>
 </nav>"""
     return f"""<!doctype html>
 <html lang="it"><head><meta charset="utf-8">
@@ -152,23 +160,32 @@ def gaps_page(rows, nav_qs: str, filter_values: dict) -> str:
     mapped_val = filter_values.get("mapped", "")
     body_rows = []
     for r in rows:
+        if r.canonical_control_ref:
+            ctrl_qs = _with_control(nav_qs, r.canonical_control_ref)
+            ctrl_cell = (
+                f"<a href='/control?{ctrl_qs}'><code>{escape(r.canonical_control_ref)}</code></a>"
+                f"<br>{escape(r.control_name or '')}"
+            )
+        else:
+            ctrl_cell = "—<br>"
         body_rows.append(
             "<tr>"
             f"<td>{escape(r.framework_name)}<br><code>{escape(r.framework_version)}</code></td>"
             f"<td><strong>{escape(r.requirement_code)}</strong><br>{escape(r.requirement_title)}</td>"
-            f"<td>{escape(r.canonical_control_ref or '—')}<br>{escape(r.control_name or '')}</td>"
+            f"<td>{ctrl_cell}</td>"
             f"<td><span class='badge'>{escape(r.mapping)}</span></td>"
             f"<td>{escape(r.status)}</td>"
             f"<td>{escape(r.owner or '—')}</td>"
             f"<td>{escape(r.deadline or '—')}</td>"
             f"<td>{r.evidence_count}</td>"
+            f"<td>{r.open_task_count}</td>"
             f"<td>{escape(r.gap)}</td>"
             f"<td>{escape(r.notes)}</td>"
             "</tr>"
         )
     body = f"""
 <h1>Gap Assessment</h1>
-<p class="meta">{len(rows)} righe · filtri server-side</p>
+<p class="meta">{len(rows)} righe · filtri server-side · click controllo → coverage/delta/evidence/task</p>
 <form class="filters" method="get" action="/gaps">
   <input type="hidden" name="superuser" value="{escape(filter_values.get('superuser',''))}">
   <input type="hidden" name="actor_tenants" value="{escape(filter_values.get('actor_tenants',''))}">
@@ -177,6 +194,8 @@ def gaps_page(rows, nav_qs: str, filter_values: dict) -> str:
   <label>Status<select name="status">{status_opts}</select></label>
   <label>Owner<input name="owner" value="{escape(filter_values.get('owner',''))}"></label>
   <label>Priority<input name="priority" value="{escape(filter_values.get('priority',''))}"></label>
+  <label>Deadline from<input type="date" name="deadline_after" value="{escape(filter_values.get('deadline_after',''))}"></label>
+  <label>Deadline to<input type="date" name="deadline_before" value="{escape(filter_values.get('deadline_before',''))}"></label>
   <label>Mapped
     <select name="mapped">
       <option value="" {'selected' if mapped_val=='' else ''}>—</option>
@@ -195,27 +214,65 @@ def gaps_page(rows, nav_qs: str, filter_values: dict) -> str:
 </form>
 <table><thead><tr>
 <th>Framework</th><th>Requirement</th><th>Control</th><th>Mapping</th>
-<th>Status</th><th>Owner</th><th>Deadline</th><th>Evidence</th><th>Gap</th><th>Notes</th>
-</tr></thead><tbody>{''.join(body_rows) or '<tr><td colspan="10">Nessun risultato</td></tr>'}</tbody></table>
+<th>Status</th><th>Owner</th><th>Deadline</th><th>Evidence</th><th>Tasks</th><th>Gap</th><th>Notes</th>
+</tr></thead><tbody>{''.join(body_rows) or '<tr><td colspan="11">Nessun risultato</td></tr>'}</tbody></table>
 """
     return _shell("Gap Assessment — WayFold", nav_qs, body)
+
+
+def control_page(detail, nav_qs: str) -> str:
+    cov_rows = "".join(
+        "<tr>"
+        f"<td>{escape(c.framework_name)}<br><code>{escape(c.framework_version)}</code></td>"
+        f"<td><strong>{escape(c.requirement_code)}</strong><br>{escape(c.requirement_title)}</td>"
+        f"<td><span class='badge'>{escape(c.relation)}</span></td>"
+        f"<td>{escape(c.uncovered_delta or '—')}</td>"
+        f"<td>{escape(c.rationale or '—')}</td>"
+        "</tr>"
+        for c in detail.framework_coverage
+    )
+    body = f"""
+<h1>Control <code>{escape(detail.control_ref)}</code></h1>
+<p class="meta">{escape(detail.name)} · status {escape(detail.status)}
+ · owner {escape(detail.owner or '—')} · deadline {escape(detail.due_date or '—')}
+ · priority {escape(detail.priority or '—')}</p>
+<p class="meta">Evidence: {detail.evidence_count} · Open tasks: {detail.open_task_count}
+ · Gap notes: {escape(detail.gap_notes or '—')}</p>
+<p class="hint"><a href="/gaps?{nav_qs}">← Gap Assessment</a>
+ · <a href="/evidence?{nav_qs}">Evidence view</a>
+ · <a href="/tasks?{nav_qs}">Task view</a></p>
+<h2>Framework coverage</h2>
+<table><thead><tr>
+<th>Framework</th><th>Requirement</th><th>Mapping</th><th>Delta</th><th>Rationale</th>
+</tr></thead><tbody>{cov_rows or '<tr><td colspan="5">Nessuna coverage</td></tr>'}</tbody></table>
+"""
+    return _shell(f"Control — {detail.control_ref}", nav_qs, body)
 
 
 def owners_page(by_owner: dict, nav_qs: str) -> str:
     sections = []
     for owner, items in by_owner.items():
-        rows = "".join(
-            "<tr>"
-            f"<td>{escape(i.control_ref or '')}</td>"
-            f"<td>{escape(i.name)}</td>"
-            f"<td>{escape(i.status)}</td>"
-            f"<td>{escape(i.priority or '—')}</td>"
-            f"<td>{escape(i.due_date or '—')}</td>"
-            f"<td>{i.open_task_count}</td>"
-            f"<td>{escape(', '.join(i.frameworks))}</td>"
-            "</tr>"
-            for i in items
-        )
+        row_parts = []
+        for i in items:
+            if i.control_ref:
+                ctrl = (
+                    f"<a href='/control?{_with_control(nav_qs, i.control_ref)}'>"
+                    f"<code>{escape(i.control_ref)}</code></a>"
+                )
+            else:
+                ctrl = "—"
+            row_parts.append(
+                "<tr>"
+                f"<td>{ctrl}</td>"
+                f"<td>{escape(i.name)}</td>"
+                f"<td>{escape(i.status)}</td>"
+                f"<td>{escape(i.priority or '—')}</td>"
+                f"<td>{escape(i.due_date or '—')}</td>"
+                f"<td>{i.open_task_count}</td>"
+                f"<td>{escape(', '.join(i.frameworks))}</td>"
+                "</tr>"
+            )
+        rows = "".join(row_parts)
         sections.append(
             f"<h2>{escape(owner)} <span class='badge'>{len(items)}</span></h2>"
             f"<table><thead><tr><th>Control</th><th>Name</th><th>Status</th>"
