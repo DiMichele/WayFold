@@ -37,3 +37,36 @@ def format_iso(d: date | datetime | None) -> str | None:
     if isinstance(d, datetime):
         return d.date().isoformat()
     return d.isoformat()
+
+
+_IT_MONTHS = (
+    "gen",
+    "feb",
+    "mar",
+    "apr",
+    "mag",
+    "giu",
+    "lug",
+    "ago",
+    "set",
+    "ott",
+    "nov",
+    "dic",
+)
+
+
+def format_display_date(value: str | date | datetime | None, *, lang: str = "it") -> str:
+    """Italian-friendly display date (e.g. 12 ago 2026) or ISO fallback."""
+    if value is None or value == "":
+        return "—"
+    if isinstance(value, datetime):
+        d = value.date()
+    elif isinstance(value, date):
+        d = value
+    else:
+        d = parse_date(str(value))
+        if d is None:
+            return str(value)
+    if lang == "en":
+        return d.strftime("%d %b %Y")
+    return f"{d.day} {_IT_MONTHS[d.month - 1]} {d.year}"
