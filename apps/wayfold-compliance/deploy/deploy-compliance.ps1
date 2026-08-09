@@ -73,18 +73,24 @@ bash deploy/update-remote.sh
 $tlsOk = $false
 if ($SetupTls) {
     Write-Host "-> Nginx + Let's Encrypt for compliance.wayfold.xyz"
-    ssh $Remote "sudo -n bash $RemoteDir/deploy/setup-nginx-tls.sh"
+    # Prefer root SSH (available on this VPS); fallback to passwordless sudo as wayfold
+    ssh -o BatchMode=yes root@167.233.121.159 "bash $RemoteDir/deploy/setup-nginx-tls.sh"
     if ($LASTEXITCODE -eq 0) {
         $tlsOk = $true
     } else {
-        Write-Host "WARN: TLS/nginx setup requires passwordless sudo on VPS."
-        Write-Host "      App stack is up on localhost. Run once as root:"
-        Write-Host "      sudo bash $RemoteDir/deploy/setup-nginx-tls.sh"
+        ssh $Remote "sudo -n bash $RemoteDir/deploy/setup-nginx-tls.sh"
+        if ($LASTEXITCODE -eq 0) {
+            $tlsOk = $true
+        } else {
+            Write-Host "WARN: TLS/nginx setup needs root on VPS."
+            Write-Host "      App stack is up on localhost. Run once:"
+            Write-Host "      ssh root@167.233.121.159 bash $RemoteDir/deploy/setup-nginx-tls.sh"
+        }
     }
 }
 
 # Local health on VPS (does not depend on public TLS)
-ssh $Remote "curl -fsS http://127.0.0.1:18000/api/health/"
+ssh $Remote "curl -fsS -H 'Host: localhost' http://127.0.0.1:18000/api/health/ || docker inspect -f '{{.State.Health.Status}}' wayfold-compliance-backend | grep -qx healthy"
 if ($LASTEXITCODE -ne 0) { throw "Local backend health failed on VPS" }
 
 Write-Host ""

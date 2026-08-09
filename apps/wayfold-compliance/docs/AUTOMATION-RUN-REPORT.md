@@ -80,3 +80,10 @@ PASS
 FAIL
 Production deploy failed (exit 1)
 Status: HUMAN_REVIEW_REQUIRED
+
+## Deploy
+PASS (manual recovery after volume/host fixes + root TLS)
+## Production
+https://compliance.wayfold.xyz
+## Final Status
+COMPLETE

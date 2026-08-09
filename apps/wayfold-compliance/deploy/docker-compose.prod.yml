@@ -1,5 +1,6 @@
 # WayFold Compliance — production stack (CISO core + WayFold engine)
 # Binds only to localhost; nginx terminates TLS for compliance.wayfold.xyz
+# WAYFOLD_COMPLIANCE_ROOT must be the app root (set by update-remote.sh).
 services:
   backend:
     container_name: wayfold-compliance-backend
@@ -7,7 +8,7 @@ services:
     pull_policy: always
     restart: always
     environment:
-      - ALLOWED_HOSTS=backend,localhost,compliance.wayfold.xyz
+      - ALLOWED_HOSTS=backend,localhost,127.0.0.1,compliance.wayfold.xyz
       - CISO_ASSISTANT_URL=https://compliance.wayfold.xyz
       - DJANGO_DEBUG=False
       - AUTH_TOKEN_TTL=7200
@@ -24,7 +25,7 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev
     volumes:
-      - ./data/db:/code/db
+      - ${WAYFOLD_COMPLIANCE_ROOT:-.}/data/db:/code/db
     user: "1001:1001"
     ports:
       - "127.0.0.1:18000:8000"
@@ -44,7 +45,7 @@ services:
         condition: service_healthy
     restart: always
     environment:
-      - ALLOWED_HOSTS=backend,localhost,compliance.wayfold.xyz
+      - ALLOWED_HOSTS=backend,localhost,127.0.0.1,compliance.wayfold.xyz
       - CISO_ASSISTANT_URL=https://compliance.wayfold.xyz
       - DJANGO_DEBUG=False
       - AUTH_TOKEN_TTL=7200
@@ -61,7 +62,7 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,nodev
     volumes:
-      - ./data/db:/code/db
+      - ${WAYFOLD_COMPLIANCE_ROOT:-.}/data/db:/code/db
     entrypoint:
       - /bin/sh
       - -c
@@ -115,7 +116,7 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
     volumes:
-      - ./:/app:ro
+      - ${WAYFOLD_COMPLIANCE_ROOT:-.}:/app:ro
     ports:
       - "127.0.0.1:18092:8092"
     depends_on:

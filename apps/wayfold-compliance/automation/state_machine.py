@@ -13,6 +13,7 @@ VALID_STATUSES = {
     "BLOCKED",
     "HUMAN_REVIEW_REQUIRED",
     "FINAL_REGRESSION",
+    "DEPLOY_RETRY",
     "MERGING",
     "COMPLETE",
     "INTERRUPTED",
@@ -278,7 +279,12 @@ def resume_status(state: dict[str, Any]) -> dict[str, Any]:
         and out.get("nextTransition") is None
         and any(h.get("event") == "FINAL_REGRESSION_PASS" for h in (out.get("history") or []))
     ):
-        out["status"] = "FINAL_REGRESSION"
+        # Deploy-only retry when merge already succeeded earlier
+        issues = out.get("blockingIssues") or []
+        deploy_failed = any(
+            "deploy" in str(i.get("description", "")).lower() for i in issues if isinstance(i, dict)
+        )
+        out["status"] = "DEPLOY_RETRY" if deploy_failed else "FINAL_REGRESSION"
         out["blockingIssues"] = []
         out["lastError"] = None
     return out

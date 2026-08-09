@@ -1114,7 +1114,13 @@ def deploy_production(ctx: Context) -> None:
         print(f"Public HTTPS health not ready yet: {exc}")
     if not public_ok:
         cp = run_cmd(
-            ["ssh", "-o", "BatchMode=yes", remote, "curl -fsS http://127.0.0.1:18000/api/health/"],
+            [
+                "ssh",
+                "-o",
+                "BatchMode=yes",
+                remote,
+                "curl -fsS -H 'Host: localhost' http://127.0.0.1:18000/api/health/",
+            ],
             ctx.repo,
             timeout=60,
         )
@@ -1296,6 +1302,33 @@ def overnight(ctx: Context, *, dry: bool = False) -> int:
             if interrupted["flag"]:
                 return 130
             status = ctx.state.get("status")
+            if status == "DEPLOY_RETRY":
+                # Merge already landed; retry production deploy only
+                ctx.state["status"] = "MERGING"
+                ctx.save_state()
+                try:
+                    deploy_production(ctx)
+                except OrchestratorError as exc:
+                    ctx.state["status"] = "HUMAN_REVIEW_REQUIRED"
+                    ctx.state["blockingIssues"] = [{"severity": "BLOCKING", "description": str(exc)}]
+                    ctx.state["lastError"] = str(exc)
+                    ctx.save_state()
+                    append_report(ctx, f"## Deploy retry\nFAIL\n{exc}\nStatus: HUMAN_REVIEW_REQUIRED\n")
+                    commit_changes(ctx, "chore(compliance): deploy retry failed")
+                    run_cmd(["git", "push", "origin", str(ctx.config.get("mainBranch", "main"))], ctx.repo)
+                    return 2
+                ctx.state = apply_complete(ctx.state)
+                ctx.save_state()
+                commit_changes(ctx, "chore(compliance): mark automation COMPLETE")
+                run_cmd(["git", "push", "origin", str(ctx.config.get("mainBranch", "main"))], ctx.repo)
+                append_report(
+                    ctx,
+                    "## Deploy retry\nPASS\n## Production\nhttps://compliance.wayfold.xyz\n## Final Status\nCOMPLETE\n",
+                )
+                run_cmd(["git", "push", "origin", str(ctx.config.get("mainBranch", "main"))], ctx.repo)
+                print("COMPLETE after deploy retry")
+                return 0
+
             if status == "FINAL_REGRESSION":
                 action = run_final_regression(ctx)
                 if action == "MERGE":
