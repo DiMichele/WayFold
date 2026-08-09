@@ -1835,6 +1835,10 @@ class Handler(BaseHTTPRequestHandler):
 
         return self._deny(404, "not found")
 
+    def do_HEAD(self):  # noqa: N802
+        """Support HEAD for proxies/health probes without 501."""
+        self.do_GET()
+
     def do_POST(self):  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
