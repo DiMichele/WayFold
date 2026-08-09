@@ -8,7 +8,17 @@
 **Phase 4 CLOSED (verification PASS)** — vedi `PHASE4-VERIFICATION.md`.  
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
 **Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
-Prossima azione: orchestratore FINAL REGRESSION GATE + merge su main (tag `phase-6-complete` post PASS indipendente).
+
+### UI redesign (definitive mockup) — COMPLETE
+
+- Design system WayFold Compliance (navy + purple) in `engine/ui_shell.py`
+- Docs: `docs/design/DESIGN-SYSTEM.md` + mockup HTML in `docs/design/`
+- Sidebar sezionata + icone SVG + localizzazione IT centralizzata
+- Pagine migrate: Portfolio, Area cliente, Controlli, Gap, Control detail, Attività, Evidenze, Report, Regulatory, AI, Auto-evidence
+- Tests UI: `engine/tests/test_ui_design_system.py` + suite consultant/auto-evidence aggiornate
+- **Nessun deploy** in questo task (ready for review)
+
+Prossima azione: review UI + orchestratore FINAL REGRESSION GATE / merge su main.
 
 ## Completato
 
@@ -86,6 +96,22 @@ python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
 ## Problemi aperti
 
 - Auth Cursor Agent CLI per unattended overnight (operativo)
+- `test_regulatory.test_snapshots_append_only_with_stable_hashes` flaky/hash mismatch (non legato al redesign UI; store runtime)
+
+## UI redesign status
+
+| Area | Stato |
+|---|---|
+| Design system / tokens | Done |
+| App shell / sidebar / topbar | Done |
+| Icone SVG navigazione | Done |
+| Italian localization | Done |
+| Portfolio / Client / Controls / Gaps | Done |
+| Tasks / Evidence / Report | Done |
+| Regulatory / AI / Auto-evidence | Done (stesso shell) |
+| Control drawer (vs page) | Page restyled (drawer non forzato — dettaglio già route `/control`) |
+| Kanban tasks | Non forzato (lista densa; engine task non espone colonne kanban) |
+| Visual debt | Filtri ancora form classico; command palette non implementata (nascosta di proposito) |
 
 ## Technical debt
 
@@ -95,6 +121,7 @@ python -m engine.api   # http://127.0.0.1:8092/portfolio?superuser=1
 - Regulatory HTTP check on-demand (scheduler/worker persistente deferibile)
 - Heuristic AI → sostituibile con LLM provider sullo stesso contract
 - Live Prowler / cloud credentials → quando ambiente lo consente, stesso adapter boundary
+- Eventuale drawer laterale controllo + virtualizzazione tabelle 500+ row
 
 ## Prossimo step consigliato
 

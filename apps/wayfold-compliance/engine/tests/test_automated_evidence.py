@@ -224,14 +224,15 @@ class AutomatedEvidenceTests(unittest.TestCase):
     def test_pages_use_wayfold_ui_shell(self):
         html = auto_ev_pages.connectors_page([], "superuser=1")
         self.assertIn("WayFold", html)
-        self.assertIn("--acc:#d97b5c", html)
-        self.assertIn("Jost", html)
+        self.assertIn("--wf-primary:#675cf2", html)
+        self.assertIn("Inter", html)
+        self.assertIn("sidebar", html)
         self.assertIn(WAYFOLD_CSS[:40], html)
-        self.assertNotIn("Segoe UI", html)
         self.assertNotIn("#f6f7f9", html)
+        self.assertNotIn("--acc:#d97b5c", html)
         ev_html = auto_ev_pages.evidence_page([], "superuser=1")
         self.assertIn("WayFold", ev_html)
-        self.assertIn("--acc:#d97b5c", ev_html)
+        self.assertIn("--wf-primary:#675cf2", ev_html)
 
 
 if __name__ == "__main__":

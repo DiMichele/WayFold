@@ -208,19 +208,30 @@ Rivedere se:
 
 ## [2026-08-09] Visual language — allineamento ecosistema WayFold (Bills)
 
+> **SUPERSEDED** da «WayFold Compliance definitive design system» (sotto). Storico: l’UI era allineata a Bills (terracotta/sage/Jost).
+
+Scelto (storico):
+- Palette Bills charcoal/sage/terracotta; tipografia Jost/Inter/DM Mono via `engine/ui_shell.py`.
+
+---
+
+## [2026-08-09] WayFold Compliance definitive design system
+
 Scelto:
-- L’UI WayFold Compliance (engine HTML consultant) **deve** usare la stessa visual language di `apps/wayfold-bills`:
-  - palette charcoal `#1A242B` · sage `#98A9A2` · terracotta `#D97B5C` · sand `#D9C5A0` · bg `#F7F6F3`
-  - tipografia **Jost** (display) / **Inter** (UI) / **DM Mono** (label)
-  - shell condiviso in `engine/ui_shell.py`
-- Vietato introdurre temi generici “admin blue/gray”, purple-on-white, o stili CISO grezzi sulle superfici WayFold.
-- Il frontend CISO upstream può restare invariato; le viste WayFold (portfolio/checklist/regulatory/AI) passano dallo shell brand.
+- Source of truth visuale: `docs/design/wayfold-compliance-definitive-mockup.html` + `docs/design/DESIGN-SYSTEM.md`.
+- Identità: **navy sidebar** `#101522` · superfici chiare `#f5f7fb`/`#fff` · accento viola WayFold `#675cf2` · Inter · densità desktop-first.
+- Shell: sidebar scura sezionata + topbar sticky + page header operativo (no fake search/CTA).
+- Icone: solo SVG centralizzate (`engine/ui_icons.py`).
+- Lingua UI default: **italiano** (`engine/i18n.py`); status/mapping/priority via `engine/ui_labels.py`.
+- Dark mode content: non implementato (sidebar scura fa parte del light design).
+- Nessun fork del frontend SvelteKit del core; resta Strategy B overlay HTML.
 
 Motivazione:
-- Coerenza di prodotto nell’ecosistema WayFold (viaggi / bills / compliance).
+- Mockup definitivo Compliance è più adatto al lavoro GRC quotidiano (alta densità, data tables) rispetto al look warm di Bills.
+- Coerenza ecosistema via brand WayFold + viola, senza template SaaS generico.
 
 Rivedere se:
-- nasce un design-system package condiviso a livello monorepo.
+- nasce un package design-system monorepo condiviso Bills/Compliance.
 
 ---
 
