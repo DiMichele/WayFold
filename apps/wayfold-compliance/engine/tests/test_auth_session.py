@@ -99,7 +99,10 @@ class AuthSessionTests(unittest.TestCase):
 
             FakeHandler("/login").do_GET()
             self.assertEqual(captured["status"], 200)
-            self.assertIn("Accedi", captured["body"].decode())
+            body = captured["body"].decode()
+            self.assertIn("Accedi", body)
+            self.assertIn('type="text"', body)
+            self.assertNotIn('type="email"', body)
 
 
 if __name__ == "__main__":

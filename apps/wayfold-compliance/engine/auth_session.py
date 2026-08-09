@@ -157,10 +157,10 @@ def login_page_html(
         if lang != "en"
         else "WayFold Compliance — consultant access"
     )
-    email_label = "Email" if lang == "en" else "Email"
-    pass_label = "Password"
-    submit = "Accedi" if lang != "en" else "Sign in"
-    return f"""<!doctype html>
+  user_label = "Username" if lang == "en" else "Utente"
+  pass_label = "Password"
+  submit = "Accedi" if lang != "en" else "Sign in"
+  return f"""<!doctype html>
 <html lang="{escape(lang)}"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -191,8 +191,8 @@ button:hover{{filter:brightness(.96)}}
   <p class="sub">{escape(subtitle)}</p>
   {err}
   <input type="hidden" name="next" value="{escape(next_path)}">
-  <label for="email">{escape(email_label)}</label>
-  <input id="email" name="username" type="email" required autocomplete="username">
+  <label for="username">{escape(user_label)}</label>
+  <input id="username" name="username" type="text" required autocomplete="username" autocapitalize="none" spellcheck="false">
   <label for="password">{escape(pass_label)}</label>
   <input id="password" name="password" type="password" required autocomplete="current-password">
   <button type="submit">{escape(submit)}</button>
