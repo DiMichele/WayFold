@@ -25,14 +25,15 @@ def profile_page(
     session_expires: int | None,
 ) -> str:
     lang = normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
-    role_key = f"role.{role}"
+    role_s = role.value if hasattr(role, "value") else str(role or "")
+    role_key = f"role.{role_s}"
     role_label = t(lang, role_key)
     if role_label == role_key:
-        role_label = role or "—"
+        role_label = role_s or "—"
     tenants = (
         ", ".join(tenant_ids)
         if tenant_ids
-        else ("Tutti (amministratore)" if role == "SUPER_ADMIN" else "—")
+        else ("Tutti (amministratore)" if role_s == "SUPER_ADMIN" else "—")
     )
     mfa = "Abilitata" if mfa_enabled else "Non abilitata"
     from datetime import datetime, timezone
