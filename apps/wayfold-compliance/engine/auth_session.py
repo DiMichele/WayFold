@@ -205,4 +205,8 @@ def wants_html(accept: str | None, path: str) -> bool:
         return False
     if not accept:
         return True
-    return "text/html" in accept.lower()
+    a = accept.lower()
+    # Prefer HTML login redirect unless the client clearly wants JSON only.
+    if "application/json" in a and "text/html" not in a:
+        return False
+    return True
