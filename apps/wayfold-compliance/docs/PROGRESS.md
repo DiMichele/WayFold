@@ -9,6 +9,29 @@
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
 **Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
 
+## Product Review Dataset
+
+Status: **READY FOR EXTERNAL REVIEW** (NOT ready for real client data)
+
+Seed command:
+
+```powershell
+python -m engine.seed_review_demo --write-fixtures
+python -m engine.seed_review_demo --data-dir <WAYFOLD_DATA_DIR>
+```
+
+Demo client: Michele S.r.l. [Demo]  
+Dataset marker: `WF_REVIEW_DEMO_2026`  
+Live URL: https://compliance.wayfold.xyz/  
+Live verified: **YES**  
+E2E: PASS (`test_review_demo` + browser live Michele workflow)  
+Docs: `DEMO-REVIEW-DATASET.md`, `PRODUCT-ACCEPTANCE-REVIEW.md`
+
+Security findings:
+- P0 BEFORE REAL CLIENT DATA: temporary `admin/admin` review credential
+- P0: consultant session is global superuser (no per-tenant login roles yet)
+- Evidence binary download authz: NOT IMPLEMENTED (catalog-only overlay)  
+
 ### UI redesign (definitive mockup) — COMPLETE
 
 - Design system WayFold Compliance (navy + purple) in `engine/ui_shell.py`
