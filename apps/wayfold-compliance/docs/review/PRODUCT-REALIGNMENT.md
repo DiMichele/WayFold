@@ -1,8 +1,10 @@
 # WAYFOLD COMPLIANCE — PRODUCT REALIGNMENT
 
 Date: 2026-08-09  
+Repository: https://github.com/DiMichele/WayFold-Compliance  
 Live: https://compliance.wayfold.xyz/  
-Deployed commit: `dab74ce`
+Deployed commit: `dab74ce204fcbfffa6e58a6d4942f1f27c0e1feb`  
+Screenshots: `docs/review/realign/` · `docs/review/final/`
 
 ## STATUS
 
