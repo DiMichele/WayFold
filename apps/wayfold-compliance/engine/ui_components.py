@@ -115,11 +115,11 @@ def progress_bar(ratio: float | None, *, css_class: str = "") -> str:
     )
 
 
-def empty_state(*, title: str, body: str, action_html: str = "") -> str:
+def empty_state(*, title: str, body: str, action_html: str = "", icon_name: str = "grid") -> str:
     action = f'<div class="empty-actions">{action_html}</div>' if action_html else ""
     return f"""
-<div class="empty-state">
-  <div class="empty-icon">{icon("alert")}</div>
+<div class="empty-state panel">
+  <div class="empty-icon">{icon(icon_name)}</div>
   <div class="empty-title">{escape(title)}</div>
   <p class="empty-body">{escape(body)}</p>
   {action}

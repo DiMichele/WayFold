@@ -94,7 +94,7 @@ def frameworks_page(
         )
     table = f"""<table class="data-table"><thead><tr>
 <th>Nome</th><th>Tipo</th><th>Publisher</th><th>Versione</th><th>Stato</th>
-<th>Source status</th><th>Requisiti</th><th>Domande</th>
+<th>{escape(t(lang, 'fwkb.source_status'))}</th><th>Requisiti</th><th>{escape(t(lang, 'fwkb.questions'))}</th>
 <th>Copertura</th><th>Utilizzato da</th><th>Azioni</th>
 </tr></thead><tbody>{''.join(rows)}</tbody></table>"""
     body = (
@@ -295,8 +295,13 @@ def framework_detail_page(
 """
 
     questions = list(getattr(selected, "assessment_questions", None) or [])
+    q_total = len(questions)
+    q_pages = max(1, (q_total + page_size - 1) // page_size)
+    q_page = min(page, q_pages) if tab == "questions" else page
+    q_start = (q_page - 1) * page_size
+    page_questions = questions[q_start : q_start + page_size]
     q_rows = []
-    for aq in questions[:500]:
+    for aq in page_questions:
         sm = getattr(aq, "service_model", {}) or {}
         ql = getattr(aq, "qualification_levels", {}) or {}
         badges = " ".join(
@@ -314,8 +319,13 @@ def framework_detail_page(
             f"<td>{escape(getattr(aq, 'answer_options', '') or '—')}</td>"
             "</tr>"
         )
-    if len(questions) > 500:
-        q_rows.append(f"<tr><td colspan=6 class='meta'>… e altre {len(questions)-500} domande (usa export)</td></tr>")
+    q_pager = f"""
+<div class="pager meta">
+  {q_total} domande · pagina {q_page}/{q_pages}
+  {" · <a href='" + base + f"&tab=questions&page={q_page-1}&page_size={page_size}'>← Prec</a>" if q_page > 1 else ""}
+  {" · <a href='" + base + f"&tab=questions&page={q_page+1}&page_size={page_size}'>Succ →</a>" if q_page < q_pages else ""}
+</div>
+"""
 
     clients = "".join(f"<li>{escape(c)}</li>" for c in (usage_clients or [])) or (
         f"<li>{escape(t(lang, 'client.none'))}</li>"
@@ -343,7 +353,7 @@ def framework_detail_page(
 </div>
 """
     panels = {
-        "overview": overview,
+        "overview": overview.replace('<div class="panel" style="padding:16px">', "<div>", 1),
         "versions": table_wrap(
             f"<table class='data-table'><thead><tr><th>Versione</th><th>Stato</th><th>Requirement</th><th>Data</th></tr></thead><tbody>{ver_rows}</tbody></table>"
         ),
@@ -355,7 +365,8 @@ def framework_detail_page(
             f"<th>Mapping</th><th>Source status</th><th>Azioni</th>"
             f"</tr></thead><tbody>{''.join(req_rows) or '<tr><td colspan=8>Nessun requisito</td></tr>'}</tbody></table>"
         ),
-        "questions": table_wrap(
+        "questions": q_pager
+        + table_wrap(
             f"<table class='data-table'><thead><tr>"
             f"<th>Codice sorgente</th><th>Domanda</th><th>Requirement</th>"
             f"<th>Service model</th><th>Qualification</th><th>Opzioni</th>"
@@ -408,85 +419,113 @@ def mappings_page(
     lang = _lang(nav_qs)
     nav_qs = with_lang(nav_qs, lang)
     filters = filters or {}
-    rows = []
+    tab = (filters.get("tab") or "approved").lower()
+    if tab not in {"approved", "review", "unmapped"}:
+        tab = "approved"
+    page = max(1, int(filters.get("page") or 1))
+    page_size = int(filters.get("page_size") or 50)
+    if page_size not in (25, 50, 100):
+        page_size = 50
+
+    approved = []
+    review = []
     for m in mappings:
-        rel = m.relation.value if hasattr(m.relation, "value") else m.relation
         rev = m.review_status.value if hasattr(m.review_status, "value") else m.review_status
-        tip = f'title="{escape(rel)}"'
-        rows.append(
+        rev_u = str(rev or "").upper()
+        if rev_u == "APPROVED":
+            approved.append(m)
+        else:
+            review.append(m)
+
+    def _map_rows(items: list[Any]) -> list[str]:
+        out = []
+        for m in items:
+            rel = m.relation.value if hasattr(m.relation, "value") else m.relation
+            rev = m.review_status.value if hasattr(m.review_status, "value") else m.review_status
+            out.append(
+                "<tr>"
+                f"<td><code>{escape(m.requirement_code)}</code></td>"
+                f"<td>{escape(m.framework_name)} <code>{escape(m.framework_version)}</code></td>"
+                f"<td><code>{escape(m.canonical_control_ref)}</code></td>"
+                f"<td>{mapping_badge(lang, rel)}</td>"
+                f"<td>{escape(m.uncovered_delta or '—')}</td>"
+                f"<td>{escape(review_label(lang, rev))}</td>"
+                f"<td><details class='row-menu'><summary>⋯</summary>"
+                f"<a href='/mappings/new?requirement_id={escape(m.requirement_id)}&{nav_qs}'>Modifica</a>"
+                f"</details></td>"
+                "</tr>"
+            )
+        return out
+
+    if tab == "approved":
+        dataset = approved
+    elif tab == "review":
+        dataset = review
+    else:
+        dataset = list(unmapped)
+
+    total = len(dataset)
+    pages = max(1, (total + page_size - 1) // page_size)
+    page = min(page, pages)
+    start = (page - 1) * page_size
+    slice_rows = dataset[start : start + page_size]
+
+    if tab == "unmapped":
+        rows_html = "".join(
             "<tr>"
-            f"<td><code>{escape(m.requirement_code)}</code></td>"
-            f"<td>{escape(m.framework_name)} <code>{escape(m.framework_version)}</code></td>"
-            f"<td><code>{escape(m.canonical_control_ref)}</code></td>"
-            f"<td {tip}>{mapping_badge(lang, rel)}</td>"
-            f"<td>{escape(m.uncovered_delta or '—')}</td>"
-            f"<td>{escape(m.rationale or '—')}</td>"
-            f"<td>{escape(review_label(lang, rev))}</td>"
-            f"<td><a class='btn sm' href='/mappings/new?requirement_id={escape(m.requirement_id)}&{nav_qs}'>Modifica</a></td>"
+            f"<td><code>{escape(u.code)}</code></td>"
+            f"<td>{escape(u.framework_name)} <code>{escape(u.framework_version)}</code></td>"
+            f"<td>{escape(u.title)}</td>"
+            f"<td><details class='row-menu'><summary>⋯</summary>"
+            f"<a href='/mappings/new?requirement_id={escape(u.id)}&{nav_qs}'>{escape(t(lang, 'map.associate'))}</a>"
+            f"<a href='/controls/new?from_requirement={escape(u.id)}&title={escape(u.title)}&{nav_qs}'>{escape(t(lang, 'map.create_control'))}</a>"
+            f"</details></td>"
             "</tr>"
+            for u in slice_rows
         )
-    unmapped_rows = "".join(
-        "<tr>"
-        f"<td><code>{escape(u.code)}</code></td>"
-        f"<td>{escape(u.framework_name)} <code>{escape(u.framework_version)}</code></td>"
-        f"<td>{escape(u.title)}</td>"
-        f"<td style='white-space:nowrap'>"
-        f"<a class='btn sm' href='/mappings/new?requirement_id={escape(u.id)}&{nav_qs}'>{escape(t(lang, 'map.associate'))}</a> "
-        f"<a class='btn sm' href='/controls/new?from_requirement={escape(u.id)}&title={escape(u.title)}&{nav_qs}'>{escape(t(lang, 'map.create_control'))}</a>"
-        f"</td>"
-        "</tr>"
-        for u in unmapped
-    )
-    form = f"""
-<form class="filter-bar" method="get" action="/mappings">
-  <input type="hidden" name="program_id" value="{escape(filters.get('program_id',''))}">
-  <input type="hidden" name="lang" value="{escape(lang)}">
-  <label>Relazione
-    <select name="relation">
-      <option value="">—</option>
-      <option value="FULL" {"selected" if filters.get("relation")=="FULL" else ""}>Completa</option>
-      <option value="PARTIAL" {"selected" if filters.get("relation")=="PARTIAL" else ""}>Parziale</option>
-      <option value="SUPPORTING" {"selected" if filters.get("relation")=="SUPPORTING" else ""}>Di supporto</option>
-    </select>
-  </label>
-  <label>Stato
-    <select name="review">
-      <option value="">—</option>
-      <option value="DRAFT" {"selected" if filters.get("review")=="DRAFT" else ""}>Bozza</option>
-      <option value="HUMAN_REVIEWED" {"selected" if filters.get("review")=="HUMAN_REVIEWED" else ""}>Da revisionare</option>
-      <option value="APPROVED" {"selected" if filters.get("review")=="APPROVED" else ""}>Approvata</option>
-      <option value="REJECTED" {"selected" if filters.get("review")=="REJECTED" else ""}>Rifiutata</option>
-    </select>
-  </label>
-  <label><input type="checkbox" name="unmapped_only" value="1" {"checked" if filters.get("unmapped_only")=="1" else ""}> Solo non mappati</label>
-  <button class="btn primary sm" type="submit">{escape(t(lang, 'gaps.filter'))}</button>
-</form>
-"""
-    table = f"""<table class="data-table"><thead><tr>
+        table = f"""<table class="data-table"><thead><tr>
+<th>{escape(t(lang,'col.requirement'))}</th><th>{escape(t(lang,'col.framework'))}</th>
+<th>{escape(t(lang,'col.title'))}</th><th>Azioni</th></tr></thead>
+<tbody>{rows_html or f"<tr><td colspan='4'>{escape(t(lang,'map.unmapped_empty'))}</td></tr>"}</tbody></table>"""
+    else:
+        rows_html = "".join(_map_rows(slice_rows))
+        table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.requirement'))}</th>
 <th>{escape(t(lang,'col.framework'))}</th>
 <th>{escape(t(lang,'col.control'))}</th>
 <th>{escape(t(lang,'col.mapping'))}</th>
 <th>{escape(t(lang,'col.delta'))}</th>
-<th>{escape(t(lang,'col.rationale'))}</th>
 <th>{escape(t(lang,'col.status'))}</th>
-<th></th>
-</tr></thead><tbody>{''.join(rows) or f"<tr><td colspan='8'>{escape(t(lang,'map.empty'))}</td></tr>"}</tbody></table>"""
-    um_table = f"""<table class="data-table"><thead><tr>
-<th>{escape(t(lang,'col.requirement'))}</th><th>{escape(t(lang,'col.framework'))}</th>
-<th>{escape(t(lang,'col.title'))}</th><th></th></tr></thead>
-<tbody>{unmapped_rows or f"<tr><td colspan='4'>{escape(t(lang,'map.unmapped_empty'))}</td></tr>"}</tbody></table>"""
+<th>Azioni</th>
+</tr></thead><tbody>{rows_html or f"<tr><td colspan='7'>{escape(t(lang,'map.empty'))}</td></tr>"}</tbody></table>"""
+
+    base_q = f"/mappings?lang={escape(lang)}"
+    if filters.get("program_id"):
+        base_q += f"&program_id={escape(filters['program_id'])}"
+    tabs = (
+        f"<div class='tabs'>"
+        f"<a class='{'active' if tab=='approved' else ''}' href='{base_q}&tab=approved'>Approvate ({len(approved)})</a>"
+        f"<a class='{'active' if tab=='review' else ''}' href='{base_q}&tab=review'>Da revisionare ({len(review)})</a>"
+        f"<a class='{'active' if tab=='unmapped' else ''}' href='{base_q}&tab=unmapped'>Non mappati ({len(unmapped)})</a>"
+        f"</div>"
+    )
+    pager = f"""
+<div class="pager meta">
+  {total} elementi · pagina {page}/{pages}
+  {" · <a href='" + base_q + f"&tab={tab}&page={page-1}&page_size={page_size}'>← Prec</a>" if page > 1 else ""}
+  {" · <a href='" + base_q + f"&tab={tab}&page={page+1}&page_size={page_size}'>Succ →</a>" if page < pages else ""}
+</div>
+"""
     body = (
         page_header(
             eyebrow=t(lang, "nav.section.knowledge"),
             title=t(lang, "map.title"),
-            subtitle=t(lang, "map.meta"),
+            subtitle="Solo le mappature Approvate contribuiscono alla readiness.",
             actions_html=f"<a class='btn primary' href='/mappings/new?{nav_qs}'>{escape(t(lang, 'map.new'))}</a>",
         )
-        + form
+        + tabs
+        + pager
         + f'<div class="panel">{table_wrap(table)}</div>'
-        + f"<section style='margin-top:16px'><h2>{escape(t(lang,'map.unmapped'))}</h2>"
-        + f'<div class="panel">{table_wrap(um_table)}</div></section>'
     )
     return render_shell(
         f"{t(lang, 'map.title')} — WayFold Compliance",
@@ -504,12 +543,12 @@ def audit_page(events: list[Any], nav_qs: str, *, filters: dict[str, str] | None
     filters = filters or {}
     rows = []
     for ev in events:
-        detail = ev.detail or ""
-        if ev.old_value or ev.new_value:
-            detail = (
-                f"{detail} "
-                f"old={escape(str(ev.old_value or {}))} → new={escape(str(ev.new_value or {}))}"
-            ).strip()
+        detail = (ev.detail or "").strip()
+        # Avoid dumping raw JSON blobs in the main table
+        if detail.startswith("{") or detail.startswith("["):
+            detail = "Dettaglio tecnico disponibile in export"
+        elif ev.old_value or ev.new_value:
+            detail = detail or "Modifica registrata"
         rows.append(
             "<tr>"
             f"<td>{escape(format_display_datetime(ev.timestamp, lang=lang))}</td>"
@@ -517,7 +556,7 @@ def audit_page(events: list[Any], nav_qs: str, *, filters: dict[str, str] | None
             f"<td><code>{escape(ev.action)}</code></td>"
             f"<td>{escape(ev.entity_type)} <code>{escape(ev.entity_id)}</code></td>"
             f"<td>{escape(ev.tenant_id or '—')}</td>"
-            f"<td class='client-meta'>{detail or '—'}</td>"
+            f"<td class='client-meta'>{escape(detail) if detail else '—'}</td>"
             "</tr>"
         )
     form = f"""
@@ -611,7 +650,7 @@ def clients_page(
             "</tr>"
         )
     filter_bar = f"""
-<form class="filter-bar" method="get" action="/clients">
+<form class="filters" method="get" action="/clients">
   <input type="hidden" name="lang" value="{escape(lang)}">
   <label>Ricerca <input name="q" value="{escape(q)}" placeholder="Cliente o programma"></label>
   <label>Stato
@@ -625,27 +664,67 @@ def clients_page(
   <button class="btn primary sm" type="submit">Filtra</button>
 </form>
 """
-    table = f"""<table class="data-table"><thead><tr>
+    if not rows:
+        body = (
+            page_header(
+                eyebrow=t(lang, "nav.section.workspace"),
+                title=t(lang, "clients.title"),
+                subtitle="",
+                actions_html=(
+                    f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
+                ),
+            )
+            + empty_state(
+                title=t(lang, "clients.empty_title"),
+                body=t(lang, "clients.empty_body"),
+                icon_name="building",
+                action_html=(
+                    f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
+                    f"<a class='btn' href='/frameworks?{nav_qs}'>{escape(t(lang, 'empty.open_frameworks'))}</a>"
+                ),
+            )
+        )
+    elif not filtered:
+        body = (
+            page_header(
+                eyebrow=t(lang, "nav.section.workspace"),
+                title=t(lang, "clients.title"),
+                subtitle=t(lang, "clients.meta"),
+                actions_html=(
+                    f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
+                    f"<a class='btn' href='/programs/new?{nav_qs}'>{escape(t(lang, 'program.new'))}</a>"
+                ),
+            )
+            + filter_bar
+            + empty_state(
+                title="Nessun risultato",
+                body="Nessun cliente corrisponde ai filtri selezionati.",
+                icon_name="search",
+                action_html=f"<a class='btn' href='/clients?{nav_qs}'>Azzera filtri</a>",
+            )
+        )
+    else:
+        table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.client'))}</th>
 <th>{escape(t(lang,'col.program'))}</th>
 <th>{escape(t(lang,'col.framework'))}</th>
 <th>{escape(t(lang,'clients.consultant'))}</th>
 <th>{escape(t(lang,'col.status'))}</th>
 <th></th>
-</tr></thead><tbody>{''.join(body_rows) or f"<tr><td colspan='6'>{escape(t(lang,'clients.empty'))}</td></tr>"}</tbody></table>"""
-    body = (
-        page_header(
-            eyebrow=t(lang, "nav.section.workspace"),
-            title=t(lang, "clients.title"),
-            subtitle=t(lang, "clients.meta"),
-            actions_html=(
-                f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
-                f"<a class='btn' href='/programs/new?{nav_qs}'>{escape(t(lang, 'program.new'))}</a>"
-            ),
+</tr></thead><tbody>{''.join(body_rows)}</tbody></table>"""
+        body = (
+            page_header(
+                eyebrow=t(lang, "nav.section.workspace"),
+                title=t(lang, "clients.title"),
+                subtitle=t(lang, "clients.meta"),
+                actions_html=(
+                    f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
+                    f"<a class='btn' href='/programs/new?{nav_qs}'>{escape(t(lang, 'program.new'))}</a>"
+                ),
+            )
+            + filter_bar
+            + f'<div class="panel">{table_wrap(table)}</div>'
         )
-        + filter_bar
-        + f'<div class="panel">{table_wrap(table)}</div>'
-    )
     return render_shell(
         f"{t(lang, 'clients.title')} — WayFold Compliance",
         nav_qs,
@@ -682,14 +761,14 @@ def settings_page(
     user_rows = "".join(
         "<tr>"
         f"<td>{escape(u.username)}</td>"
-        f"<td>{escape(u.role)}</td>"
+        f"<td>{escape(t(lang, f'role.{u.role}') if t(lang, f'role.{u.role}') != f'role.{u.role}' else u.role)}</td>"
         f"<td>{escape(', '.join(u.tenant_ids) or '—')}</td>"
-        f"<td>{'MFA' if u.mfa_enabled else '—'}</td>"
+        f"<td>{'Sì' if u.mfa_enabled else 'No'}</td>"
         "</tr>"
         for u in (users or [])
     )
     assign_rows = "".join(
-        f"<tr><td>{escape(u)}</td><td>{escape(', '.join(tids))}</td></tr>"
+        f"<tr><td>{escape(u)}</td><td>{escape(', '.join(tids) or '—')}</td></tr>"
         for u, tids in sorted((assignments or {}).items())
     )
     mfa = mfa_status or {}
@@ -699,28 +778,30 @@ def settings_page(
     title=t(lang, 'settings.title'),
     subtitle=t(lang, 'settings.meta'),
 )}
-<section class="panel" style="margin-bottom:14px">
-  <h2>{escape(t(lang, 'settings.general'))}</h2>
-  <p class="client-meta">WayFold Compliance · sessione cookie HttpOnly · timeout inattività 45 minuti</p>
-</section>
-<section class="panel" style="margin-bottom:14px">
-  <h2>{escape(t(lang, 'settings.users'))}</h2>
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang, 'settings.general'))}</div></div>
+  <div class="panel-body"><p class="meta">{escape(t(lang, 'settings.session_note'))}</p></div>
+</div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang, 'settings.users'))}</div></div>
   {table_wrap(f"<table class='data-table'><thead><tr><th>Utente</th><th>Ruolo</th><th>Tenant</th><th>MFA</th></tr></thead><tbody>{user_rows or '<tr><td colspan=4>—</td></tr>'}</tbody></table>")}
-</section>
-<section class="panel" style="margin-bottom:14px">
-  <h2>{escape(t(lang, 'settings.assignments'))}</h2>
+</div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang, 'settings.assignments'))}</div></div>
   {table_wrap(f"<table class='data-table'><thead><tr><th>Consulente</th><th>Clienti</th></tr></thead><tbody>{assign_rows or '<tr><td colspan=2>—</td></tr>'}</tbody></table>")}
-</section>
-<section class="panel" style="margin-bottom:14px">
-  <h2>{escape(t(lang, 'settings.evidence'))}</h2>
-  <p class="client-meta">{escape(t(lang, 'settings.evidence_note'))}</p>
-</section>
+</div>
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang, 'settings.evidence'))}</div></div>
+  <div class="panel-body"><p class="meta">{escape(t(lang, 'settings.evidence_note'))}</p></div>
+</div>
 {ai_block}
-<section class="panel">
-  <h2>{escape(t(lang, 'settings.security'))}</h2>
-  <p>MFA SUPER_ADMIN/CONSULTANT: {"abilitata in directory utenti" if mfa.get("supported") else "hook pronto"}</p>
-  <p class="client-meta">Credenziale review temporanea: TEMPORARY REVIEW CREDENTIAL (solo audit esterno).</p>
-</section>
+<div class="panel">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang, 'settings.security'))}</div></div>
+  <div class="panel-body">
+    <p class="meta">{escape(t(lang, 'settings.security_note'))}</p>
+    <p class="meta">MFA directory utenti: {"disponibile" if mfa.get("supported") else "configurabile dal profilo"}</p>
+  </div>
+</div>
 """
     return render_shell(
         f"{t(lang, 'settings.title')} — WayFold Compliance",

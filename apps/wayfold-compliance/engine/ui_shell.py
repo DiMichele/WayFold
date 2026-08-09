@@ -118,7 +118,7 @@ code,.control-code,td code{white-space:nowrap}
 .tabs a.active,.tabs button.active{color:var(--wf-primary);border-bottom-color:var(--wf-primary)}
 .summary-row{display:flex;flex-wrap:wrap;gap:14px 22px;padding:10px 0 16px;font-size:13px}
 .summary-row label{display:block;font-size:10px;font-weight:700;color:var(--wf-muted);text-transform:uppercase;letter-spacing:.06em}
-.filters.compact{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.filters.compact{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px;padding:0;background:transparent;border:0;box-shadow:none}
 .filters.compact input,.filters.compact select{border:1px solid var(--wf-border);border-radius:8px;padding:7px 9px;background:#fff;font-size:12.5px}
 .row-menu{position:relative;display:inline-block}
 .row-menu>summary{list-style:none;cursor:pointer;padding:4px 8px;border-radius:8px;font-weight:700}
@@ -220,7 +220,22 @@ button:not(.nav-item):not(.icon-btn):not(.lang-switch):not(.btn):hover{backgroun
 .panel-subtitle{font-size:11px;color:var(--wf-muted);margin-top:2px}
 .panel-head-spacer{margin-left:auto}
 .panel-body{padding:15px}
+.panel.form-panel .panel-body{padding:18px}
 .panel-toolbar{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.action-row{
+  display:flex;align-items:center;gap:14px;padding:12px 0;
+  border-bottom:1px solid var(--wf-border)
+}
+.action-row:last-child{border-bottom:0}
+.action-count{font-size:22px;font-weight:800;min-width:42px;letter-spacing:-.03em}
+.action-copy{flex:1;min-width:0}
+.action-title{font-weight:700}
+.onboarding-steps{margin:0 0 16px 1.2rem;line-height:1.75;padding:0}
+.onboarding-panel{padding:18px}
+.profile-grid{
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 18px
+}
+.profile-grid .field{margin:0}
 .metric{padding:16px 17px;min-height:108px;position:relative;overflow:hidden}
 .metric:after{
   content:"";position:absolute;right:-25px;bottom:-28px;width:82px;height:82px;border-radius:50%;
@@ -258,12 +273,12 @@ button:not(.nav-item):not(.icon-btn):not(.lang-switch):not(.btn):hover{backgroun
 .progress.warning>span{background:#dfa12b}
 .progress.danger>span{background:#d34a40}
 
-.filters,.table-toolbar{
+.filters,.filter-bar,.table-toolbar{
   display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px;align-items:end;
   padding:12px;background:var(--wf-surface);border:1px solid var(--wf-border);border-radius:var(--wf-r);
   box-shadow:var(--wf-shadow-sm)
 }
-.filters label{
+.filters label,.filter-bar label{
   display:flex;flex-direction:column;font-size:10px;color:var(--wf-muted);gap:4px;
   font-weight:700;letter-spacing:.04em;text-transform:uppercase
 }
@@ -341,7 +356,22 @@ section{margin:1.25rem 0}
 }
 .mapping-node{padding:10px;border:1px solid var(--wf-border);border-radius:9px;background:#fbfcfe}
 .mapping-arrow{display:grid;place-items:center;color:#9ba4b3}
-.empty-state{padding:36px 20px;text-align:center;color:var(--wf-muted)}
+.empty-state{
+  padding:48px 28px;text-align:center;color:var(--wf-muted);
+  display:flex;flex-direction:column;align-items:center;gap:8px;max-width:560px;margin:0 auto
+}
+.empty-state.panel{max-width:640px;margin:0 auto}
+.empty-icon{
+  width:56px;height:56px;border-radius:16px;display:grid;place-items:center;margin-bottom:8px;
+  background:var(--wf-primary-soft);color:var(--wf-primary)
+}
+.empty-icon .wf-icon{width:26px;height:26px}
+.empty-title{font-size:18px;font-weight:750;color:var(--wf-ink);letter-spacing:-.02em}
+.empty-body{margin:0;max-width:420px;line-height:1.55;font-size:13.5px}
+.empty-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:14px}
+.onboarding-panel{padding:8px 4px 4px}
+.onboarding-steps{margin:0 0 18px 1.1rem;padding:0;line-height:1.9;color:var(--wf-ink)}
+.onboarding-steps li{margin-bottom:4px}
 .empty-icon{width:40px;height:40px;margin:0 auto 12px;border-radius:10px;background:var(--wf-surface-3);
   display:grid;place-items:center;color:var(--wf-muted)}
 .empty-title{font-size:15px;font-weight:700;color:var(--wf-ink);margin-bottom:6px}
@@ -420,16 +450,21 @@ body.nav-open{overflow:hidden}
   .page-actions .btn{flex:1 1 auto;justify-content:center;min-height:44px}
   h1{font-size:22px}
   .subtitle,.meta,.hint{font-size:13px}
-  .panel{border-radius:14px;padding:14px}
+  .panel{border-radius:14px}
+  .panel.form-panel .panel-body,.onboarding-panel{padding:16px}
   .tabs{
     flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
     gap:0;margin:0 -14px 14px;padding:0 14px;scrollbar-width:none
   }
   .tabs::-webkit-scrollbar{display:none}
   .tabs a,.tabs button{flex:0 0 auto;padding:12px 14px;font-size:13px;white-space:nowrap}
-  .filters.compact{flex-direction:column;align-items:stretch}
-  .filters.compact input,.filters.compact select,.filters.compact .btn{width:100%;min-height:44px}
+  .filters,.filters.compact,.filter-bar{flex-direction:column;align-items:stretch}
+  .filters input,.filters select,.filters.compact input,.filters.compact select,
+  .filter-bar input,.filter-bar select,.filters .btn,.filter-bar .btn{width:100%;min-height:44px}
   .summary-row{gap:10px 14px;padding:8px 0 12px}
+  .profile-grid{grid-template-columns:1fr}
+  .action-row{align-items:flex-start;flex-wrap:wrap}
+  .action-row .btn{margin-left:auto}
   .table-wrap{
     margin:0 -14px;padding:0 14px;border-radius:0;border-left:0;border-right:0;
     -webkit-overflow-scrolling:touch

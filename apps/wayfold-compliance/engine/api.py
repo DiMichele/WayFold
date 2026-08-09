@@ -342,15 +342,17 @@ def _empty_workspace_html(nav_qs: str, *, active_path: str = "/portfolio") -> by
     title_key = _PATH_TITLE_KEYS.get(active_path, "empty.title")
     page_title = t(lang, title_key)
     body = page_header(
-        eyebrow="WayFold Compliance",
+        eyebrow=t(lang, "nav.section.workspace"),
         title=page_title,
-        subtitle=t(lang, "empty.meta"),
+        subtitle="",
     ) + empty_state(
-        title=t(lang, "empty.title"),
-        body=t(lang, "empty.meta"),
+        title=t(lang, "empty.select_program"),
+        body=t(lang, "empty.select_program_meta"),
+        icon_name="briefcase",
         action_html=(
-            f'<a class="btn primary" href="/portfolio?{nav_qs}">'
-            f'{t(lang, "nav.portfolio")}</a>'
+            f'<a class="btn primary" href="/clients/new?{nav_qs}">{t(lang, "empty.create_client")}</a>'
+            f'<a class="btn" href="/clients?{nav_qs}">{t(lang, "empty.open_clients")}</a>'
+            f'<a class="btn ghost" href="/frameworks?{nav_qs}">{t(lang, "empty.open_frameworks")}</a>'
         ),
     )
     return render_shell(
@@ -976,7 +978,32 @@ class Handler(BaseHTTPRequestHandler):
             )
             program = _resolve_program(qs)
             if program is None:
-                return self._deny(404, "program_not_found")
+                auth = self._gate(qs, permission=need_perm)
+                if auth is None:
+                    return
+                actor_tenants, is_super = auth
+                nav = _nav_qs(qs)
+                rows = build_portfolio(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    registry_path=_active_registry(),
+                )
+                if len(rows) == 1:
+                    flat = {k: v[0] for k, v in qs.items() if v}
+                    flat["program_id"] = rows[0].program_id
+                    flat.setdefault("lang", lang_from_qs(qs))
+                    return self._redirect(f"{path}?{urlencode(flat)}")
+                if len(rows) > 1:
+                    return self._send(
+                        200,
+                        _select_client_html(nav, rows, active_path=path),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    _empty_workspace_html(nav, active_path=path if path.startswith("/tasks") else "/evidence"),
+                    "text/html; charset=utf-8",
+                )
             auth = self._gate(
                 qs, target_tenant_id=program.tenant_id, permission=need_perm
             )
@@ -988,10 +1015,12 @@ class Handler(BaseHTTPRequestHandler):
                 title = "Nuova evidenza"
                 target = "/evidence"
                 body = (
-                    f"<div class='page-head'><h1>{title}</h1>"
-                    f"<p class='subtitle'>Carica un file binario reale collegato al programma.</p></div>"
-                    f"<form method='post' action='/evidence/new?{nav}' class='panel' style='padding:18px' "
+                    f"<div class='page-head'><div><div class='eyebrow'>Evidenze</div>"
+                    f"<h1>{title}</h1>"
+                    f"<p class='subtitle'>Carica un file collegato al programma corrente.</p></div></div>"
+                    f"<form method='post' action='/evidence/new?{nav}' class='panel form-panel' "
                     f"enctype='multipart/form-data'>"
+                    f"<div class='panel-body'>"
                     f"<input type='hidden' name='csrf_token' value='{csrf}'>"
                     f"<div class='form-grid'>"
                     f"<div class='form-field full'><label>Titolo</label><input name='title' required></div>"
@@ -1007,7 +1036,8 @@ class Handler(BaseHTTPRequestHandler):
                     f"</div>"
                     f"<div class='page-actions' style='margin-top:14px'>"
                     f"<button class='btn primary' type='submit'>Carica evidenza</button>"
-                    f"<a class='btn ghost' href='{target}?{nav}'>Annulla</a></div></form>"
+                    f"<a class='btn ghost' href='{target}?{nav}'>Annulla</a></div>"
+                    f"</div></form>"
                 )
             else:
                 from engine import task_service
@@ -1252,6 +1282,9 @@ class Handler(BaseHTTPRequestHandler):
                             "relation": relation,
                             "review": review,
                             "unmapped_only": qs.get("unmapped_only", [""])[0],
+                            "tab": qs.get("tab", ["approved"])[0],
+                            "page": qs.get("page", ["1"])[0],
+                            "page_size": qs.get("page_size", ["50"])[0],
                         },
                     ).encode("utf-8"),
                     "text/html; charset=utf-8",

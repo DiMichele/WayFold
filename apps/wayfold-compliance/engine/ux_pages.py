@@ -116,13 +116,13 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
         body = f"""
 {page_header(eyebrow=t(lang,'portfolio.eyebrow'), title=t(lang,'onboarding.title'), subtitle=t(lang,'onboarding.meta'))}
 <div class="panel">
-  <div class="panel-body">
-    <ol class="compact" style="margin:0 0 16px 1.2rem;line-height:1.7">{steps}</ol>
+  <div class="panel-body onboarding-panel">
+    <ol class="onboarding-steps">{steps}</ol>
     <p class="meta">{escape(t(lang,'onboarding.note'))}</p>
     <p class="meta">{escape(t(lang,'onboarding.cta_hint'))}</p>
     <div class="page-actions" style="margin-top:16px">
-      <a class="btn primary" href="/changes?{nav_qs}">{escape(t(lang,'onboarding.cta_primary'))}</a>
-      <a class="btn" href="/sources?{nav_qs}">{escape(t(lang,'onboarding.cta_secondary'))}</a>
+      <a class="btn primary" href="/clients/new?{nav_qs}">{escape(t(lang,'onboarding.cta_primary'))}</a>
+      <a class="btn" href="/frameworks?{nav_qs}">{escape(t(lang,'onboarding.cta_secondary'))}</a>
     </div>
   </div>
 </div>
@@ -146,11 +146,11 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 
     def _action_row(title: str, count: int, desc: str, href: str, icon_name: str = "gap") -> str:
         return (
-            f"<div class='action-row' style='display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--wf-border)'>"
-            f"<div style='font-size:22px;font-weight:800;min-width:42px'>{count}</div>"
-            f"<div style='flex:1'><div style='font-weight:700'>{escape(title)}</div>"
+            f"<div class='action-row'>"
+            f"<div class='action-count'>{count}</div>"
+            f"<div class='action-copy'><div class='action-title'>{escape(title)}</div>"
             f"<div class='client-meta'>{escape(desc)}</div></div>"
-            f"<a class='btn sm' href='{href}'>Apri</a></div>"
+            f"<a class='btn sm' href='{href}'>{escape(t(lang,'action.open'))}</a></div>"
         )
 
     action_rows = []
@@ -715,7 +715,7 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
 <th>Validità</th>
 <th>{escape(t(lang,'col.framework'))}</th><th></th>
-</tr></thead><tbody>{rows}</tbody></table>"""
+</tr></thead><tbody>{rows or f'<tr><td colspan="8">{escape(t(lang,"evidence.empty_body"))}</td></tr>'}</tbody></table>"""
     body = f"""
 {page_header(
     eyebrow=t(lang,'evidence.eyebrow'),

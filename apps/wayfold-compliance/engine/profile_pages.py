@@ -6,8 +6,8 @@ from html import escape
 from urllib.parse import parse_qsl
 
 from engine.csrf import CSRF_FORM_FIELD
-from engine.i18n import DEFAULT_LANG, normalize_lang
-from engine.rbac import parse_role
+from engine.dates import format_display_datetime
+from engine.i18n import DEFAULT_LANG, normalize_lang, t
 from engine.ui_components import page_header
 from engine.ui_shell import render_shell
 
@@ -25,28 +25,46 @@ def profile_page(
     session_expires: int | None,
 ) -> str:
     lang = normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
-    role_label = parse_role(role).value if role else "—"
-    tenants = ", ".join(tenant_ids) if tenant_ids else "Tutti (super admin)" if role else "—"
+    role_key = f"role.{role}"
+    role_label = t(lang, role_key)
+    if role_label == role_key:
+        role_label = role or "—"
+    tenants = (
+        ", ".join(tenant_ids)
+        if tenant_ids
+        else ("Tutti (amministratore)" if role == "SUPER_ADMIN" else "—")
+    )
     mfa = "Abilitata" if mfa_enabled else "Non abilitata"
-    review = "Sì (credenziale temporanea)" if temporary_review else "No"
-    sess = ""
+    from datetime import datetime, timezone
+
+    def _epoch(v: int | None) -> str:
+        if not v:
+            return "—"
+        try:
+            return format_display_datetime(
+                datetime.fromtimestamp(int(v), tz=timezone.utc).isoformat(),
+                lang=lang,
+            )
+        except (OSError, OverflowError, ValueError):
+            return "—"
+
+    sess_bits = []
     if session_issued:
-        sess += f"Emessa (epoch): {session_issued}"
+        sess_bits.append(f"Emessa: {_epoch(session_issued)}")
     if session_expires:
-        sess += f" · Scadenza (epoch): {session_expires}"
-    if not sess:
-        sess = "Informazioni sessione disponibili dopo login."
+        sess_bits.append(f"Scade: {_epoch(session_expires)}")
+    sess = " · ".join(sess_bits) if sess_bits else "Sessione attiva"
 
     pwd_form = f"""
-<form method="post" action="/profile/password?{nav_qs}" class="panel" style="padding:18px;margin-top:16px">
-  <h2>Cambia password</h2>
-  <p class="client-meta">La password viene salvata nel directory utenti (non in .auth.env).</p>
+<form method="post" action="/profile/password?{nav_qs}" class="panel" style="padding:18px;margin-top:16px" id="password">
+  <h2 style="margin-top:0">Cambia password</h2>
+  <p class="meta">Aggiorna la password del tuo account.</p>
   <div class="form-grid">
     <div class="form-field"><label>Password attuale</label>
       <input type="password" name="current_password" required autocomplete="current-password"></div>
     <div class="form-field"><label>Nuova password</label>
       <input type="password" name="new_password" required minlength="8" autocomplete="new-password"></div>
-    <div class="form-field"><label>Conferma nuova password</label>
+    <div class="form-field full"><label>Conferma nuova password</label>
       <input type="password" name="confirm_password" required minlength="8" autocomplete="new-password"></div>
   </div>
   <input type="hidden" name="{CSRF_FORM_FIELD}" value="">
@@ -59,21 +77,27 @@ document.querySelector('input[name="{CSRF_FORM_FIELD}"]').value =
   document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('wf_csrf='))?.split('=')[1] || '';
 </script>
 """
+    review_row = ""
+    if temporary_review:
+        review_row = (
+            "<div class='field'><label>Nota account</label>"
+            "<div class='field-value'>Account di servizio — cambia la password dal modulo sotto.</div></div>"
+        )
     body = page_header(
         eyebrow="Account",
         title="Profilo",
-        subtitle="Informazioni account e sessione.",
+        subtitle="Dati account e sicurezza.",
     ) + f"""
 <div class="panel" style="padding:18px">
-  <dl class="detail-grid">
-    <dt>Nome visualizzato</dt><dd>{escape(display_name or username)}</dd>
-    <dt>Username</dt><dd>{escape(username)}</dd>
-    <dt>Ruolo</dt><dd>{escape(role_label)}</dd>
-    <dt>Tenant / assegnazioni</dt><dd>{escape(tenants)}</dd>
-    <dt>MFA</dt><dd>{escape(mfa)}</dd>
-    <dt>Credenziale review temporanea</dt><dd>{escape(review)}</dd>
-    <dt>Sessione</dt><dd>{escape(sess)}</dd>
-  </dl>
+  <div class="detail-grid">
+    <div class="field"><label>Nome</label><div class="field-value">{escape(display_name or username)}</div></div>
+    <div class="field"><label>Username</label><div class="field-value">{escape(username)}</div></div>
+    <div class="field"><label>Ruolo</label><div class="field-value">{escape(role_label)}</div></div>
+    <div class="field"><label>Assegnazioni</label><div class="field-value">{escape(tenants)}</div></div>
+    <div class="field"><label>MFA</label><div class="field-value">{escape(mfa)}</div></div>
+    <div class="field"><label>Sessione</label><div class="field-value">{escape(sess)}</div></div>
+    {review_row}
+  </div>
 </div>
 {pwd_form}
 """
