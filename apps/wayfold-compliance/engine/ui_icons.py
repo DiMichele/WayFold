@@ -11,6 +11,7 @@ from html import escape
 PATH_ICONS: dict[str, str] = {
     "/": "grid",
     "/portfolio": "grid",
+    "/clients": "building",
     "/client": "briefcase",
     "/checklist": "shield",
     "/gaps": "gap",
@@ -19,6 +20,10 @@ PATH_ICONS: dict[str, str] = {
     "/report": "report",
     "/owners": "users",
     "/deadlines": "clock",
+    "/frameworks": "book",
+    "/mappings": "network",
+    "/audit": "checklist",
+    "/settings": "settings",
     "/sources": "database",
     "/changes": "radar",
     "/change": "radar",

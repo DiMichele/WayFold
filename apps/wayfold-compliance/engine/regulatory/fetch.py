@@ -8,10 +8,19 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-# Safety defaults for local/dev engine (not a full SSRF gateway)
+# SSRF hardening for regulatory watcher HTTP fetches
 DEFAULT_TIMEOUT_SEC = 15
 DEFAULT_MAX_BYTES = 2_000_000
-BLOCKED_HOSTS = {"metadata.google.internal", "metadata"}
+BLOCKED_HOSTS = {
+    "metadata.google.internal",
+    "metadata",
+    "metadata.goog",
+    "169.254.169.254",
+    "localhost",
+    "127.0.0.1",
+    "::1",
+    "0.0.0.0",
+}
 
 
 @dataclass
@@ -24,35 +33,47 @@ class FetchResult:
     metadata: dict | None = None
 
 
+def _is_blocked_ip(ip: ipaddress._BaseAddress) -> bool:
+    return bool(
+        ip.is_private
+        or ip.is_loopback
+        or ip.is_link_local
+        or ip.is_reserved
+        or ip.is_multicast
+        or ip.is_unspecified
+    )
+
+
 def validate_url(url: str, *, allow_file: bool = True) -> str | None:
     """Return error message if URL is not allowed; None if OK."""
     parsed = urlparse(url)
     scheme = (parsed.scheme or "").lower()
-    if scheme in {"fixture", "file"}:
+    if scheme == "fixture":
+        return None
+    if scheme == "file":
         return None if allow_file else "file_scheme_disabled"
+    if scheme in {"gopher", "ftp", "dict", "jar", "data"}:
+        return f"unsupported_scheme:{scheme}"
     if scheme not in {"http", "https"}:
         return f"unsupported_scheme:{scheme or 'none'}"
     host = (parsed.hostname or "").lower()
     if not host:
         return "missing_host"
-    if host in BLOCKED_HOSTS:
-        return "blocked_host"
-    if host.endswith(".local") and host != "localhost":
+    if host in BLOCKED_HOSTS or host.endswith(".local"):
         return "blocked_host"
     try:
-        # Resolve and reject private/link-local unless localhost
-        if host not in {"localhost", "127.0.0.1", "::1"}:
-            infos = socket.getaddrinfo(host, None)
-            for info in infos:
-                ip = ipaddress.ip_address(info[4][0])
-                if (
-                    ip.is_private
-                    or ip.is_loopback
-                    or ip.is_link_local
-                    or ip.is_reserved
-                    or ip.is_multicast
-                ):
-                    return "private_or_reserved_ip"
+        # Literal IP in hostname
+        ip = ipaddress.ip_address(host)
+        if _is_blocked_ip(ip):
+            return "private_or_reserved_ip"
+    except ValueError:
+        pass
+    try:
+        infos = socket.getaddrinfo(host, None)
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if _is_blocked_ip(ip):
+                return "private_or_reserved_ip"
     except (socket.gaierror, ValueError, OSError):
         # DNS failure checked at fetch time
         pass
@@ -85,7 +106,16 @@ def fetch_url(
 
     try:
         req = Request(url, headers={"User-Agent": "WayFoldRegulatoryEngine/0.1"})
-        with urlopen(req, timeout=timeout) as resp:  # noqa: S310 — URL validated above
+        # Do not follow redirects automatically — block open-redirect SSRF.
+        import urllib.request as _ur
+
+        class _NoRedirect(_ur.HTTPRedirectHandler):
+            def redirect_request(self, req, fp, code, msg, headers, newurl):  # noqa: N802
+                return None
+
+        opener = _ur.build_opener(_NoRedirect)
+        with opener.open(req, timeout=timeout) as resp:  # noqa: S310 — URL validated above
+            final = resp.geturl()
             raw = resp.read(max_bytes + 1)
             if len(raw) > max_bytes:
                 return FetchResult(False, url, error="response_too_large")
@@ -95,9 +125,18 @@ def fetch_url(
                 url,
                 content=raw,
                 content_type=ctype,
-                metadata={"status": getattr(resp, "status", 200), "final_url": resp.geturl()},
+                metadata={"status": getattr(resp, "status", 200), "final_url": final},
             )
     except HTTPError as exc:
+        if 300 <= int(exc.code) < 400:
+            location = exc.headers.get("Location") if exc.headers else None
+            if location:
+                redir_err = validate_url(location, allow_file=False)
+                if redir_err:
+                    return FetchResult(False, url, error=f"redirect_blocked:{redir_err}")
+                # Re-validate DNS of redirect target without fetching again here
+                return FetchResult(False, url, error="redirect_not_followed")
+            return FetchResult(False, url, error=f"http_{exc.code}")
         return FetchResult(False, url, error=f"http_{exc.code}")
     except URLError as exc:
         return FetchResult(False, url, error=f"url_error:{exc.reason}")

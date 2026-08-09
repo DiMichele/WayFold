@@ -144,9 +144,38 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 {metric_card(label=t(lang,'portfolio.metric.unmapped'), value=format_number(unmapped, lang=lang), icon_name='network')}
 </div>"""
 
+    # Action Center — real counts from portfolio rows (consultant operations)
+    action_lis = []
+    if unmapped:
+        action_lis.append(
+            f"<li><a href='/gaps?mapped=0&{nav_qs}'><strong>{unmapped}</strong> requisiti non mappati</a></li>"
+        )
+    if overdue:
+        action_lis.append(
+            f"<li><a href='/tasks?{nav_qs}'><strong>{overdue}</strong> attività scadute</a></li>"
+        )
+    if gaps:
+        action_lis.append(
+            f"<li><a href='/gaps?{nav_qs}'><strong>{gaps}</strong> gap critici / alta priorità</a></li>"
+        )
+    action_lis.append(
+        f"<li><a href='/changes?{nav_qs}'>Modifiche normative da revisionare</a></li>"
+    )
+    action_lis.append(
+        f"<li><a href='/suggestions?{nav_qs}'>Nuove FrameworkVersion / suggerimenti</a></li>"
+    )
+    action_lis.append(
+        f"<li><a href='/evidence?{nav_qs}'>Evidenze in scadenza / da revisionare</a></li>"
+    )
+
     body = f"""
 {page_header(eyebrow=t(lang,'portfolio.eyebrow'), title=t(lang,'portfolio.title'), subtitle=t(lang,'portfolio.meta'))}
 {metrics}
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang,'portfolio.action_center'))}</div>
+  <div class="client-meta">{escape(t(lang,'portfolio.action_meta'))}</div></div>
+  <ul class="compact">{''.join(action_lis)}</ul>
+</div>
 <div class="panel">
   <div class="panel-head"><div class="panel-title">{escape(t(lang,'portfolio.table'))}</div></div>
   {table_wrap(table)}
@@ -252,24 +281,33 @@ def client_page(dash, nav_qs: str, lang: str | None = None) -> str:
     new_fw_html = (
         "<div class='mapping-delta' style='margin-top:8px'><strong>"
         + escape(t(lang, "fw.new_version"))
-        + "</strong><br>"
+        + "</strong> — <a href='/suggestions?"
+        + nav_qs
+        + "'>Confronta versioni</a><br>"
         + "<br>".join(
             f"{escape(v.get('framework_name',''))} <code>{escape(str(v.get('framework_version','')))}</code>"
             f" · {escape(str(v.get('status','')))}"
             for v in new_fw
         )
+        + "<div class='client-meta'>Nessun aggiornamento automatico della baseline cliente.</div>"
         + "</div>"
         if new_fw
         else ""
     )
+    baseline_bits = " · ".join(
+        f"{escape(f['framework_name'])} <code>{escape(f['framework_version'])}</code> · Baseline bloccata"
+        for f in dash.frameworks
+    )
     body = f"""
-{page_header(eyebrow=t(lang,'client.eyebrow'), title=dash.tenant_name, subtitle=t(lang,'client.subtitle'))}
+{page_header(eyebrow=t(lang,'client.eyebrow'), title=dash.tenant_name, subtitle=escape(dash.program_name))}
 <div class="client-summary">
   <div class="client-logo" style="width:42px;height:42px">{escape(client_initials(dash.tenant_name))}</div>
   <div>
     <div class="client-summary-title" style="font-size:15px;font-weight:750">{escape(dash.tenant_name)}</div>
-    {scope_html}
-    <div class="client-meta">{escape(dash.program_name)} · {dash.raw_requirements} {escape(t(lang,'client.raw'))}
+    <div class="client-meta"><strong>Programma:</strong> {escape(dash.program_name)}</div>
+    {scope_html or "<div class='client-meta'><strong>Scope:</strong> —</div>"}
+    <div class="client-meta"><strong>Baseline:</strong> {baseline_bits}</div>
+    <div class="client-meta">{dash.raw_requirements} {escape(t(lang,'client.raw'))}
  · {dash.unified_controls} {escape(t(lang,'client.unified'))} · {dash.unmapped_count} {escape(t(lang,'client.unmapped'))}</div>
     {new_fw_html}
   </div>
@@ -311,6 +349,8 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
     )
     mapped_val = filter_values.get("mapped", "")
 
+    from engine.product_pages import gap_taxonomy_label
+
     critical = sum(
         1
         for r in rows
@@ -321,6 +361,8 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
     partial = sum(1 for r in rows if (r.mapping or "").upper() == "PARTIAL")
     unmapped_n = sum(1 for r in rows if not r.mapped or (r.mapping or "").upper() == "UNMAPPED")
     overdue_n = sum(1 for r in rows if r.deadline and is_overdue(r.deadline))
+    findings_total = len(rows)
+    req_with_issues = len({r.requirement_id for r in rows})
 
     body_rows = []
     for r in rows:
@@ -332,9 +374,11 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
             )
         else:
             ctrl_cell = "—"
+        tax = gap_taxonomy_label(getattr(r, "taxonomy", "") or "")
         body_rows.append(
             "<tr>"
             f"<td>{priority_badge(lang, r.priority) if r.priority else '—'}</td>"
+            f"<td><span class='badge'>{escape(tax)}</span></td>"
             f"<td><strong>{escape(r.requirement_code)}</strong><div class='client-meta'>{escape(r.requirement_title)}</div></td>"
             f"<td>{escape(r.framework_name)}<div class='client-meta'><code>{escape(r.framework_version)}</code></div></td>"
             f"<td>{ctrl_cell}</td>"
@@ -349,6 +393,7 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
 
     table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.severity'))}</th>
+<th>{escape(t(lang,'gaps.taxonomy'))}</th>
 <th>{escape(t(lang,'col.requirement'))}</th>
 <th>{escape(t(lang,'col.framework'))}</th>
 <th>{escape(t(lang,'col.control'))}</th>
@@ -357,10 +402,12 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
 <th>{escape(t(lang,'col.deadline'))}</th>
 <th>{escape(t(lang,'col.status'))}</th>
 <th>{escape(t(lang,'col.mapping'))}</th>
-</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="9">{escape(t(lang,"gaps.empty"))}</td></tr>'}</tbody></table>"""
+</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="10">{escape(t(lang,"gaps.empty"))}</td></tr>'}</tbody></table>"""
 
     summary = f"""
 <div class="gap-summary">
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.req_with_issues'))}</div><div class="gap-stat-value">{req_with_issues}</div></div>
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.findings_total'))}</div><div class="gap-stat-value">{findings_total}</div></div>
   <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.critical'))}</div><div class="gap-stat-value text-danger">{critical}</div></div>
   <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.high'))}</div><div class="gap-stat-value">{high}</div></div>
   <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.partial'))}</div><div class="gap-stat-value text-warning">{partial}</div></div>
@@ -369,7 +416,7 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
 </div>"""
 
     body = f"""
-{page_header(eyebrow=t(lang,'gaps.eyebrow'), title=t(lang,'gaps.title'), subtitle=t(lang,'gaps.meta', n=len(rows)))}
+{page_header(eyebrow=t(lang,'gaps.eyebrow'), title=t(lang,'gaps.title'), subtitle=f"{req_with_issues} {t(lang,'gaps.req_with_issues').lower()} · {findings_total} {t(lang,'gaps.findings_total').lower()}")}
 {summary}
 <form class="filters" method="get" action="/gaps">
   <input type="hidden" name="lang" value="{escape(lang)}">
@@ -601,6 +648,7 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
         f"<td>{escape(format_display_date(getattr(i, 'valid_until', None) or i.due_date, lang=lang))}</td>"
         f"<td>{'<span class="badge danger">' + escape(t(lang,'evidence.missing')) + '</span>' if i.missing else '<span class="badge success">' + escape(t(lang,'evidence.ok')) + '</span>'}</td>"
         f"<td>{framework_chips(i.frameworks)}</td>"
+        f"<td><a class='btn sm' href='/api/evidence/{escape(getattr(i, 'evidence_id', '') or '')}/download?{nav_qs}'>Scarica</a></td>"
         "</tr>"
         for i in items
     )
@@ -609,7 +657,7 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
 <th>{escape(t(lang,'col.control'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
 <th>{escape(t(lang,'col.deadline'))}</th><th>{escape(t(lang,'col.flag'))}</th>
-<th>{escape(t(lang,'col.framework'))}</th>
+<th>{escape(t(lang,'col.framework'))}</th><th></th>
 </tr></thead><tbody>{rows}</tbody></table>"""
     body = f"""
 {page_header(eyebrow=t(lang,'evidence.eyebrow'), title=t(lang,'evidence.title'), subtitle=t(lang,'evidence.meta'))}

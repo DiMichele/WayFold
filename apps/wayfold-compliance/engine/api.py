@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from engine.authz import assert_tenant_access
+from engine.authz import AuthContext, assert_tenant_access, context_from_session_fields
 from engine.checklist import build_unified_checklist
 from engine.consultant_views import (
     control_detail,
@@ -50,15 +50,40 @@ from engine.serialize import to_jsonable
 from engine.auth_session import (
     auth_configured,
     clear_session_cookie_header,
+    forbidden_page_html,
     issue_session,
     login_page_html,
     open_access_enabled,
     qs_auth_allowed,
+    refresh_session,
     session_cookie_header,
     session_from_cookie_header,
-    verify_credentials,
     wants_html,
 )
+from engine.rbac import (
+    PERM_AUDIT_READ,
+    PERM_EVIDENCE_DOWNLOAD,
+    PERM_FRAMEWORK_PUBLISH,
+    PERM_KB_READ,
+    PERM_KB_WRITE,
+    PERM_REPORT_GENERATE,
+    Role,
+    has_permission,
+    parse_role,
+    role_is_superuser,
+)
+from engine import audit as audit_mod
+from engine import evidence_storage
+from engine import framework_versions as fw_versions
+from engine import product_pages
+from engine import report_snapshots
+from engine.users import (
+    authenticate,
+    effective_tenant_ids,
+    list_users,
+    load_assignments,
+)
+from engine.mfa import mfa_required_for_role, verify_totp
 from engine.i18n import lang_from_qs, t, with_lang
 from engine.ui_shell import render_shell, table_wrap
 from engine import ux_pages
@@ -132,25 +157,59 @@ def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
     return actor_tenants, is_super
 
 
-def _auth_from_request(handler: "Handler", qs: dict) -> tuple[set[str], bool, str | None]:
-    """Return (actor_tenants, is_superuser, username)."""
+def _auth_context_from_request(handler: "Handler", qs: dict) -> AuthContext | None:
+    """Return AuthContext when authenticated; None when anonymous."""
     headers = getattr(handler, "headers", None)
     cookie = headers.get("Cookie") if headers is not None else None
     session = session_from_cookie_header(cookie)
     if session is not None:
-        return set(), session.is_superuser, session.username
+        role = parse_role(session.role)
+        tenants = set(session.tenant_ids)
+        is_super = session.is_superuser or role_is_superuser(role)
+        # Sliding session refresh attached for handler to emit
+        handler._session_refresh_token = refresh_session(session)  # type: ignore[attr-defined]
+        return context_from_session_fields(
+            username=session.username,
+            role=role,
+            tenant_ids=tenants,
+            is_superuser=is_super,
+            mfa_verified=session.mfa_verified,
+        )
 
     if qs_auth_allowed():
         tenants, is_super = _auth_from_qs(qs)
         if is_super or tenants:
-            return tenants, is_super, None
+            role = Role.SUPER_ADMIN if is_super else Role.CONSULTANT
+            return context_from_session_fields(
+                username="qs-auth",
+                role=role,
+                tenant_ids=tenants,
+                is_superuser=is_super,
+            )
         if open_access_enabled():
-            return set(), True, "open-access"
+            return context_from_session_fields(
+                username="open-access",
+                role=Role.SUPER_ADMIN,
+                tenant_ids=set(),
+                is_superuser=True,
+            )
 
     if open_access_enabled():
-        return set(), True, "open-access"
+        return context_from_session_fields(
+            username="open-access",
+            role=Role.SUPER_ADMIN,
+            tenant_ids=set(),
+            is_superuser=True,
+        )
+    return None
 
-    return set(), False, None
+
+def _auth_from_request(handler: "Handler", qs: dict) -> tuple[set[str], bool, str | None]:
+    """Backward-compatible: (actor_tenants, is_superuser, username)."""
+    ctx = _auth_context_from_request(handler, qs)
+    if ctx is None:
+        return set(), False, None
+    return ctx.actor_tenant_ids, ctx.is_superuser, ctx.username
 
 
 def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
@@ -202,6 +261,7 @@ _PROGRAM_SCOPED_HTML = frozenset(
         "/evidence",
         "/tasks",
         "/report",
+        "/mappings",
     }
 )
 
@@ -450,9 +510,27 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
         self.send_header("Cache-Control", "no-store")
-        if extra_headers:
-            for key, value in extra_headers.items():
-                self.send_header(key, value)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Referrer-Policy", "strict-origin-when-cross-origin")
+        self.send_header(
+            "Content-Security-Policy",
+            "default-src 'self'; "
+            "img-src 'self' data:; "
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
+            "font-src 'self' https://fonts.gstatic.com; "
+            "script-src 'self' 'unsafe-inline'; "
+            "frame-ancestors 'self'; "
+            "base-uri 'self'; "
+            "form-action 'self'",
+        )
+        headers = dict(extra_headers or {})
+        refresh = getattr(self, "_session_refresh_token", None)
+        if refresh and "Set-Cookie" not in headers:
+            headers["Set-Cookie"] = session_cookie_header(
+                refresh, secure=self._request_is_secure()
+            )
+        for key, value in headers.items():
+            self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
 
@@ -470,11 +548,17 @@ class Handler(BaseHTTPRequestHandler):
         proto = (self.headers.get("X-Forwarded-Proto") or "").lower()
         return proto == "https"
 
-    def _gate(self, qs: dict, target_tenant_id: str | None = None):
+    def _gate(
+        self,
+        qs: dict,
+        target_tenant_id: str | None = None,
+        *,
+        permission: str | None = None,
+    ):
         from urllib.parse import quote
 
-        actor_tenants, is_super, _user = _auth_from_request(self, qs)
-        if not is_super and not actor_tenants:
+        ctx = _auth_context_from_request(self, qs)
+        if ctx is None or (not ctx.is_superuser and not ctx.actor_tenant_ids):
             parsed = urlparse(self.path)
             path = parsed.path.rstrip("/") or "/"
             headers = getattr(self, "headers", None)
@@ -485,21 +569,71 @@ class Handler(BaseHTTPRequestHandler):
                 return None
             self._deny(401, "authentication_required")
             return None
+        if permission and not has_permission(ctx.role, permission):
+            parsed = urlparse(self.path)
+            path = parsed.path.rstrip("/") or "/"
+            headers = getattr(self, "headers", None)
+            accept = headers.get("Accept") if headers is not None else None
+            if wants_html(accept, path):
+                html = forbidden_page_html(lang=lang_from_qs(qs))
+                self._send(403, html.encode("utf-8"), "text/html; charset=utf-8")
+                return None
+            self._deny(403, "permission_denied")
+            return None
         if target_tenant_id is not None:
             decision = assert_tenant_access(
-                actor_tenant_ids=actor_tenants,
-                is_superuser=is_super,
+                actor_tenant_ids=ctx.actor_tenant_ids,
+                is_superuser=ctx.is_superuser,
                 target_tenant_id=target_tenant_id,
             )
             if not decision.allowed:
+                audit_mod.record_event(
+                    actor_user_id=ctx.username or "unknown",
+                    action=audit_mod.ACCESS_DENIED,
+                    entity_type="tenant",
+                    entity_id=target_tenant_id,
+                    tenant_id=target_tenant_id,
+                    detail=decision.reason,
+                )
+                parsed = urlparse(self.path)
+                path = parsed.path.rstrip("/") or "/"
+                headers = getattr(self, "headers", None)
+                accept = headers.get("Accept") if headers is not None else None
+                if wants_html(accept, path):
+                    html = forbidden_page_html(lang=lang_from_qs(qs))
+                    self._send(403, html.encode("utf-8"), "text/html; charset=utf-8")
+                    return None
                 self._deny(403, decision.reason)
                 return None
-        return actor_tenants, is_super
+        self._auth_ctx = ctx  # type: ignore[attr-defined]
+        return ctx.actor_tenant_ids, ctx.is_superuser
 
     def do_GET(self):  # noqa: N802
         parsed = urlparse(self.path)
         qs = parse_qs(parsed.query)
         path = parsed.path.rstrip("/") or "/"
+
+        # Deep-link program context: /clients/:clientId/programs/:programId/...
+        parts = [p for p in path.split("/") if p]
+        if len(parts) >= 4 and parts[0] == "clients" and parts[2] == "programs":
+            client_id, program_id = parts[1], parts[3]
+            rest = parts[4] if len(parts) > 4 else "client"
+            route_map = {
+                "controls": "/checklist",
+                "checklist": "/checklist",
+                "gaps": "/gaps",
+                "evidence": "/evidence",
+                "tasks": "/tasks",
+                "report": "/report",
+                "mappings": "/mappings",
+                "client": "/client",
+            }
+            target = route_map.get(rest, "/client")
+            flat = {k: v[0] for k, v in qs.items() if v}
+            flat["program_id"] = program_id
+            flat.setdefault("client_id", client_id)
+            flat.setdefault("lang", lang_from_qs(qs))
+            return self._redirect(f"{target}?{urlencode(flat)}")
 
         if path in {"/api/health", "/healthz"}:
             return self._send(
@@ -558,6 +692,476 @@ class Handler(BaseHTTPRequestHandler):
             )
             body = json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8")
             return self._send(200, body, "application/json")
+
+        # Clients directory (admin) — distinct from Portfolio operations
+        if path in {"/clients", "/api/clients"}:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            rows = build_portfolio(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                registry_path=_active_registry(),
+            )
+            nav = _nav_qs(qs)
+            if path == "/clients":
+                return self._send(
+                    200,
+                    product_pages.clients_page(rows, load_assignments(), nav).encode(
+                        "utf-8"
+                    ),
+                    "text/html; charset=utf-8",
+                )
+            return self._send(
+                200,
+                json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        # Framework Knowledge Base
+        if path in {"/frameworks", "/api/frameworks", "/frameworks/detail", "/api/frameworks/detail"}:
+            auth = self._gate(qs, permission=PERM_KB_READ)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            programs = [
+                p
+                for p, _ in load_portfolio_programs(_active_registry())
+                if is_super
+                or assert_tenant_access(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    target_tenant_id=p.tenant_id,
+                ).allowed
+            ]
+            fw_versions.seed_from_programs(programs)
+            versions = fw_versions.list_versions()
+            usage: dict[str, int] = {}
+            for p in programs:
+                for r in p.requirements:
+                    usage[r.framework_id] = usage.get(r.framework_id, 0)
+            # recount unique clients per framework
+            usage = {}
+            for p in programs:
+                fws = {r.framework_id for r in p.requirements}
+                for fw in fws:
+                    usage[fw] = usage.get(fw, 0) + 1
+            nav = _nav_qs(qs)
+            if path in {"/frameworks", "/api/frameworks"} and "framework_id" not in qs:
+                if path == "/frameworks":
+                    return self._send(
+                        200,
+                        product_pages.frameworks_page(versions, usage, nav).encode(
+                            "utf-8"
+                        ),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"versions": to_jsonable(versions), "usage": usage},
+                        ensure_ascii=False,
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            fw_id = qs.get("framework_id", [""])[0]
+            vers = fw_versions.list_versions(framework_id=fw_id) if fw_id else versions
+            selected = qs.get("version_id", [None])[0]
+            clients = [
+                p.tenant_name
+                for p in programs
+                if any(r.framework_id == fw_id for r in p.requirements)
+            ]
+            if path.startswith("/api/"):
+                return self._send(
+                    200,
+                    json.dumps(
+                        {"versions": to_jsonable(vers), "clients": clients},
+                        ensure_ascii=False,
+                    ).encode("utf-8"),
+                    "application/json",
+                )
+            return self._send(
+                200,
+                product_pages.framework_detail_page(
+                    vers, selected_id=selected, nav_qs=nav, usage_clients=clients
+                ).encode("utf-8"),
+                "text/html; charset=utf-8",
+            )
+
+        if path == "/api/frameworks/clone":
+            auth = self._gate(qs, permission=PERM_KB_WRITE)
+            if auth is None:
+                return
+            vid = qs.get("version_id", [""])[0]
+            new_ver = qs.get("new_version", [""])[0]
+            if not vid or not new_ver:
+                return self._deny(400, "version_id_and_new_version_required")
+            try:
+                draft = fw_versions.clone_draft(vid, new_version=new_ver)
+            except KeyError:
+                return self._deny(404, "version_not_found")
+            ctx = getattr(self, "_auth_ctx", None)
+            audit_mod.record_event(
+                actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                action=audit_mod.FRAMEWORK_VERSION_CLONE,
+                entity_type="FrameworkVersion",
+                entity_id=draft.id,
+                new_value={"version": draft.version, "cloned_from": vid},
+            )
+            return self._send(
+                200,
+                json.dumps(to_jsonable(draft), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        if path == "/api/frameworks/publish":
+            auth = self._gate(qs, permission=PERM_FRAMEWORK_PUBLISH)
+            if auth is None:
+                return
+            vid = qs.get("version_id", [""])[0]
+            try:
+                pub = fw_versions.publish_version(vid)
+            except KeyError:
+                return self._deny(404, "version_not_found")
+            ctx = getattr(self, "_auth_ctx", None)
+            audit_mod.record_event(
+                actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                action=audit_mod.FRAMEWORK_VERSION_PUBLISHED,
+                entity_type="FrameworkVersion",
+                entity_id=pub.id,
+                new_value={"version": pub.version, "status": pub.status},
+            )
+            return self._send(
+                200,
+                json.dumps(to_jsonable(pub), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        if path == "/api/frameworks/patch":
+            auth = self._gate(qs, permission=PERM_KB_WRITE)
+            if auth is None:
+                return
+            vid = qs.get("version_id", [""])[0]
+            # Intentionally no body patch via GET — deny published via service
+            try:
+                fw_versions.update_published_denied(vid, {"notes": "denied_probe"})
+            except fw_versions.ImmutabilityError:
+                return self._deny(403, "published_version_immutable")
+            except KeyError:
+                return self._deny(404, "version_not_found")
+            return self._deny(400, "use_clone_workflow")
+
+        # Mapping management
+        if path in {"/mappings", "/api/mappings"}:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            program = _resolve_program(qs)
+            if program is None:
+                nav = _nav_qs(qs)
+                rows = build_portfolio(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    registry_path=_active_registry(),
+                )
+                if path.startswith("/api/"):
+                    return self._deny(404, "program_not_found")
+                if len(rows) == 1:
+                    flat = {k: v[0] for k, v in qs.items() if v}
+                    flat["program_id"] = rows[0].program_id
+                    return self._redirect(f"/mappings?{urlencode(flat)}")
+                if rows:
+                    return self._send(
+                        200,
+                        _select_client_html(nav, rows, active_path="/mappings"),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    _empty_workspace_html(nav, active_path="/mappings"),
+                    "text/html; charset=utf-8",
+                )
+            decision = assert_tenant_access(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                target_tenant_id=program.tenant_id,
+            )
+            if not decision.allowed:
+                return self._deny(403, decision.reason)
+            checklist = build_unified_checklist(program)
+            mappings = list(program.mappings)
+            relation = qs.get("relation", [""])[0].upper()
+            review = qs.get("review", [""])[0].upper()
+            if relation:
+                mappings = [
+                    m
+                    for m in mappings
+                    if (m.relation.value if hasattr(m.relation, "value") else m.relation)
+                    == relation
+                ]
+            if review:
+                mappings = [
+                    m
+                    for m in mappings
+                    if (
+                        m.review_status.value
+                        if hasattr(m.review_status, "value")
+                        else m.review_status
+                    )
+                    == review
+                ]
+            unmapped = checklist.unmapped
+            if qs.get("unmapped_only", [""])[0] == "1":
+                mappings = []
+            nav = _nav_qs(qs, program_id=program.program_id)
+            if path == "/mappings":
+                return self._send(
+                    200,
+                    product_pages.mappings_page(
+                        mappings,
+                        unmapped,
+                        nav,
+                        filters={
+                            "program_id": program.program_id,
+                            "relation": relation,
+                            "review": review,
+                            "unmapped_only": qs.get("unmapped_only", [""])[0],
+                        },
+                    ).encode("utf-8"),
+                    "text/html; charset=utf-8",
+                )
+            return self._send(
+                200,
+                json.dumps(
+                    {
+                        "mappings": to_jsonable(mappings),
+                        "unmapped": to_jsonable(unmapped),
+                    },
+                    ensure_ascii=False,
+                ).encode("utf-8"),
+                "application/json",
+            )
+
+        # Audit log
+        if path in {"/audit", "/api/audit"}:
+            auth = self._gate(qs, permission=PERM_AUDIT_READ)
+            if auth is None:
+                return
+            events = audit_mod.list_events(
+                tenant_id=qs.get("tenant_id", [""])[0] or None,
+                actor_user_id=qs.get("actor", [""])[0] or None,
+                action=qs.get("action", [""])[0] or None,
+                date_from=qs.get("date_from", [""])[0] or None,
+                date_to=qs.get("date_to", [""])[0] or None,
+            )
+            nav = _nav_qs(qs)
+            if path == "/audit":
+                return self._send(
+                    200,
+                    product_pages.audit_page(
+                        events,
+                        nav,
+                        filters={
+                            "tenant_id": qs.get("tenant_id", [""])[0],
+                            "actor": qs.get("actor", [""])[0],
+                            "action": qs.get("action", [""])[0],
+                            "date_from": qs.get("date_from", [""])[0],
+                            "date_to": qs.get("date_to", [""])[0],
+                        },
+                    ).encode("utf-8"),
+                    "text/html; charset=utf-8",
+                )
+            return self._send(
+                200,
+                json.dumps({"events": to_jsonable(events)}, ensure_ascii=False).encode(
+                    "utf-8"
+                ),
+                "application/json",
+            )
+
+        # Settings
+        if path in {"/settings", "/api/settings"}:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            nav = _nav_qs(qs)
+            ai_settings = None
+            programs = load_portfolio_programs(_active_registry())
+            if programs:
+                tid = programs[0][0].tenant_id
+                ai_settings = _ai_service().tenant_settings(tid)
+            if path == "/settings":
+                return self._send(
+                    200,
+                    product_pages.settings_page(
+                        nav_qs=nav,
+                        ai_settings=ai_settings,
+                        users=list_users(),
+                        assignments=load_assignments(),
+                        mfa_status={"supported": True},
+                    ).encode("utf-8"),
+                    "text/html; charset=utf-8",
+                )
+            return self._send(
+                200,
+                json.dumps(
+                    {
+                        "users": [
+                            {
+                                "username": u.username,
+                                "role": u.role,
+                                "tenant_ids": u.tenant_ids,
+                                "mfa_enabled": u.mfa_enabled,
+                            }
+                            for u in list_users()
+                        ],
+                        "assignments": load_assignments(),
+                    },
+                    ensure_ascii=False,
+                ).encode("utf-8"),
+                "application/json",
+            )
+
+        # Evidence binary download (authorized)
+        if path.startswith("/api/evidence/") and path.endswith("/download"):
+            auth = self._gate(qs, permission=PERM_EVIDENCE_DOWNLOAD)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            eid = path[len("/api/evidence/") : -len("/download")].strip("/")
+            item = evidence_storage.get_evidence(eid)
+            if item is None:
+                return self._deny(404, "evidence_not_found")
+            ctx = getattr(self, "_auth_ctx", None)
+            if ctx is None:
+                return self._deny(401, "authentication_required")
+            try:
+                data = evidence_storage.read_evidence_bytes(
+                    item,
+                    evidence_storage.AuthzContext(
+                        username=ctx.username or "",
+                        role=ctx.role,
+                        actor_tenant_ids=actor_tenants,
+                        is_superuser=is_super,
+                    ),
+                )
+            except PermissionError as exc:
+                return self._deny(403, str(exc))
+            except FileNotFoundError:
+                return self._deny(404, "evidence_file_missing")
+            audit_mod.record_event(
+                actor_user_id=ctx.username or "unknown",
+                action=audit_mod.EVIDENCE_DOWNLOADED,
+                entity_type="Evidence",
+                entity_id=item.id,
+                tenant_id=item.tenant_id,
+                detail=item.filename,
+            )
+            return self._send(
+                200,
+                data,
+                item.content_type or "application/octet-stream",
+                extra_headers={
+                    "Content-Disposition": f'attachment; filename="{item.filename}"',
+                    "X-Content-Type-Options": "nosniff",
+                },
+            )
+
+        # Report snapshot generate / history
+        if path in {"/api/report/snapshot", "/report/history", "/api/report/history"}:
+            auth = self._gate(qs, permission=PERM_REPORT_GENERATE)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            program = _resolve_program(qs)
+            if program is None:
+                return self._deny(404, "program_not_found")
+            decision = assert_tenant_access(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                target_tenant_id=program.tenant_id,
+            )
+            if not decision.allowed:
+                return self._deny(403, decision.reason)
+            ctx = getattr(self, "_auth_ctx", None)
+            if path == "/api/report/snapshot":
+                snap = report_snapshots.generate_snapshot(
+                    program, generated_by=(ctx.username if ctx else "unknown") or "unknown"
+                )
+                audit_mod.record_event(
+                    actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                    action=audit_mod.REPORT_GENERATED,
+                    entity_type="ReportSnapshot",
+                    entity_id=snap.id,
+                    tenant_id=program.tenant_id,
+                    new_value={
+                        "assessment_date": snap.assessment_date,
+                        "baselines": snap.framework_baselines,
+                    },
+                )
+                return self._send(
+                    200,
+                    json.dumps(to_jsonable(snap), ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+            items = report_snapshots.list_snapshots(
+                tenant_id=program.tenant_id, program_id=program.program_id
+            )
+            if path == "/api/report/history":
+                return self._send(
+                    200,
+                    json.dumps({"snapshots": items}, ensure_ascii=False).encode("utf-8"),
+                    "application/json",
+                )
+            nav = _nav_qs(qs, program_id=program.program_id)
+            rows_html = "".join(
+                "<tr>"
+                f"<td>{s.get('generated_at')}</td>"
+                f"<td>{s.get('generated_by')}</td>"
+                f"<td>{s.get('program_name')}</td>"
+                f"<td>{', '.join(s.get('baselines') or [])}</td>"
+                f"<td><a href='/api/report/snapshot/get?id={s.get('id')}'>Apri</a></td>"
+                "</tr>"
+                for s in items
+            )
+            body = (
+                f"<h1>Cronologia report</h1><div class='panel'><table class='data-table'>"
+                f"<thead><tr><th>GeneratedAt</th><th>GeneratedBy</th><th>Program</th>"
+                f"<th>Baseline</th><th></th></tr></thead><tbody>{rows_html}</tbody></table></div>"
+            )
+            from engine.ui_shell import render_shell
+
+            return self._send(
+                200,
+                render_shell(
+                    "Cronologia report", nav, body, lang=lang_from_qs(qs), active_path="/report"
+                ).encode("utf-8"),
+                "text/html; charset=utf-8",
+            )
+
+        if path == "/api/report/snapshot/get":
+            auth = self._gate(qs, permission=PERM_REPORT_GENERATE)
+            if auth is None:
+                return
+            snap = report_snapshots.get_snapshot(qs.get("id", [""])[0])
+            if snap is None:
+                return self._deny(404, "snapshot_not_found")
+            actor_tenants, is_super = auth
+            decision = assert_tenant_access(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                target_tenant_id=snap.tenant_id,
+            )
+            if not decision.allowed:
+                return self._deny(403, decision.reason)
+            return self._send(
+                200,
+                json.dumps(to_jsonable(snap), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
 
         # Phase 4 — Regulatory Intelligence (engine store; not program-scoped)
         if path in {
@@ -1234,6 +1838,69 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+
+        # Control optimistic lock + N/A rationale
+        if path == "/api/control/update":
+            qs = parse_qs(parsed.query)
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(max(0, min(length, 256_000))).decode("utf-8", "replace")
+            try:
+                payload = json.loads(raw) if raw.strip() else {}
+            except json.JSONDecodeError:
+                return self._deny(400, "invalid_json")
+            from engine.control_locking import ConflictError, ControlPatch, apply_patch
+            from engine.domain import ImplementationStatus
+
+            program = _resolve_program(qs)
+            if program is None:
+                return self._deny(404, "program_not_found")
+            actor_tenants, is_super = auth
+            decision = assert_tenant_access(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                target_tenant_id=program.tenant_id,
+            )
+            if not decision.allowed:
+                return self._deny(403, decision.reason)
+            control_id = str(payload.get("control_id") or "")
+            expected = int(payload.get("expected_version") or 0)
+            new_status = payload.get("status")
+            na_rationale = str(payload.get("not_applicable_rationale") or "").strip()
+            if new_status == ImplementationStatus.NOT_APPLICABLE.value and not na_rationale:
+                return self._deny(400, "na_rationale_required")
+            try:
+                new_v = apply_patch(
+                    ControlPatch(
+                        program_id=program.program_id,
+                        control_id=control_id,
+                        expected_version=expected,
+                        changes=payload,
+                    )
+                )
+            except ConflictError as exc:
+                return self._deny(409, exc.user_message_it)
+            ctx = getattr(self, "_auth_ctx", None)
+            if new_status:
+                audit_mod.record_event(
+                    actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                    action=audit_mod.CONTROL_STATUS_CHANGED,
+                    entity_type="ControlImplementation",
+                    entity_id=control_id,
+                    tenant_id=program.tenant_id,
+                    old_value={"version": expected},
+                    new_value={"status": new_status, "version": new_v},
+                )
+            return self._send(
+                200,
+                json.dumps({"ok": True, "version": new_v}, ensure_ascii=False).encode(
+                    "utf-8"
+                ),
+                "application/json",
+            )
+
         if path != "/login":
             return self._deny(404, "not found")
 
@@ -1242,12 +1909,13 @@ class Handler(BaseHTTPRequestHandler):
         form = parse_qs(raw)
         username = (form.get("username") or form.get("email") or [""])[0].strip()
         password = (form.get("password") or [""])[0]
+        mfa_code = (form.get("mfa_code") or [""])[0].strip()
         next_path = (form.get("next") or ["/portfolio"])[0] or "/portfolio"
         if not next_path.startswith("/") or next_path.startswith("//"):
             next_path = "/portfolio"
         lang = lang_from_qs(parse_qs(parsed.query))
 
-        if not auth_configured():
+        if not auth_configured() and not list_users():
             html = login_page_html(
                 lang=lang or "it",
                 error="Autenticazione non configurata sul server.",
@@ -1255,7 +1923,15 @@ class Handler(BaseHTTPRequestHandler):
             )
             return self._send(503, html.encode("utf-8"), "text/html; charset=utf-8")
 
-        if not verify_credentials(username, password):
+        result = authenticate(username, password)
+        if not result.ok or result.user is None:
+            audit_mod.record_event(
+                actor_user_id=username or "anonymous",
+                action=audit_mod.LOGIN,
+                entity_type="Session",
+                entity_id="failed",
+                detail="invalid_credentials",
+            )
             html = login_page_html(
                 lang=lang or "it",
                 error="Credenziali non valide.",
@@ -1263,7 +1939,49 @@ class Handler(BaseHTTPRequestHandler):
             )
             return self._send(401, html.encode("utf-8"), "text/html; charset=utf-8")
 
-        token = issue_session(username, is_superuser=True)
+        user = result.user
+        mfa_ok = True
+        if result.requires_mfa:
+            if not mfa_code:
+                html = login_page_html(
+                    lang=lang or "it",
+                    error="Inserisci il codice MFA.",
+                    next_path=next_path,
+                    mfa_pending=True,
+                )
+                return self._send(401, html.encode("utf-8"), "text/html; charset=utf-8")
+            mfa_ok = verify_totp(user.mfa_secret or "", mfa_code)
+            if not mfa_ok:
+                html = login_page_html(
+                    lang=lang or "it",
+                    error="Codice MFA non valido.",
+                    next_path=next_path,
+                    mfa_pending=True,
+                )
+                return self._send(401, html.encode("utf-8"), "text/html; charset=utf-8")
+        elif mfa_required_for_role(user.role) and not user.temporary_review:
+            # Hook ready: enrollment recommended before real client data
+            mfa_ok = True
+
+        tenants = sorted(effective_tenant_ids(user))
+        token = issue_session(
+            user.username,
+            role=user.role,
+            tenant_ids=tenants,
+            is_superuser=role_is_superuser(user.role_enum),
+            mfa_verified=mfa_ok,
+        )
+        audit_mod.record_event(
+            actor_user_id=user.username,
+            action=audit_mod.LOGIN,
+            entity_type="Session",
+            entity_id=user.username,
+            detail=(
+                "TEMPORARY REVIEW CREDENTIAL"
+                if user.temporary_review
+                else f"role={user.role}"
+            ),
+        )
         return self._redirect(
             next_path,
             extra_headers={

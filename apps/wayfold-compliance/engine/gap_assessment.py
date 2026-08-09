@@ -8,6 +8,23 @@ from .dates import is_overdue, parse_date
 from .domain import ProgramSnapshot, UnifiedChecklist
 
 
+class GapTaxonomy:
+    IMPLEMENTATION = "IMPLEMENTATION"
+    PARTIAL_COVERAGE = "PARTIAL_COVERAGE"
+    UNMAPPED = "UNMAPPED"
+    EVIDENCE = "EVIDENCE"
+    REMEDIATION = "REMEDIATION"
+
+
+GAP_TAXONOMY_IT = {
+    GapTaxonomy.IMPLEMENTATION: "Implementazione",
+    GapTaxonomy.PARTIAL_COVERAGE: "Copertura parziale",
+    GapTaxonomy.UNMAPPED: "Non mappato",
+    GapTaxonomy.EVIDENCE: "Evidenza",
+    GapTaxonomy.REMEDIATION: "Remediation",
+}
+
+
 @dataclass
 class GapRow:
     framework_id: str
@@ -28,6 +45,8 @@ class GapRow:
     gap: str
     notes: str
     mapped: bool
+    taxonomy: str = GapTaxonomy.IMPLEMENTATION
+    severity: str = "MEDIUM"
 
 
 @dataclass
@@ -52,6 +71,14 @@ def build_gap_rows(
 
     for ctrl in checklist.controls:
         for cov in ctrl.framework_coverage:
+            taxonomy = GapTaxonomy.IMPLEMENTATION
+            if cov.relation.value == "PARTIAL" and cov.uncovered_delta:
+                taxonomy = GapTaxonomy.PARTIAL_COVERAGE
+            elif ctrl.evidence_count == 0 and ctrl.status.value != "NOT_APPLICABLE":
+                taxonomy = GapTaxonomy.EVIDENCE
+            elif ctrl.open_task_count > 0 and is_overdue(ctrl.due_date):
+                taxonomy = GapTaxonomy.REMEDIATION
+            sev = (ctrl.priority or "MEDIUM").upper()
             rows.append(
                 GapRow(
                     framework_id=cov.framework_id,
@@ -72,6 +99,8 @@ def build_gap_rows(
                     gap=cov.uncovered_delta or ctrl.gap_notes,
                     notes=cov.rationale,
                     mapped=True,
+                    taxonomy=taxonomy,
+                    severity=sev,
                 )
             )
 
@@ -93,9 +122,11 @@ def build_gap_rows(
                 priority=None,
                 evidence_count=0,
                 open_task_count=0,
-                gap="No approved mapping to a canonical control",
+                gap="Nessuna mappatura approvata a un controllo canonico",
                 notes="",
                 mapped=False,
+                taxonomy=GapTaxonomy.UNMAPPED,
+                severity="HIGH",
             )
         )
 

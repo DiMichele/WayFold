@@ -19,6 +19,12 @@ from .ui_components import page_header, progress_bar
 from .ui_labels import format_percent, status_label
 from .ui_shell import render_shell, table_wrap
 
+DISCLAIMER_IT = (
+    "Lo stato indicato rappresenta una valutazione dell'implementazione rispetto "
+    "ai requisiti configurati nel programma e non costituisce certificazione "
+    "o attestazione legale di conformità."
+)
+
 
 def build_report_context(
     program: ProgramSnapshot, *, as_of: date | None = None
@@ -52,14 +58,26 @@ def build_report_context(
         d for d in deadlines if d.overdue and d.open_task_count == 0
     ]
 
+    baselines = [
+        {
+            "framework_name": r.framework_name,
+            "framework_version": r.framework_version,
+        }
+        for r in readiness
+    ]
     return {
         "client": program.tenant_name,
         "tenant_id": program.tenant_id,
         "program": program.program_name,
         "program_id": program.program_id,
         "assessment_date": as_of.isoformat(),
-        "scope": f"{checklist.raw_requirement_count} requirements / "
-        f"{checklist.unified_control_count} unified controls",
+        "scope": program.scope
+        or (
+            f"{checklist.raw_requirement_count} requisiti / "
+            f"{checklist.unified_control_count} controlli unificati"
+        ),
+        "framework_baselines": baselines,
+        "disclaimer": DISCLAIMER_IT,
         "checklist": checklist,
         "readiness": readiness,
         "impact": impact,
@@ -139,6 +157,11 @@ def report_html(
   <div class="client-name">WayFold Compliance</div>
   <div class="client-meta">{escape(t(lang,'report.title'))}</div>
   <hr class="report-rule" style="border:0;border-top:1px solid var(--wf-border);margin:20px 0">
+  <p><strong>Cliente:</strong> {escape(ctx['client'])}<br>
+  <strong>Programma:</strong> {escape(ctx['program'])}<br>
+  <strong>{escape(t(lang,'report.scope'))}:</strong> {escape(ctx['scope'])}<br>
+  <strong>{escape(t(lang,'report.assessment'))}:</strong> {escape(format_display_date(ctx['assessment_date'], lang=lang))}</p>
+  <p><strong>Framework + versione:</strong> {escape(', '.join(f"{b['framework_name']}@{b['framework_version']}" for b in ctx['framework_baselines']))}</p>
   <h2>{escape(t(lang,'report.exec'))}</h2>
   <ul class="compact">
   <li>{escape(t(lang,'report.unified'))}: {ctx['checklist'].unified_control_count}</li>
@@ -147,6 +170,7 @@ def report_html(
   <li>{escape(t(lang,'report.in_progress'))}: {len(ctx['in_progress'])}</li>
   <li>{escape(t(lang,'report.overdue_signals'))}: {len(ctx['overdue_tasks'])}</li>
   </ul>
+  <p class="client-meta" style="margin-top:18px;border-left:3px solid var(--wf-border);padding-left:12px">{escape(ctx['disclaimer'])}</p>
   <h2>{escape(t(lang,'report.readiness'))}</h2>
   {table_wrap(ready_table)}
   <h2>{escape(t(lang,'report.critical_gaps'))}</h2><ul class="compact">{crit}</ul>

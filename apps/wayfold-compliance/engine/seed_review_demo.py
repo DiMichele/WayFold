@@ -924,6 +924,31 @@ def install_to_data_dir(target: Path | None = None) -> dict[str, Any]:
     except Exception as exc:  # noqa: BLE001
         print(f"WARN: regulatory seed skipped: {exc}", file=sys.stderr)
 
+    # Private evidence binaries + framework KB versions (additive, demo-safe)
+    try:
+        import os
+
+        from engine.evidence_storage import seed_demo_evidence_files
+        from engine.framework_versions import seed_from_programs
+        from engine.program_loader import load_program_snapshot
+
+        prev = os.environ.get("WAYFOLD_DATA_DIR")
+        os.environ["WAYFOLD_DATA_DIR"] = str(root)
+        programs = []
+        for name in installed:
+            path = root / PROGRAMS_SUBDIR / name
+            if path.is_file():
+                programs.append(load_program_snapshot(path))
+        for program in programs:
+            seed_demo_evidence_files(program)
+        seed_from_programs(programs)
+        if prev is None:
+            os.environ.pop("WAYFOLD_DATA_DIR", None)
+        else:
+            os.environ["WAYFOLD_DATA_DIR"] = prev
+    except Exception as exc:  # noqa: BLE001
+        print(f"WARN: evidence/framework seed skipped: {exc}", file=sys.stderr)
+
     return {
         "data_root": str(root),
         "registry": str(registry_path),

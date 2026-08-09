@@ -35,8 +35,10 @@ def rank_control_impact(
             open_gap = len(reqs)
 
         summary = (
-            f"Impacts {len(reqs)} requirements across {len(frameworks)} frameworks"
-            f" ({open_gap} open-gap signals); status={ctrl.status.value}"
+            f"Impatta {len(reqs)} requisiti"
+            f"{' non completamente coperti' if open_gap else ''}"
+            f" su {len(frameworks)} framework"
+            f" ({open_gap} segnali di gap aperti); stato={ctrl.status.value}"
         )
         rows.append(
             ControlImpactRow(
