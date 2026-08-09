@@ -3,8 +3,14 @@
 Run:
   python -m engine.api
 Default: http://127.0.0.1:8092
-Auth: ?superuser=1 OR ?actor_tenants=<tenant-id>[,...]
-      With WAYFOLD_OPEN_ACCESS=1, HTML/API browse as consultant demo (no product login).
+
+Auth (production):
+  Cookie session via /login (WAYFOLD_AUTH_USER / WAYFOLD_AUTH_PASSWORD).
+  Public: /login, /healthz, /api/health.
+
+Auth (local/tests):
+  ?superuser=1 OR ?actor_tenants=... when WAYFOLD_ALLOW_QS_AUTH / demo seed enabled.
+  WAYFOLD_OPEN_ACCESS=1 still allows anonymous consultant browse (dev only).
 """
 
 from __future__ import annotations
@@ -41,6 +47,18 @@ from engine.program_loader import load_program_snapshot
 from engine.readiness import framework_readiness
 from engine.reports import report_csv, report_html
 from engine.serialize import to_jsonable
+from engine.auth_session import (
+    auth_configured,
+    clear_session_cookie_header,
+    issue_session,
+    login_page_html,
+    open_access_enabled,
+    qs_auth_allowed,
+    session_cookie_header,
+    session_from_cookie_header,
+    verify_credentials,
+    wants_html,
+)
 from engine.i18n import lang_from_qs, t, with_lang
 from engine.ui_shell import render_shell, table_wrap
 from engine import ux_pages
@@ -101,12 +119,7 @@ def _auto_ev_service() -> AutomatedEvidenceService:
 
 
 def _open_access_enabled() -> bool:
-    return os.environ.get("WAYFOLD_OPEN_ACCESS", "").strip().lower() in {
-        "1",
-        "true",
-        "yes",
-        "on",
-    }
+    return open_access_enabled()
 
 
 def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
@@ -114,10 +127,30 @@ def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
         t.strip() for t in qs.get("actor_tenants", [""])[0].split(",") if t.strip()
     }
     is_super = qs.get("superuser", ["0"])[0].lower() in {"1", "true", "yes"}
-    # Product has no WayFold login yet — production demo opens as consultant.
-    if _open_access_enabled() and not actor_tenants and not is_super:
+    if open_access_enabled() and not actor_tenants and not is_super:
         return set(), True
     return actor_tenants, is_super
+
+
+def _auth_from_request(handler: "Handler", qs: dict) -> tuple[set[str], bool, str | None]:
+    """Return (actor_tenants, is_superuser, username)."""
+    headers = getattr(handler, "headers", None)
+    cookie = headers.get("Cookie") if headers is not None else None
+    session = session_from_cookie_header(cookie)
+    if session is not None:
+        return set(), session.is_superuser, session.username
+
+    if qs_auth_allowed():
+        tenants, is_super = _auth_from_qs(qs)
+        if is_super or tenants:
+            return tenants, is_super, None
+        if open_access_enabled():
+            return set(), True, "open-access"
+
+    if open_access_enabled():
+        return set(), True, "open-access"
+
+    return set(), False, None
 
 
 def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
@@ -401,28 +434,55 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(body)))
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
 
-    def _send(self, code: int, body: bytes, content_type: str):
+    def _send(
+        self,
+        code: int,
+        body: bytes,
+        content_type: str,
+        *,
+        extra_headers: dict[str, str] | None = None,
+    ):
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
-        # Avoid stale shell HTML when navigating between pages
         self.send_header("Cache-Control", "no-store")
+        if extra_headers:
+            for key, value in extra_headers.items():
+                self.send_header(key, value)
         self.end_headers()
         self.wfile.write(body)
 
-    def _redirect(self, location: str):
+    def _redirect(self, location: str, *, extra_headers: dict[str, str] | None = None):
         self.send_response(302)
         self.send_header("Location", location)
         self.send_header("Cache-Control", "no-store")
+        if extra_headers:
+            for key, value in extra_headers.items():
+                self.send_header(key, value)
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+    def _request_is_secure(self) -> bool:
+        proto = (self.headers.get("X-Forwarded-Proto") or "").lower()
+        return proto == "https"
+
     def _gate(self, qs: dict, target_tenant_id: str | None = None):
-        actor_tenants, is_super = _auth_from_qs(qs)
+        from urllib.parse import quote
+
+        actor_tenants, is_super, _user = _auth_from_request(self, qs)
         if not is_super and not actor_tenants:
+            parsed = urlparse(self.path)
+            path = parsed.path.rstrip("/") or "/"
+            headers = getattr(self, "headers", None)
+            accept = headers.get("Accept") if headers is not None else None
+            if wants_html(accept, path):
+                next_path = self.path if self.path.startswith("/") else "/portfolio"
+                self._redirect(f"/login?next={quote(next_path, safe='/?&=')}")
+                return None
             self._deny(401, "authentication_required")
             return None
         if target_tenant_id is not None:
@@ -446,6 +506,26 @@ class Handler(BaseHTTPRequestHandler):
                 200,
                 b'{"status":"ok","service":"wayfold-compliance"}',
                 "application/json",
+            )
+
+        if path == "/login":
+            lang = lang_from_qs(qs)
+            next_path = qs.get("next", ["/portfolio"])[0] or "/portfolio"
+            if not next_path.startswith("/"):
+                next_path = "/portfolio"
+            # Already authenticated → portfolio
+            _t, is_super, _u = _auth_from_request(self, qs)
+            if is_super or _t:
+                return self._redirect(next_path)
+            html = login_page_html(lang=lang, next_path=next_path)
+            return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+
+        if path == "/logout":
+            return self._redirect(
+                "/login",
+                extra_headers={
+                    "Set-Cookie": clear_session_cookie_header(secure=self._request_is_secure())
+                },
             )
 
         # Portfolio (multi-tenant filtered)
@@ -1150,6 +1230,48 @@ class Handler(BaseHTTPRequestHandler):
             )
 
         return self._deny(404, "not found")
+
+    def do_POST(self):  # noqa: N802
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if path != "/login":
+            return self._deny(404, "not found")
+
+        length = int(self.headers.get("Content-Length") or "0")
+        raw = self.rfile.read(max(0, min(length, 64_000))).decode("utf-8", "replace")
+        form = parse_qs(raw)
+        username = (form.get("username") or form.get("email") or [""])[0].strip()
+        password = (form.get("password") or [""])[0]
+        next_path = (form.get("next") or ["/portfolio"])[0] or "/portfolio"
+        if not next_path.startswith("/") or next_path.startswith("//"):
+            next_path = "/portfolio"
+        lang = lang_from_qs(parse_qs(parsed.query))
+
+        if not auth_configured():
+            html = login_page_html(
+                lang=lang or "it",
+                error="Autenticazione non configurata sul server.",
+                next_path=next_path,
+            )
+            return self._send(503, html.encode("utf-8"), "text/html; charset=utf-8")
+
+        if not verify_credentials(username, password):
+            html = login_page_html(
+                lang=lang or "it",
+                error="Credenziali non valide.",
+                next_path=next_path,
+            )
+            return self._send(401, html.encode("utf-8"), "text/html; charset=utf-8")
+
+        token = issue_session(username, is_superuser=True)
+        return self._redirect(
+            next_path,
+            extra_headers={
+                "Set-Cookie": session_cookie_header(
+                    token, secure=self._request_is_secure()
+                )
+            },
+        )
 
     def log_message(self, fmt, *args):  # noqa: A003
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))

@@ -11,6 +11,34 @@ mkdir -p data/db data/engine
 # Clean mistaken bind targets from earlier path-resolution bugs
 rm -rf deploy/data 2>/dev/null || true
 
+# Consultant login credentials (not in git). Created once; persisted on volume.
+AUTH_ENV="$APP_DIR/data/engine/.auth.env"
+AUTH_NOTE="$APP_DIR/data/engine/.consultant-credentials"
+if [[ ! -f "$AUTH_ENV" ]]; then
+  echo "==> Creating consultant auth credentials (first deploy)"
+  USER_EMAIL="${WAYFOLD_AUTH_USER:-consultant@wayfold.xyz}"
+  PASS="$(openssl rand -base64 18 | tr -d '=+/' | cut -c1-20)"
+  SECRET="$(openssl rand -hex 32)"
+  umask 077
+  cat >"$AUTH_ENV" <<EOF
+WAYFOLD_AUTH_USER=$USER_EMAIL
+WAYFOLD_AUTH_PASSWORD=$PASS
+WAYFOLD_SESSION_SECRET=$SECRET
+EOF
+  cat >"$AUTH_NOTE" <<EOF
+WayFold Compliance — consultant login
+URL: https://compliance.wayfold.xyz/login
+User: $USER_EMAIL
+Password: $PASS
+Generated: $(date -u +%Y-%m-%dT%H:%MZ)
+EOF
+  chmod 600 "$AUTH_ENV" "$AUTH_NOTE"
+  echo "==> Credentials written to data/engine/.consultant-credentials (server-only)"
+fi
+# Compose requires env_file to exist
+touch "$AUTH_ENV"
+chmod 600 "$AUTH_ENV" 2>/dev/null || true
+
 # One-shot clean slate: touch data/.wipe_db before deploy to reset GRC + engine stores
 if [[ -f data/.wipe_db ]]; then
   echo "==> Wiping GRC DB + engine stores (clean workspace)"

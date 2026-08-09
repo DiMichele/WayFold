@@ -15,10 +15,24 @@
 - Docs: `docs/design/DESIGN-SYSTEM.md` + mockup HTML in `docs/design/`
 - Sidebar sezionata + icone SVG + localizzazione IT centralizzata
 - Pagine migrate: Portfolio, Area cliente, Controlli, Gap, Control detail, Attività, Evidenze, Report, Regulatory, AI, Auto-evidence
-- Tests UI: `engine/tests/test_ui_design_system.py` + suite consultant/auto-evidence aggiornate
-- **Nessun deploy** in questo task (ready for review)
 
-Prossima azione: review UI + orchestratore FINAL REGRESSION GATE / merge su main.
+### Hardening phase — IN PROGRESS (gate prodotto)
+
+Priorità P0 (prima di nuove feature / dati cliente reali):
+1. **Auth** — login sessione; `OPEN_ACCESS=0` in prod; `/portfolio` non pubblico
+2. **Tenant isolation** — test negativi API/UI/download (già parziale in suite; da estendere)
+3. **Evidence hardening** — non iniziato
+4. **SSRF regulatory fetcher** — non iniziato
+
+Completato in questo slice:
+- `/login` + cookie sessione firmata (`engine/auth_session.py`)
+- Produzione: `WAYFOLD_OPEN_ACCESS=0`, `WAYFOLD_ALLOW_QS_AUTH=0`
+- Portfolio empty → onboarding a 4 passi + CTA (niente KPI a zero come contenuto principale)
+- Fix navigazione program-scoped (redirect / select client)
+
+Gate E2E Michele (non ancora PASS): login → programma → controlli unificati → delta PARTIAL → evidence → task → dashboard.
+
+Prossima azione: credenziali prod + seed staging Michele + test 401/403 negativi evidence.
 
 ## Completato
 

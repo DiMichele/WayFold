@@ -100,6 +100,42 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 <th></th>
 </tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="7">{escape(t(lang,"portfolio.empty"))}</td></tr>'}</tbody></table>"""
 
+    if not rows:
+        steps = "".join(
+            f"<li><strong>{i}.</strong> {escape(t(lang, key))}</li>"
+            for i, key in enumerate(
+                (
+                    "onboarding.step1",
+                    "onboarding.step2",
+                    "onboarding.step3",
+                    "onboarding.step4",
+                ),
+                start=1,
+            )
+        )
+        body = f"""
+{page_header(eyebrow=t(lang,'portfolio.eyebrow'), title=t(lang,'onboarding.title'), subtitle=t(lang,'onboarding.meta'))}
+<div class="panel">
+  <div class="panel-body">
+    <ol class="compact" style="margin:0 0 16px 1.2rem;line-height:1.7">{steps}</ol>
+    <p class="meta">{escape(t(lang,'onboarding.note'))}</p>
+    <p class="meta">{escape(t(lang,'onboarding.cta_hint'))}</p>
+    <div class="page-actions" style="margin-top:16px">
+      <a class="btn primary" href="/changes?{nav_qs}">{escape(t(lang,'onboarding.cta_primary'))}</a>
+      <a class="btn" href="/sources?{nav_qs}">{escape(t(lang,'onboarding.cta_secondary'))}</a>
+    </div>
+  </div>
+</div>
+"""
+        return _shell(
+            f"{t(lang,'portfolio.title')} — WayFold Compliance",
+            nav_qs,
+            body,
+            lang=lang,
+            active_path="/portfolio",
+            breadcrumb=t(lang, "portfolio.title"),
+        )
+
     metrics = f"""
 <div class="grid grid-4" style="margin-bottom:14px">
 {metric_card(label=t(lang,'portfolio.metric.clients'), value=format_number(clients, lang=lang), icon_name='building')}

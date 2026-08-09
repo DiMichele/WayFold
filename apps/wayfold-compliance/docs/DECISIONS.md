@@ -262,22 +262,30 @@ Rivedere se:
 
 ## [2026-08-09] Nessun credential di accesso prodotto (temporaneo)
 
+> **SUPERSEDED** da «Hardening gate — auth before features» (sotto).
+
+---
+
+## [2026-08-09] Hardening gate — auth before features
+
 Scelto:
-- **Per il momento** WayFold Compliance **non** deve richiedere / introdurre dati di accesso utente di prodotto (login proprietario WayFold, password utente finali, SSO, invite email, secret di onboarding cliente).
-- L’automazione e lo sviluppo delle fasi devono procedere **senza** chiedere all’operatore nuove credenziali di accesso all’app.
-- Restano ammessi solo:
-  - auth tecnica già esistente del **core CISO locale** per demo/dev (es. admin demo sulla macchina);
-  - auth Cursor / Git già configurate per l’overnight (non sono login prodotto Compliance).
+- **Stop feature race** (Phase 3/4/5/6 UI polish senza fondamenta). Nessuna nuova fase “completa” finché non passa il gate Michele E2E autenticato.
+- Produzione: `WAYFOLD_OPEN_ACCESS=0`, `WAYFOLD_ALLOW_QS_AUTH=0`.
+- Route pubbliche: `/login`, `/logout`, `/healthz`, `/api/health`. Tutto il resto richiede sessione cookie firmata.
+- Credenziali consulente in `data/engine/.auth.env` (non in git); query `?superuser=1` **disabilitata** in prod.
+- Empty state Portfolio = onboarding operativo (non quattro zeri).
+- Gate E2E obbligatorio: login → Michele → checklist → CTRL con FULL/PARTIAL/delta → evidence → task → readiness coerente + isolamento tenant.
 
 Motivazione:
-- Evitare blocchi overnight e scope creep su identity prima che il prodotto sia stabile.
-- Phase 1–3 devono concentrarsi su GRC / unified compliance / UX consulente, non su un nuovo IdP WayFold.
+- Workspace pubblico + empty state vuoto + assenza workflow dimostrabile = rischio security e prodotto.
+- Review prodotto: P0 auth / tenant isolation / evidence / SSRF prima di AI/Prowler/visualizzazioni.
 
-Vietato per ora:
-- inventare o richiedere password/utenti di produzione;
-- aggiungere flussi di registrazione/login WayFold obbligatori;
-- bloccare una fase perché “mancano le credenziali di accesso Compliance”.
+Non ancora in questo gate (P0 residuo):
+- RBAC multi-ruolo completo
+- Evidence private storage + signed URL
+- SSRF hardening fetcher normativo
+- Audit log prodotto
 
 Rivedere quando:
-- si introduce un ambiente condiviso o `compliance.wayfold.xyz` con utenti reali;
-- serve RBAC multi-consulente oltre al modello CISO già riusato.
+- serve IdP/SSO reale o multi-utente consulente;
+- si apre staging `compliance-dev` con seed Michele.

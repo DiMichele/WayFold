@@ -409,6 +409,9 @@ def render_shell(
       <button type="button" class="lang-switch" onclick="wfToggleLang('{other_lang}')" aria-label="{lang_label}" title="{lang_label}">
         {icon("lang")}<span>{escape(lang_flag)}</span>
       </button>
+      <a class="lang-switch" href="/logout" style="margin-top:8px;text-decoration:none" aria-label="{escape(t(lang, 'nav.logout'))}">
+        {icon("x")}<span>{escape(t(lang, 'nav.logout'))}</span>
+      </a>
     </div>
   </aside>
   <div class="main">
