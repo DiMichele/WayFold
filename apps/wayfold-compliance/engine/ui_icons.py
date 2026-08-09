@@ -106,6 +106,10 @@ _PATHS: dict[str, str] = {
         '<path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="1.8" '
         'stroke-linecap="round" stroke-linejoin="round"/>'
     ),
+    "menu": (
+        '<path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.8" '
+        'stroke-linecap="round"/>'
+    ),
     "chevron-down": (
         '<path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="1.8" '
         'stroke-linecap="round" stroke-linejoin="round"/>'

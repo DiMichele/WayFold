@@ -283,8 +283,13 @@ def login_page_html(
     return f"""<!doctype html>
 <html lang="{escape(lang)}"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#675cf2">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="WayFold">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/pwa/icon-192.png">
 <title>{escape(title)} — WayFold Compliance</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -292,21 +297,22 @@ def login_page_html(
 <style>
 :root{{--wf-bg:#f5f7fb;--wf-surface:#fff;--wf-ink:#151b2b;--wf-muted:#6f7a8e;--wf-border:#e2e7ef;--wf-primary:#675cf2;--wf-danger:#b42318;--wf-danger-soft:#fff0ef}}
 *{{box-sizing:border-box}}
-body{{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,system-ui,sans-serif;background:
+body{{margin:0;min-height:100dvh;display:grid;place-items:center;font-family:Inter,system-ui,sans-serif;background:
   radial-gradient(circle at 20% 0%,rgba(103,92,242,.12),transparent 40%),
   radial-gradient(circle at 90% 100%,rgba(16,21,34,.06),transparent 45%),
-  var(--wf-bg);color:var(--wf-ink)}}
-.card{{width:min(400px,92vw);background:var(--wf-surface);border:1px solid var(--wf-border);border-radius:14px;padding:28px 24px;box-shadow:0 6px 20px rgba(21,27,43,.045)}}
-.mark{{width:40px;height:40px;border-radius:11px;background:linear-gradient(145deg,#7a71ff,#5a4ff0);margin-bottom:14px}}
-h1{{margin:0;font-size:22px;letter-spacing:-.02em}}
-.sub{{color:var(--wf-muted);font-size:13px;margin:6px 0 18px}}
+  var(--wf-bg);color:var(--wf-ink);padding:max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom))}}
+.card{{width:min(400px,100%);background:var(--wf-surface);border:1px solid var(--wf-border);border-radius:16px;padding:28px 22px;box-shadow:0 6px 20px rgba(21,27,43,.045)}}
+.mark{{width:44px;height:44px;border-radius:12px;background:linear-gradient(145deg,#7a71ff,#5a4ff0);margin-bottom:14px}}
+h1{{margin:0;font-size:clamp(20px,5vw,22px);letter-spacing:-.02em}}
+.sub{{color:var(--wf-muted);font-size:13px;margin:6px 0 18px;line-height:1.45}}
 label{{display:block;font-size:11px;font-weight:700;color:var(--wf-muted);text-transform:uppercase;letter-spacing:.06em;margin:0 0 6px}}
-input{{width:100%;height:40px;border:1px solid var(--wf-border);border-radius:9px;padding:0 12px;margin-bottom:12px;font:inherit}}
+input{{width:100%;height:44px;border:1px solid var(--wf-border);border-radius:10px;padding:0 12px;margin-bottom:12px;font:inherit;font-size:16px}}
 input:focus{{outline:0;border-color:#beb8ff;box-shadow:0 0 0 3px rgba(103,92,242,.08)}}
-button{{width:100%;height:40px;border:0;border-radius:9px;background:var(--wf-primary);color:#fff;font-weight:700;cursor:pointer}}
+button{{width:100%;height:46px;border:0;border-radius:10px;background:var(--wf-primary);color:#fff;font-weight:700;cursor:pointer;font-size:15px}}
 button:hover{{filter:brightness(.96)}}
 .login-error{{background:var(--wf-danger-soft);color:var(--wf-danger);padding:10px 12px;border-radius:8px;font-size:13px;margin:0 0 12px}}
 </style>
+<script>if('serviceWorker' in navigator){{window.addEventListener('load',function(){{navigator.serviceWorker.register('/sw.js',{{scope:'/'}}).catch(function(){{}});}});}}</script>
 </head><body>
 <form class="card" method="post" action="/login" autocomplete="on">
   <div class="mark" aria-hidden="true"></div>

@@ -131,7 +131,6 @@ code,.control-code,td code{white-space:nowrap}
 .step-num{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid currentColor;font-size:11px;margin-right:4px}
 .badge{display:inline-block;padding:2px 7px;border-radius:999px;background:var(--wf-primary-soft);color:var(--wf-primary);font-size:11px;font-weight:650;margin:0 2px}
 .pager{margin:8px 0 12px}
-@media(max-width:900px){.form-grid{grid-template-columns:1fr}}
 .nav-label{
   padding:4px 10px 7px;color:#667287;font-size:10px;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase
@@ -364,19 +363,115 @@ section{margin:1.25rem 0}
   .gap-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
 }
 @media(max-width:980px){
-  .shell{grid-template-columns:72px minmax(0,1fr)}
-  .brand{padding:0;justify-content:center}
-  .brand-copy,.nav-text,.nav-label{display:none}
-  .nav-item{justify-content:center;padding:0}
-  .content{padding:20px 18px 40px}
-  .topbar{padding:0 18px}
+  .form-grid{grid-template-columns:1fr}
   .detail-grid{grid-template-columns:1fr}
 }
+@media(max-width:900px){.form-grid{grid-template-columns:1fr}}
+
+/* —— Mobile / PWA shell —— */
+.mobile-top-btn,.mobile-backdrop,.mobile-bottom-nav{display:none}
+body.nav-open{overflow:hidden}
+
+@media(max-width:900px){
+  .shell{
+    grid-template-columns:1fr;
+    min-height:100dvh;
+    padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));
+  }
+  .sidebar{
+    position:fixed;inset:0 auto 0 0;width:min(300px,86vw);height:100dvh;
+    transform:translateX(-105%);transition:transform .22s ease;
+    z-index:60;box-shadow:none;
+  }
+  body.nav-open .sidebar{transform:translateX(0);box-shadow:24px 0 60px rgba(16,21,34,.35)}
+  .brand{height:56px;padding:0 14px;justify-content:flex-start}
+  .brand-copy,.nav-text,.nav-label{display:block}
+  .nav-item{justify-content:flex-start;padding:0 10px;height:44px;font-size:13px;margin-bottom:4px}
+  .nav-item:before{display:none}
+  .sidebar-footer{padding-bottom:calc(12px + env(safe-area-inset-bottom,0px))}
+  .lang-switch{height:40px;justify-content:flex-start;padding:0 10px;margin-bottom:6px}
+
+  .mobile-backdrop{
+    display:block;position:fixed;inset:0;background:rgba(16,21,34,.46);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:55
+  }
+  body.nav-open .mobile-backdrop{opacity:1;pointer-events:auto}
+
+  .topbar{
+    height:56px;padding:0 12px 0 8px;
+    padding-top:env(safe-area-inset-top,0px);height:calc(56px + env(safe-area-inset-top,0px));
+    gap:8px
+  }
+  .mobile-top-btn{
+    display:grid;place-items:center;width:44px;height:44px;border:0;border-radius:12px;
+    background:transparent;color:var(--wf-ink);flex:0 0 auto
+  }
+  .mobile-top-btn .wf-icon{width:22px;height:22px}
+  .breadcrumb{font-size:13px;min-width:0;overflow:hidden}
+  .breadcrumb span:first-child{display:none}
+  .breadcrumb .wf-icon{display:none}
+  .breadcrumb strong{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px}
+  .topbar-actions .btn{height:40px;padding:0 12px;font-size:13px}
+  .content{
+    padding:16px 14px calc(28px + env(safe-area-inset-bottom,0px));
+  }
+  .page-head{flex-direction:column;align-items:stretch;gap:12px;margin-bottom:14px}
+  .page-actions{width:100%}
+  .page-actions .btn{flex:1 1 auto;justify-content:center;min-height:44px}
+  h1{font-size:22px}
+  .subtitle,.meta,.hint{font-size:13px}
+  .panel{border-radius:14px;padding:14px}
+  .tabs{
+    flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    gap:0;margin:0 -14px 14px;padding:0 14px;scrollbar-width:none
+  }
+  .tabs::-webkit-scrollbar{display:none}
+  .tabs a,.tabs button{flex:0 0 auto;padding:12px 14px;font-size:13px;white-space:nowrap}
+  .filters.compact{flex-direction:column;align-items:stretch}
+  .filters.compact input,.filters.compact select,.filters.compact .btn{width:100%;min-height:44px}
+  .summary-row{gap:10px 14px;padding:8px 0 12px}
+  .table-wrap{
+    margin:0 -14px;padding:0 14px;border-radius:0;border-left:0;border-right:0;
+    -webkit-overflow-scrolling:touch
+  }
+  table,.data-table{min-width:560px;font-size:12px}
+  table th,table td,.data-table th,.data-table td{padding:10px 8px}
+  .btn,.icon-btn{min-height:40px}
+  .btn.sm{min-height:36px}
+  .grid-4,.grid-3,.grid-2,.gap-summary{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .import-card{margin:12px 0 !important;max-width:none !important}
+  .stepper.compact{font-size:11px;gap:6px}
+  .mobile-bottom-nav{
+    display:flex;position:fixed;left:0;right:0;bottom:0;z-index:50;
+    height:calc(64px + env(safe-area-inset-bottom,0px));
+    padding:6px 8px env(safe-area-inset-bottom,0px);
+    background:rgba(255,255,255,.94);backdrop-filter:blur(16px);
+    border-top:1px solid var(--wf-border);
+    justify-content:space-around;align-items:stretch;gap:2px
+  }
+  .mobile-bottom-nav a{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    border-radius:12px;color:var(--wf-muted);font-size:10px;font-weight:650;text-decoration:none;
+    min-width:0;padding:4px 2px
+  }
+  .mobile-bottom-nav a .wf-icon{width:20px;height:20px}
+  .mobile-bottom-nav a span{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mobile-bottom-nav a.active,.mobile-bottom-nav a:hover{color:var(--wf-primary);background:var(--wf-primary-soft)}
+}
+
 @media(max-width:720px){
   .grid-4,.grid-3,.grid-2{grid-template-columns:1fr}
   .page-head{flex-direction:column}
-  .gap-summary{grid-template-columns:repeat(2,1fr)}
-  table,.data-table{min-width:640px}
+  .gap-summary{grid-template-columns:1fr 1fr}
+  .kpi-grid{grid-template-columns:1fr}
+  table,.data-table{min-width:520px}
+}
+
+@supports (padding: max(0px)) {
+  @media(max-width:900px){
+    .content{padding-left:max(14px, env(safe-area-inset-left));padding-right:max(14px, env(safe-area-inset-right))}
+  }
 }
 """
 
@@ -392,12 +487,27 @@ function wfToggleDropdown(id){
   if(!el) return;
   el.classList.toggle('open');
 }
+function wfToggleNav(force){
+  var open = typeof force === 'boolean' ? force : !document.body.classList.contains('nav-open');
+  document.body.classList.toggle('nav-open', open);
+  var btn = document.getElementById('wf-nav-toggle');
+  if(btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
 document.addEventListener('click',function(e){
   document.querySelectorAll('.dropdown.open').forEach(function(d){
     if(!d.contains(e.target)) d.classList.remove('open');
   });
 });
+document.addEventListener('keydown',function(e){
+  if(e.key === 'Escape') wfToggleNav(false);
+});
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js',{scope:'/'}).catch(function(){});
+  });
+}
 """
+
 
 # Back-compat alias used by older imports/tests
 DEFAULT_NAV = tuple((k.split(".", 1)[-1].title().replace("_", " "), p) for k, p in DEFAULT_NAV_KEYS)
@@ -444,13 +554,23 @@ def render_shell(
             f'<div class="pc-program">{escape(str(ctx.get("program_name") or ""))}</div>'
             f"</div>"
         )
+    bottom_nav = _mobile_bottom_nav(lang=lang, q=q, active=active, program_context=ctx)
 
     return f"""<!doctype html>
 <html lang="{escape(lang)}"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="light">
+<meta name="theme-color" content="#675cf2">
 <meta name="application-name" content="WayFold Compliance">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="WayFold">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="/static/pwa/manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="/static/pwa/icon-192.png">
+<link rel="apple-touch-icon" href="/static/pwa/icon-192.png">
 <title>{escape(page_title)}</title>
 <script>{SHELL_JS}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -459,9 +579,10 @@ def render_shell(
 <style>{WAYFOLD_CSS}</style>
 </head><body>
 {sprite_defs()}
+<div class="mobile-backdrop" onclick="wfToggleNav(false)" aria-hidden="true"></div>
 <div class="shell">
-  <aside class="sidebar" aria-label="Navigazione principale">
-    <a class="brand" href="/portfolio{q}">
+  <aside class="sidebar" id="wf-sidebar" aria-label="Navigazione principale">
+    <a class="brand" href="/portfolio{q}" onclick="wfToggleNav(false)">
       <div class="brand-mark">{icon("logo")}</div>
       <div class="brand-copy">
         <div class="brand-title">WayFold {escape(brand_subtitle)}</div>
@@ -469,12 +590,12 @@ def render_shell(
       </div>
     </a>
     {ctx_banner}
-    <nav class="nav-wrap">{nav_html}</nav>
+    <nav class="nav-wrap" onclick="if(event.target.closest('a')) wfToggleNav(false)">{nav_html}</nav>
     <div class="sidebar-footer">
-      <a class="lang-switch" href="/profile{q}" style="text-decoration:none" aria-label="Profilo">
+      <a class="lang-switch" href="/profile{q}" style="text-decoration:none" aria-label="Profilo" onclick="wfToggleNav(false)">
         {icon("users")}<span>Profilo</span>
       </a>
-      <a class="lang-switch" href="/profile?tab=password{q}" style="text-decoration:none" aria-label="Cambia password">
+      <a class="lang-switch" href="/profile?tab=password{q}" style="text-decoration:none" aria-label="Cambia password" onclick="wfToggleNav(false)">
         {icon("settings")}<span>Cambia password</span>
       </a>
       <form method="post" action="/logout{q}" style="margin:0">
@@ -489,6 +610,9 @@ def render_shell(
   </aside>
   <div class="main">
     <header class="topbar">
+      <button type="button" class="mobile-top-btn" id="wf-nav-toggle" aria-label="Menu" aria-controls="wf-sidebar" aria-expanded="false" onclick="wfToggleNav()">
+        {icon("menu")}
+      </button>
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <span>WayFold</span>
         {icon("chevron-right")}
@@ -501,7 +625,39 @@ def render_shell(
     </main>
   </div>
 </div>
+{bottom_nav}
 </body></html>"""
+
+
+def _mobile_bottom_nav(
+    *,
+    lang: str,
+    q: str,
+    active: str | None,
+    program_context: dict | None,
+) -> str:
+    items: list[tuple[str, str, str]] = [
+        ("nav.portfolio", "/portfolio", "grid"),
+        ("nav.clients", "/clients", "building"),
+        ("nav.frameworks", "/frameworks", "book"),
+        ("nav.tasks", "/tasks", "checklist"),
+    ]
+    if program_context and program_context.get("program_id"):
+        items = [
+            ("nav.client", "/client", "briefcase"),
+            ("nav.checklist", "/checklist", "shield"),
+            ("nav.gaps", "/gaps", "gap"),
+            ("nav.evidence", "/evidence", "paperclip"),
+        ]
+    links = []
+    for label_key, path, _ik in items:
+        cls = "active" if _is_active(active, path) else ""
+        links.append(
+            f'<a class="{cls}" href="{escape(path)}{q}">'
+            f"{icon_for_path(path)}"
+            f"<span>{escape(t(lang, label_key))}</span></a>"
+        )
+    return f'<nav class="mobile-bottom-nav" aria-label="Navigazione rapida">{"".join(links)}</nav>'
 
 
 def _render_nav(

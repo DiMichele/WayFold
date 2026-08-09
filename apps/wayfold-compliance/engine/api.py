@@ -785,6 +785,21 @@ class Handler(BaseHTTPRequestHandler):
                 "application/json",
             )
 
+        # Public PWA / static assets (no auth)
+        if path == "/sw.js" or path.startswith("/static/pwa/"):
+            from engine.pwa_assets import serve_pwa_asset
+
+            payload = serve_pwa_asset(path)
+            if payload is None:
+                return self._deny(404, "not found")
+            body, ctype, cache = payload
+            return self._send(
+                200,
+                body,
+                ctype,
+                extra_headers={"Cache-Control": cache},
+            )
+
         if path == "/login":
             lang = lang_from_qs(qs)
             next_path = qs.get("next", ["/portfolio"])[0] or "/portfolio"
