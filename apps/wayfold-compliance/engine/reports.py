@@ -11,7 +11,11 @@ from .domain import ImplementationStatus, ProgramSnapshot
 from .gap_assessment import build_gap_rows
 from .impact import rank_control_impact
 from .readiness import framework_readiness
-from .ui_shell import render_shell
+from html import escape
+from urllib.parse import parse_qsl
+
+from .i18n import DEFAULT_LANG, normalize_lang, t, with_lang
+from .ui_shell import render_shell, table_wrap
 
 
 def build_report_context(
@@ -71,9 +75,12 @@ def report_html(
     program: ProgramSnapshot, *, as_of: date | None = None, nav_qs: str = ""
 ) -> str:
     ctx = build_report_context(program, as_of=as_of)
+    lang = normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
+    nav_qs = with_lang(nav_qs, lang)
+    none = escape(t(lang, "report.none"))
     ready_rows = "".join(
         "<tr>"
-        f"<td>{r.framework_name}</td><td>{r.framework_version}</td>"
+        f"<td>{escape(r.framework_name)}</td><td>{escape(r.framework_version)}</td>"
         f"<td>{(r.implementation_readiness or 0):.0%}</td>"
         f"<td>{r.fully_covered}</td><td>{r.partially_covered}</td>"
         f"<td>{r.not_covered}</td><td>{r.unmapped}</td><td>{r.not_applicable}</td>"
@@ -81,63 +88,72 @@ def report_html(
         for r in ctx["readiness"]
     )
     crit = "".join(
-        f"<li>{g.framework_name} {g.requirement_code} → "
-        f"{g.canonical_control_ref or '—'} ({g.status}): {g.gap}</li>"
+        f"<li>{escape(g.framework_name)} {escape(g.requirement_code)} → "
+        f"{escape(g.canonical_control_ref or '—')} ({escape(g.status)}): {escape(g.gap)}</li>"
         for g in ctx["critical_gaps"][:25]
-    ) or "<li>None</li>"
+    ) or f"<li>{none}</li>"
     high = "".join(
-        f"<li>{g.framework_name} {g.requirement_code} → "
-        f"{g.canonical_control_ref or '—'} ({g.status})</li>"
+        f"<li>{escape(g.framework_name)} {escape(g.requirement_code)} → "
+        f"{escape(g.canonical_control_ref or '—')} ({escape(g.status)})</li>"
         for g in ctx["high_priority_gaps"][:25]
-    ) or "<li>None</li>"
+    ) or f"<li>{none}</li>"
     progress = "".join(
-        f"<li>{c.canonical_control_ref}: {c.name} "
-        f"(owner={c.owner or '—'}, due={c.due_date or '—'})</li>"
+        f"<li>{escape(c.canonical_control_ref or '')}: {escape(c.name)} "
+        f"({escape(t(lang,'col.owner'))}={escape(c.owner or '—')}, "
+        f"{escape(t(lang,'col.deadline'))}={escape(c.due_date or '—')})</li>"
         for c in ctx["in_progress"]
-    ) or "<li>None</li>"
+    ) or f"<li>{none}</li>"
     overdue = "".join(
-        f"<li>{getattr(t, 'control_ref', None) or getattr(t, 'name', t)} "
-        f"due={getattr(t, 'due_date', None)} owner={getattr(t, 'owner', None)}</li>"
-        for t in ctx["overdue_tasks"][:25]
-    ) or "<li>None</li>"
+        f"<li>{escape(str(getattr(item, 'control_ref', None) or getattr(item, 'name', item)))} "
+        f"{escape(t(lang,'col.deadline'))}={escape(str(getattr(item, 'due_date', None)))} "
+        f"{escape(t(lang,'col.owner'))}={escape(str(getattr(item, 'owner', None)))}</li>"
+        for item in ctx["overdue_tasks"][:25]
+    ) or f"<li>{none}</li>"
     upcoming = "".join(
-        f"<li>{d.due_date} {d.control_ref}: {d.name} (owner={d.owner or '—'})</li>"
+        f"<li>{escape(d.due_date)} {escape(d.control_ref or '')}: {escape(d.name)} "
+        f"({escape(t(lang,'col.owner'))}={escape(d.owner or '—')})</li>"
         for d in ctx["upcoming_deadlines"][:25]
-    ) or "<li>None</li>"
+    ) or f"<li>{none}</li>"
     unmapped = "".join(
-        f"<li>{u.framework_name} {u.code}: {u.title}</li>" for u in ctx["unmapped"]
-    ) or "<li>None</li>"
+        f"<li>{escape(u.framework_name)} {escape(u.code)}: {escape(u.title)}</li>"
+        for u in ctx["unmapped"]
+    ) or f"<li>{none}</li>"
+    ready_table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.version'))}</th>
+<th>{escape(t(lang,'col.readiness'))}</th>
+<th>FULLY</th><th>PARTIAL</th><th>NOT</th><th>UNMAPPED</th><th>N/A</th>
+</tr></thead><tbody>{ready_rows}</tbody></table>"""
 
     body = f"""
-<h1>Compliance Report</h1>
+<div class="page-head">
+<h1>{escape(t(lang,'report.title'))}</h1>
 <p class="meta">
-<strong>{ctx['client']}</strong> · {ctx['program']}<br>
-Assessment date: {ctx['assessment_date']} · Scope: {ctx['scope']}
+<strong>{escape(ctx['client'])}</strong> · {escape(ctx['program'])}<br>
+{escape(t(lang,'report.assessment'))}: {escape(ctx['assessment_date'])} · {escape(t(lang,'report.scope'))}: {escape(ctx['scope'])}
 </p>
-<h2>Executive overview</h2>
+</div>
+<h2>{escape(t(lang,'report.exec'))}</h2>
 <ul class="compact">
-<li>Unified controls: {ctx['checklist'].unified_control_count}</li>
-<li>Unmapped requirements: {len(ctx['unmapped'])}</li>
-<li>Critical gaps (HIGH / NOT_IMPLEMENTED): {len(ctx['critical_gaps'])}</li>
-<li>Controls in progress: {len(ctx['in_progress'])}</li>
-<li>Overdue signals: {len(ctx['overdue_tasks'])}</li>
+<li>{escape(t(lang,'report.unified'))}: {ctx['checklist'].unified_control_count}</li>
+<li>{escape(t(lang,'report.unmapped_req'))}: {len(ctx['unmapped'])}</li>
+<li>{escape(t(lang,'report.critical'))}: {len(ctx['critical_gaps'])}</li>
+<li>{escape(t(lang,'report.in_progress'))}: {len(ctx['in_progress'])}</li>
+<li>{escape(t(lang,'report.overdue_signals'))}: {len(ctx['overdue_tasks'])}</li>
 </ul>
-<h2>Framework readiness</h2>
-<table><thead><tr>
-<th>Framework</th><th>Version</th><th>Readiness</th>
-<th>FULLY</th><th>PARTIAL</th><th>NOT</th><th>UNMAPPED</th><th>N/A</th>
-</tr></thead><tbody>{ready_rows}</tbody></table>
-<h2>Critical gaps</h2><ul class="compact">{crit}</ul>
-<h2>High-priority gaps</h2><ul class="compact">{high}</ul>
-<h2>Controls in progress</h2><ul class="compact">{progress}</ul>
-<h2>Overdue</h2><ul class="compact">{overdue}</ul>
-<h2>Upcoming deadlines</h2><ul class="compact">{upcoming}</ul>
-<h2>Unmapped requirements</h2><ul class="compact">{unmapped}</ul>
+<h2>{escape(t(lang,'report.readiness'))}</h2>
+{table_wrap(ready_table)}
+<h2>{escape(t(lang,'report.critical_gaps'))}</h2><ul class="compact">{crit}</ul>
+<h2>{escape(t(lang,'report.high_gaps'))}</h2><ul class="compact">{high}</ul>
+<h2>{escape(t(lang,'report.controls_progress'))}</h2><ul class="compact">{progress}</ul>
+<h2>{escape(t(lang,'report.overdue'))}</h2><ul class="compact">{overdue}</ul>
+<h2>{escape(t(lang,'report.upcoming'))}</h2><ul class="compact">{upcoming}</ul>
+<h2>{escape(t(lang,'report.unmapped'))}</h2><ul class="compact">{unmapped}</ul>
 """
     return render_shell(
-        f"Report — {ctx['client']} / {ctx['program']}",
+        f"{t(lang,'nav.report')} — {ctx['client']} / {ctx['program']}",
         nav_qs,
         body,
+        lang=lang,
     )
 
 

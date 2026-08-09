@@ -41,7 +41,8 @@ from engine.program_loader import load_program_snapshot
 from engine.readiness import framework_readiness
 from engine.reports import report_csv, report_html
 from engine.serialize import to_jsonable
-from engine.ui_shell import render_shell
+from engine.i18n import lang_from_qs, t, with_lang
+from engine.ui_shell import render_shell, table_wrap
 from engine import ux_pages
 from engine.regulatory.demo import seed_demo_source
 from engine.regulatory.domain import ChangeStatus
@@ -116,7 +117,8 @@ def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
     actor = qs.get("actor_tenants", [""])[0]
     superuser = qs.get("superuser", ["0"])[0]
     pid = program_id or qs.get("program_id", [""])[0]
-    data = {}
+    lang = lang_from_qs(qs)
+    data = {"lang": lang}
     if superuser in {"1", "true", "yes"}:
         data["superuser"] = "1"
     if actor:
@@ -143,6 +145,12 @@ def _resolve_program(qs: dict):
 
 
 def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
+    from html import escape
+    from urllib.parse import parse_qsl as _pq
+
+    from engine.i18n import normalize_lang
+
+    lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
     rows = []
     for c in checklist.controls:
         cov = "<br>".join(
@@ -153,25 +161,25 @@ def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
         )
         rows.append(
             "<tr>"
-            f"<td>{c.canonical_control_ref or ''}</td>"
-            f"<td>{c.name}</td>"
-            f"<td>{c.status.value}</td>"
+            f"<td>{escape(c.canonical_control_ref or '')}</td>"
+            f"<td>{escape(c.name)}</td>"
+            f"<td>{escape(c.status.value)}</td>"
             f"<td>{cov}</td>"
-            f"<td>{c.owner or ''}</td>"
-            f"<td>{c.due_date or ''}</td>"
-            f"<td>{c.priority or ''}</td>"
+            f"<td>{escape(c.owner or '')}</td>"
+            f"<td>{escape(c.due_date or '')}</td>"
+            f"<td>{escape(c.priority or '')}</td>"
             f"<td>{c.evidence_count}</td>"
             f"<td>{c.open_task_count}</td>"
-            f"<td>{c.gap_notes}</td>"
+            f"<td>{escape(c.gap_notes or '')}</td>"
             "</tr>"
         )
     unmapped = "".join(
-        f"<li>{u.framework_name} <code>{u.code}</code> — {u.title}</li>"
+        f"<li>{escape(u.framework_name)} <code>{escape(u.code)}</code> — {escape(u.title)}</li>"
         for u in checklist.unmapped
     )
     ready_rows = "".join(
         "<tr>"
-        f"<td>{r.framework_name}</td><td>{r.framework_version}</td>"
+        f"<td>{escape(r.framework_name)}</td><td>{escape(r.framework_version)}</td>"
         f"<td>{r.fully_covered}</td><td>{r.partially_covered}</td>"
         f"<td>{r.not_covered}</td><td>{r.unmapped}</td>"
         f"<td>{r.not_applicable}</td>"
@@ -179,41 +187,50 @@ def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
         "</tr>"
         for r in readiness
     )
-    impact_items = "".join(f"<li>{i.readable_summary}</li>" for i in impact[:10])
-    body = f"""
-<h1>Unified Checklist</h1>
-<p class="meta">{checklist.program_name} · raw requirements {checklist.raw_requirement_count}
- · unified controls {checklist.unified_control_count}
- · unmapped {len(checklist.unmapped)}</p>
-<section>
-<table>
+    impact_items = "".join(f"<li>{escape(i.readable_summary)}</li>" for i in impact[:10])
+    main_table = f"""<table>
 <thead><tr>
-<th>Control</th><th>Name</th><th>Status</th><th>Framework coverage</th>
-<th>Owner</th><th>Deadline</th><th>Priority</th><th>Evidence</th><th>Tasks</th><th>Gap/delta</th>
+<th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
+<th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'control.coverage'))}</th>
+<th>{escape(t(lang,'col.owner'))}</th><th>{escape(t(lang,'col.deadline'))}</th>
+<th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.evidence'))}</th>
+<th>{escape(t(lang,'col.tasks'))}</th><th>{escape(t(lang,'col.gap'))}</th>
 </tr></thead>
 <tbody>{''.join(rows)}</tbody>
-</table>
+</table>"""
+    ready_table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.version'))}</th>
+<th>FULLY</th><th>PARTIAL</th><th>NOT</th>
+<th>UNMAPPED</th><th>N/A</th><th>{escape(t(lang,'checklist.impl_ready'))}</th>
+</tr></thead><tbody>{ready_rows}</tbody></table>"""
+    body = f"""
+<div class="page-head">
+<h1>{escape(t(lang,'checklist.title'))}</h1>
+<p class="meta">{escape(checklist.program_name)} · {checklist.raw_requirement_count} {escape(t(lang,'client.raw'))}
+ · {checklist.unified_control_count} {escape(t(lang,'client.unified'))}
+ · {len(checklist.unmapped)} {escape(t(lang,'client.unmapped'))}</p>
+</div>
+<section>
+{table_wrap(main_table)}
 </section>
 <section>
-<h2>Unmapped requirements</h2>
-<ul class="compact">{unmapped or '<li>None</li>'}</ul>
+<h2>{escape(t(lang,'checklist.unmapped'))}</h2>
+<ul class="compact">{unmapped or f'<li>{escape(t(lang,"client.none"))}</li>'}</ul>
 </section>
 <section>
-<h2>Framework readiness</h2>
-<table><thead><tr>
-<th>Framework</th><th>Version</th><th>FULLY</th><th>PARTIAL</th><th>NOT</th>
-<th>UNMAPPED</th><th>N/A</th><th>Impl readiness</th>
-</tr></thead><tbody>{ready_rows}</tbody></table>
+<h2>{escape(t(lang,'checklist.readiness'))}</h2>
+{table_wrap(ready_table)}
 </section>
 <section>
-<h2>Control impact</h2>
+<h2>{escape(t(lang,'checklist.impact'))}</h2>
 <ul class="compact">{impact_items}</ul>
 </section>
 """
     return render_shell(
-        f"Unified Checklist — {checklist.program_name}",
-        nav_qs,
+        f"{t(lang,'checklist.title')} — {checklist.program_name}",
+        with_lang(nav_qs, lang),
         body,
+        lang=lang,
     )
 
 
@@ -795,6 +812,7 @@ class Handler(BaseHTTPRequestHandler):
             flt = _gap_filter_from_qs()
             rows = filter_gap_rows(build_gap_rows(program, checklist), flt)
             filter_values = {
+                "lang": lang_from_qs(qs),
                 "superuser": "1" if qs.get("superuser", ["0"])[0] in {"1", "true", "yes"} else "",
                 "actor_tenants": qs.get("actor_tenants", [""])[0],
                 "program_id": program.program_id,

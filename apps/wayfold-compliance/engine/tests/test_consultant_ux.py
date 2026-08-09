@@ -94,13 +94,16 @@ class ConsultantUxTests(unittest.TestCase):
         self.assertTrue(any(c.uncovered_delta for c in detail.framework_coverage))
         self.assertEqual(detail.evidence_count, 1)
         self.assertEqual(detail.open_task_count, 0)
-        html = ux_pages.control_page(detail, "superuser=1&program_id=program-cyber-demo")
+        html = ux_pages.control_page(
+            detail, "superuser=1&program_id=program-cyber-demo&lang=en", lang="en"
+        )
         self.assertIn("Framework coverage", html)
         self.assertIn("CTRL-IAM-001", html)
         gaps_html = ux_pages.gaps_page(
             build_gap_rows(self.michele),
-            "superuser=1&program_id=program-cyber-demo",
+            "superuser=1&program_id=program-cyber-demo&lang=en",
             {
+                "lang": "en",
                 "superuser": "1",
                 "program_id": "program-cyber-demo",
                 "framework": "",
@@ -114,6 +117,7 @@ class ConsultantUxTests(unittest.TestCase):
                 "search": "",
                 "actor_tenants": "",
             },
+            lang="en",
         )
         self.assertIn("/control?", gaps_html)
         self.assertIn("CTRL-IAM-001", gaps_html)
@@ -137,12 +141,14 @@ class ConsultantUxTests(unittest.TestCase):
         self.assertEqual(sum(t.open_task_count for t in tasks), 2)
 
     def test_report_uses_pinned_program_data(self):
-        html = report_html(self.michele, as_of=AS_OF)
+        html = report_html(self.michele, as_of=AS_OF, nav_qs="lang=it")
         self.assertIn("Michele Demo", html)
         self.assertIn("Cyber Compliance Demo", html)
-        self.assertIn("Framework readiness", html)
-        self.assertIn("Unmapped requirements", html)
+        self.assertIn("Prontezza framework", html)
+        self.assertIn("Requisiti non mappati", html)
         self.assertIn("A.9.9", html)
+        self.assertIn('wfToggleTheme', html)
+        self.assertIn('wfToggleLang', html)
 
         csv_text = report_csv(self.alfa, as_of=AS_OF)
         self.assertIn("Cliente Alfa", csv_text)

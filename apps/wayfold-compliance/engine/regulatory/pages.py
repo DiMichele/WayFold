@@ -1,50 +1,69 @@
-"""Dense HTML for Regulatory Intelligence inbox (Phase 4)."""
+"""Dense HTML for Regulatory Intelligence inbox."""
 
 from __future__ import annotations
 
 from html import escape
+from urllib.parse import parse_qsl
 
-from engine.ui_shell import render_shell
+from engine.i18n import DEFAULT_LANG, normalize_lang, t, with_lang
+from engine.ui_shell import render_shell, table_wrap
 
-_NAV = (
-    ("Portfolio", "/portfolio"),
-    ("Sources", "/sources"),
-    ("Reg Changes", "/changes"),
-    ("FW Suggestions", "/suggestions"),
-    ("AI", "/ai/suggestions"),
+_NAV_KEYS = (
+    ("nav.portfolio", "/portfolio"),
+    ("nav.sources", "/sources"),
+    ("nav.changes", "/changes"),
+    ("nav.fw_suggestions", "/suggestions"),
+    ("nav.ai", "/ai/suggestions"),
 )
 
 
-def _shell(title: str, nav_qs: str, body: str) -> str:
-    return render_shell(title, nav_qs, body, nav_items=_NAV)
+def _resolve_lang(nav_qs: str, lang: str | None) -> str:
+    if lang:
+        return normalize_lang(lang)
+    return normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
 
 
-def sources_page(sources, nav_qs: str) -> str:
+def _shell(title: str, nav_qs: str, body: str, *, lang: str) -> str:
+    return render_shell(
+        title, with_lang(nav_qs, lang), body, nav_keys=_NAV_KEYS, lang=lang
+    )
+
+
+def sources_page(sources, nav_qs: str, lang: str | None = None) -> str:
+    lang = _resolve_lang(nav_qs, lang)
+    nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
         f"<td><code>{escape(s.id)}</code></td>"
         f"<td>{escape(s.title)}</td>"
         f"<td>{escape(s.type.value)}</td>"
         f"<td>{escape(s.url)}</td>"
-        f"<td>{'yes' if s.monitoring_enabled else 'no'}</td>"
+        f"<td>{escape(t(lang,'sources.yes') if s.monitoring_enabled else t(lang,'sources.no'))}</td>"
         f"<td>{escape(s.last_successful_fetch or '—')}</td>"
         f"<td><code>{escape((s.last_content_hash or '')[:12] or '—')}</code></td>"
-        f"<td><a href='/api/regulatory/check?{nav_qs}&source_id={escape(s.id)}'>check</a></td>"
+        f"<td><a href='/api/regulatory/check?{nav_qs}&source_id={escape(s.id)}'>{escape(t(lang,'sources.check'))}</a></td>"
         "</tr>"
         for s in sources
     )
+    table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.id'))}</th><th>{escape(t(lang,'col.title'))}</th>
+<th>{escape(t(lang,'col.type'))}</th><th>{escape(t(lang,'col.url'))}</th>
+<th>{escape(t(lang,'col.monitor'))}</th><th>{escape(t(lang,'col.last_ok'))}</th>
+<th>{escape(t(lang,'col.hash'))}</th><th>{escape(t(lang,'col.action'))}</th>
+</tr></thead><tbody>{rows or f'<tr><td colspan="8">{escape(t(lang,"sources.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<h1>Regulatory Sources</h1>
-<p class="meta">Configurabili · fetch adapters HTML/JSON/FILE · nessuna mutazione automatica del core</p>
-<table><thead><tr>
-<th>ID</th><th>Title</th><th>Type</th><th>URL</th><th>Monitor</th>
-<th>Last OK fetch</th><th>Hash</th><th>Action</th>
-</tr></thead><tbody>{rows or '<tr><td colspan="8">Nessuna source</td></tr>'}</tbody></table>
+<div class="page-head">
+<h1>{escape(t(lang,'sources.title'))}</h1>
+<p class="meta">{escape(t(lang,'sources.meta'))}</p>
+</div>
+{table_wrap(table)}
 """
-    return _shell("Sources — WayFold", nav_qs, body)
+    return _shell(f"{t(lang,'sources.title')} — WayFold Compliance", nav_qs, body, lang=lang)
 
 
-def changes_page(changes, nav_qs: str) -> str:
+def changes_page(changes, nav_qs: str, lang: str | None = None) -> str:
+    lang = _resolve_lang(nav_qs, lang)
+    nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
         f"<td><a href='/change?{nav_qs}&change_id={escape(c.id)}'><code>{escape(c.id)}</code></a></td>"
@@ -56,17 +75,24 @@ def changes_page(changes, nav_qs: str) -> str:
         "</tr>"
         for c in changes
     )
+    table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.change'))}</th><th>{escape(t(lang,'col.source'))}</th>
+<th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.relevance'))}</th>
+<th>{escape(t(lang,'col.detected'))}</th><th>{escape(t(lang,'col.summary'))}</th>
+</tr></thead><tbody>{rows or f'<tr><td colspan="6">{escape(t(lang,"changes.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<h1>Regulatory Changes</h1>
-<p class="meta">Inbox deterministica · AI analysis = Phase 5</p>
-<table><thead><tr>
-<th>Change</th><th>Source</th><th>Status</th><th>Relevance</th><th>Detected</th><th>Summary</th>
-</tr></thead><tbody>{rows or '<tr><td colspan="6">Nessun change</td></tr>'}</tbody></table>
+<div class="page-head">
+<h1>{escape(t(lang,'changes.title'))}</h1>
+<p class="meta">{escape(t(lang,'changes.meta'))}</p>
+</div>
+{table_wrap(table)}
 """
-    return _shell("Changes — WayFold", nav_qs, body)
+    return _shell(f"{t(lang,'changes.title')} — WayFold Compliance", nav_qs, body, lang=lang)
 
 
-def change_detail_page(change, impact, nav_qs: str) -> str:
+def change_detail_page(change, impact, nav_qs: str, lang: str | None = None) -> str:
+    lang = _resolve_lang(nav_qs, lang)
+    nav_qs = with_lang(nav_qs, lang)
     impact_rows = "".join(
         "<tr>"
         f"<td>{escape(r.tenant_name)}</td>"
@@ -77,28 +103,35 @@ def change_detail_page(change, impact, nav_qs: str) -> str:
         "</tr>"
         for r in (impact.rows if impact else [])
     )
+    table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.client'))}</th><th>{escape(t(lang,'col.program'))}</th>
+<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.requirements'))}</th>
+<th>{escape(t(lang,'col.controls'))}</th>
+</tr></thead><tbody>{impact_rows or f'<tr><td colspan="5">{escape(t(lang,"client.none"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<h1>Change <code>{escape(change.id)}</code></h1>
-<p class="meta">Source {escape(change.source_id)} · {escape(change.status.value)} · {escape(change.relevance)}</p>
+<div class="page-head">
+<h1>{escape(t(lang,'col.change'))} <code>{escape(change.id)}</code></h1>
+<p class="meta">{escape(t(lang,'col.source'))} {escape(change.source_id)} · {escape(change.status.value)} · {escape(change.relevance)}</p>
 <p class="meta">{escape(change.summary)}</p>
+</div>
 <p class="meta">
-  <a href="/api/regulatory/review?{nav_qs}&change_id={escape(change.id)}&status=ACCEPTED">Accept</a> ·
-  <a href="/api/regulatory/review?{nav_qs}&change_id={escape(change.id)}&status=IGNORED">Ignore</a> ·
-  <a href="/api/regulatory/impact?{nav_qs}&change_id={escape(change.id)}">Impact JSON</a>
+  <a href="/api/regulatory/review?{nav_qs}&change_id={escape(change.id)}&status=ACCEPTED">{escape(t(lang,'change.accept'))}</a> ·
+  <a href="/api/regulatory/review?{nav_qs}&change_id={escape(change.id)}&status=IGNORED">{escape(t(lang,'change.ignore'))}</a> ·
+  <a href="/api/regulatory/impact?{nav_qs}&change_id={escape(change.id)}">{escape(t(lang,'change.impact_json'))}</a>
 </p>
-<h2>Client impact (indication only — no auto migration)</h2>
-<p class="meta">Requirements: {impact.requirements if impact else 0} · Controls: {impact.controls if impact else 0}
- · Clients: {impact.clients if impact else 0} · Programs: {impact.programs if impact else 0}</p>
-<table><thead><tr>
-<th>Client</th><th>Program</th><th>Framework</th><th>Requirements</th><th>Controls</th>
-</tr></thead><tbody>{impact_rows or '<tr><td colspan="5">Nessun impatto mappato</td></tr>'}</tbody></table>
-<h2>Diff (normalized)</h2>
+<h2>{escape(t(lang,'change.impact'))}</h2>
+<p class="meta">{escape(t(lang,'col.requirements'))}: {impact.requirements if impact else 0} · {escape(t(lang,'col.controls'))}: {impact.controls if impact else 0}
+ · {escape(t(lang,'col.client'))}: {impact.clients if impact else 0} · {escape(t(lang,'col.program'))}: {impact.programs if impact else 0}</p>
+{table_wrap(table)}
+<h2>{escape(t(lang,'change.diff'))}</h2>
 <pre class="diff">{escape(change.raw_diff or '(empty)')}</pre>
 """
-    return _shell(f"Change — {change.id}", nav_qs, body)
+    return _shell(f"{t(lang,'col.change')} — {change.id}", nav_qs, body, lang=lang)
 
 
-def suggestions_page(suggestions, nav_qs: str) -> str:
+def suggestions_page(suggestions, nav_qs: str, lang: str | None = None) -> str:
+    lang = _resolve_lang(nav_qs, lang)
+    nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
         f"<td><code>{escape(s.id)}</code></td>"
@@ -111,11 +144,17 @@ def suggestions_page(suggestions, nav_qs: str) -> str:
         "</tr>"
         for s in suggestions
     )
+    table = f"""<table><thead><tr>
+<th>{escape(t(lang,'col.id'))}</th><th>{escape(t(lang,'col.change'))}</th>
+<th>{escape(t(lang,'col.action'))}</th><th>{escape(t(lang,'col.status'))}</th>
+<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.version'))}</th>
+<th>{escape(t(lang,'col.rationale'))}</th>
+</tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"fw_sugg.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<h1>Framework update suggestions</h1>
-<p class="meta">CLONE_DRAFT / review mappings — mai publish automatico sulle baseline pubblicate</p>
-<table><thead><tr>
-<th>ID</th><th>Change</th><th>Action</th><th>Status</th><th>Frameworks</th><th>Versions</th><th>Rationale</th>
-</tr></thead><tbody>{rows or '<tr><td colspan="7">Nessun suggestion</td></tr>'}</tbody></table>
+<div class="page-head">
+<h1>{escape(t(lang,'fw_sugg.title'))}</h1>
+<p class="meta">{escape(t(lang,'fw_sugg.meta'))}</p>
+</div>
+{table_wrap(table)}
 """
-    return _shell("FW Suggestions — WayFold", nav_qs, body)
+    return _shell(f"{t(lang,'fw_sugg.title')} — WayFold Compliance", nav_qs, body, lang=lang)
