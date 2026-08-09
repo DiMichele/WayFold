@@ -175,12 +175,13 @@ class ConsultantUxTests(unittest.TestCase):
                 self.wfile.write = lambda b: captured.__setitem__("body", b)
                 captured.clear()
                 captured["status"] = None
+                captured["headers"] = {}
 
             def send_response(self, code, message=None):  # noqa: ARG002
                 captured["status"] = code
 
             def send_header(self, key, value):
-                return None
+                captured["headers"][key] = value
 
             def end_headers(self):
                 return None
@@ -218,6 +219,68 @@ class ConsultantUxTests(unittest.TestCase):
             "&control_ref=CTRL-IAM-001"
         ).do_GET()
         self.assertEqual(captured["status"], 403)
+
+    def test_program_scoped_nav_redirects_or_selects_client(self):
+        """Sidebar links without program_id must not render the same empty shell."""
+        from types import SimpleNamespace
+
+        import engine.api as api_mod
+
+        captured: dict = {}
+
+        class FakeHandler(Handler):
+            def __init__(self, path: str):
+                self.path = path
+                self.wfile = mock.Mock()
+                self.wfile.write = lambda b: captured.__setitem__("body", b)
+                captured.clear()
+                captured["status"] = None
+                captured["headers"] = {}
+
+            def send_response(self, code, message=None):  # noqa: ARG002
+                captured["status"] = code
+
+            def send_header(self, key, value):
+                captured["headers"][key] = value
+
+            def end_headers(self):
+                return None
+
+            def address_string(self):
+                return "test"
+
+        one = [
+            SimpleNamespace(
+                tenant_id="tenant-michele",
+                tenant_name="Michele",
+                program_id="program-cyber-demo",
+                program_name="Demo",
+                frameworks=["NIS2"],
+            )
+        ]
+        with mock.patch.object(api_mod, "_resolve_program", return_value=None):
+            with mock.patch.object(api_mod, "build_portfolio", return_value=one):
+                FakeHandler("/gaps?superuser=1&lang=it").do_GET()
+        self.assertEqual(captured["status"], 302)
+        self.assertIn("program_id=program-cyber-demo", captured["headers"]["Location"])
+
+        two = one + [
+            SimpleNamespace(
+                tenant_id="tenant-alfa",
+                tenant_name="Alfa",
+                program_id="program-alfa-cloud",
+                program_name="Cloud",
+                frameworks=["ISO"],
+            )
+        ]
+        with mock.patch.object(api_mod, "_resolve_program", return_value=None):
+            with mock.patch.object(api_mod, "build_portfolio", return_value=two):
+                FakeHandler("/tasks?superuser=1&lang=it").do_GET()
+        self.assertEqual(captured["status"], 200)
+        html = captured["body"].decode()
+        self.assertIn("Seleziona un cliente", html)
+        self.assertIn("Analisi" if False else "Attività", html)
+        self.assertIn('href="/tasks?', html)
 
 
 if __name__ == "__main__":

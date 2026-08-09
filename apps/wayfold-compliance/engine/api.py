@@ -158,26 +158,119 @@ def _resolve_program(qs: dict):
     return None
 
 
-def _empty_workspace_html(nav_qs: str) -> bytes:
-    from html import escape
+_PROGRAM_SCOPED_HTML = frozenset(
+    {
+        "/checklist",
+        "/client",
+        "/gaps",
+        "/control",
+        "/owners",
+        "/deadlines",
+        "/evidence",
+        "/tasks",
+        "/report",
+    }
+)
+
+_PATH_TITLE_KEYS = {
+    "/portfolio": "portfolio.title",
+    "/checklist": "checklist.title",
+    "/client": "nav.client",
+    "/gaps": "gaps.title",
+    "/control": "control.title",
+    "/owners": "owners.title",
+    "/deadlines": "deadlines.title",
+    "/evidence": "evidence.title",
+    "/tasks": "tasks.title",
+    "/report": "report.title",
+    "/sources": "sources.title",
+    "/changes": "changes.title",
+    "/suggestions": "fw_sugg.title",
+    "/connectors": "auto.conn.title",
+    "/auto-evidence": "auto.ev.title",
+    "/ai/suggestions": "ai.sugg.title",
+    "/ai/settings": "ai.settings.title",
+}
+
+
+def _empty_workspace_html(nav_qs: str, *, active_path: str = "/portfolio") -> bytes:
     from urllib.parse import parse_qsl as _pq
 
     from engine.i18n import normalize_lang
     from engine.ui_components import empty_state, page_header
 
     lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
+    title_key = _PATH_TITLE_KEYS.get(active_path, "empty.title")
+    page_title = t(lang, title_key)
     body = page_header(
         eyebrow="WayFold Compliance",
-        title=t(lang, "empty.title"),
+        title=page_title,
         subtitle=t(lang, "empty.meta"),
-    ) + empty_state(title=t(lang, "empty.title"), body=t(lang, "empty.meta"))
+    ) + empty_state(
+        title=t(lang, "empty.title"),
+        body=t(lang, "empty.meta"),
+        action_html=(
+            f'<a class="btn primary" href="/portfolio?{nav_qs}">'
+            f'{t(lang, "nav.portfolio")}</a>'
+        ),
+    )
     return render_shell(
-        f"{t(lang, 'empty.title')} — WayFold Compliance",
+        f"{page_title} — WayFold Compliance",
         with_lang(nav_qs, lang),
         body,
         lang=lang,
-        active_path="/portfolio",
-        breadcrumb=t(lang, "empty.title"),
+        active_path=active_path,
+        breadcrumb=page_title,
+    ).encode("utf-8")
+
+
+def _select_client_html(nav_qs: str, rows, *, active_path: str) -> bytes:
+    """Shown when a program-scoped page is opened and multiple clients are available."""
+    from html import escape
+    from urllib.parse import parse_qsl as _pq
+
+    from engine.i18n import normalize_lang
+    from engine.ui_components import page_header
+
+    lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
+    title_key = _PATH_TITLE_KEYS.get(active_path, "empty.title")
+    page_title = t(lang, title_key)
+    links = []
+    for r in rows:
+        data = dict(_pq(nav_qs))
+        data["program_id"] = r.program_id
+        data["lang"] = lang
+        qs = urlencode(data)
+        links.append(
+            "<tr>"
+            f"<td><a href='{escape(active_path)}?{qs}'><strong>{escape(r.tenant_name)}</strong></a>"
+            f"<div class='client-meta'>{escape(r.program_name)}</div></td>"
+            f"<td>{escape(', '.join(r.frameworks))}</td>"
+            f"<td><a class='btn sm primary' href='{escape(active_path)}?{qs}'>"
+            f"{escape(t(lang, 'action.open'))}</a></td>"
+            "</tr>"
+        )
+    table = (
+        f"<table class='data-table'><thead><tr>"
+        f"<th>{escape(t(lang, 'col.client'))}</th>"
+        f"<th>{escape(t(lang, 'col.framework'))}</th>"
+        f"<th></th></tr></thead><tbody>{''.join(links)}</tbody></table>"
+    )
+    body = (
+        page_header(
+            eyebrow=page_title,
+            title=t(lang, "select_client.title"),
+            subtitle=t(lang, "select_client.meta"),
+        )
+        + f'<div class="panel">{table_wrap(table)}</div>'
+    )
+    return render_shell(
+        f"{page_title} — WayFold Compliance",
+        with_lang(nav_qs, lang),
+        body,
+        lang=lang,
+        active_path=active_path,
+        breadcrumb=page_title,
     ).encode("utf-8")
 
 
@@ -315,8 +408,17 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
+        # Avoid stale shell HTML when navigating between pages
+        self.send_header("Cache-Control", "no-store")
         self.end_headers()
         self.wfile.write(body)
+
+    def _redirect(self, location: str):
+        self.send_response(302)
+        self.send_header("Location", location)
+        self.send_header("Cache-Control", "no-store")
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def _gate(self, qs: dict, target_tenant_id: str | None = None):
         actor_tenants, is_super = _auth_from_qs(qs)
@@ -828,10 +930,41 @@ class Handler(BaseHTTPRequestHandler):
             auth = self._gate(qs)
             if auth is None:
                 return
+            actor_tenants, is_super = auth
             nav = _nav_qs(qs)
             if path.startswith("/api/"):
                 return self._deny(404, "program_not_found")
-            return self._send(200, _empty_workspace_html(nav), "text/html; charset=utf-8")
+
+            # Program-scoped HTML without program_id: attach a default client so
+            # sidebar navigation actually changes page content (not the same empty shell).
+            if path in _PROGRAM_SCOPED_HTML:
+                rows = build_portfolio(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    registry_path=_active_registry(),
+                )
+                if len(rows) == 1:
+                    flat = {k: v[0] for k, v in qs.items() if v}
+                    flat["program_id"] = rows[0].program_id
+                    flat.setdefault("lang", lang_from_qs(qs))
+                    return self._redirect(f"{path}?{urlencode(flat)}")
+                if len(rows) > 1:
+                    return self._send(
+                        200,
+                        _select_client_html(nav, rows, active_path=path),
+                        "text/html; charset=utf-8",
+                    )
+                return self._send(
+                    200,
+                    _empty_workspace_html(nav, active_path=path),
+                    "text/html; charset=utf-8",
+                )
+
+            return self._send(
+                200,
+                _empty_workspace_html(nav, active_path=path),
+                "text/html; charset=utf-8",
+            )
 
         auth = self._gate(qs, program.tenant_id)
         if auth is None:
