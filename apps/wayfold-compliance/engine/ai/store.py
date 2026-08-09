@@ -15,7 +15,11 @@ from .domain import (
     TenantAISettings,
 )
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[1] / "data" / "ai"
+from engine.runtime_paths import data_root
+
+
+def _default_root() -> Path:
+    return data_root() / "ai"
 
 
 def _now() -> str:
@@ -42,7 +46,7 @@ class AIStore:
     """JSON store for AI suggestions + tenant AI settings (outside CISO DB)."""
 
     def __init__(self, root: Path | None = None):
-        self.root = root or DEFAULT_ROOT
+        self.root = root or _default_root()
         self.root.mkdir(parents=True, exist_ok=True)
         self._suggestions_path = self.root / "suggestions.json"
         self._settings_path = self.root / "tenant_settings.json"

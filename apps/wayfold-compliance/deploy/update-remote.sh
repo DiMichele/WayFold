@@ -7,9 +7,26 @@ export WAYFOLD_COMPLIANCE_ROOT="$APP_DIR"
 COMPOSE=(docker compose --project-directory "$APP_DIR" -f "$APP_DIR/deploy/docker-compose.prod.yml")
 
 cd "$APP_DIR"
-mkdir -p data/db
+mkdir -p data/db data/engine
 # Clean mistaken bind targets from earlier path-resolution bugs
 rm -rf deploy/data 2>/dev/null || true
+
+# One-shot clean slate: touch data/.wipe_db before deploy to reset GRC + engine stores
+if [[ -f data/.wipe_db ]]; then
+  echo "==> Wiping GRC DB + engine stores (clean workspace)"
+  # Stop stack first if present so sqlite files are released
+  "${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
+  for c in wayfold-compliance-backend wayfold-compliance-frontend wayfold-compliance-huey \
+           wayfold-compliance-engine wayfold-compliance-qdrant; do
+    docker rm -f "$c" 2>/dev/null || true
+  done
+  # Files may be owned by uid 1001 — wipe via root container
+  docker run --rm \
+    -v "$APP_DIR/data:/data" alpine:3.20 \
+    sh -c 'rm -rf /data/db/* /data/engine/*; mkdir -p /data/db /data/engine; printf "%s\n" "{\"programs\": []}" > /data/engine/portfolio_registry.json'
+  rm -f data/.wipe_db
+fi
+
 # GRC core images expect uid 1001 for db volume (no passwordless sudo on VPS:
 # use a one-shot root container to chown the bind mount).
 if ! docker run --rm -v "$APP_DIR/data/db:/code/db" alpine:3.20 \
@@ -17,6 +34,7 @@ if ! docker run --rm -v "$APP_DIR/data/db:/code/db" alpine:3.20 \
   echo "WARN: docker chown failed; trying chmod a+rwx on data/db" >&2
   chmod -R a+rwx data/db || true
 fi
+chmod -R a+rwX data/engine 2>/dev/null || true
 
 echo "==> Pull + up Compliance stack"
 # Tear down previous project names (compose file dir was used as project name before)

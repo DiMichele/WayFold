@@ -44,7 +44,6 @@ from engine.serialize import to_jsonable
 from engine.i18n import lang_from_qs, t, with_lang
 from engine.ui_shell import render_shell, table_wrap
 from engine import ux_pages
-from engine.regulatory.demo import seed_demo_source
 from engine.regulatory.domain import ChangeStatus
 from engine.regulatory.pipeline import check_source, impact_for_change, review_change
 from engine.regulatory.store import RegulatoryStore
@@ -54,10 +53,10 @@ from engine.ai.service import AIAssistanceService, AIProcessingDisabled
 from engine.ai.store import AIStore
 from engine.ai import pages as ai_pages
 from engine.automated_evidence.domain import EvidenceReviewStatus
-from engine.automated_evidence.demo import seed_demo_connector
 from engine.automated_evidence.service import AutomatedEvidenceService
 from engine.automated_evidence.store import AutomatedEvidenceStore
 from engine.automated_evidence import pages as auto_ev_pages
+from engine.runtime_paths import portfolio_registry_path, seed_demo_enabled
 
 DEFAULT_PROGRAM = ROOT / "engine" / "fixtures" / "michele_phase2_program.json"
 _REG_STORE: RegulatoryStore | None = None
@@ -65,11 +64,17 @@ _AI_SERVICE: AIAssistanceService | None = None
 _AUTO_EV_SERVICE: AutomatedEvidenceService | None = None
 
 
+def _active_registry() -> Path:
+    return portfolio_registry_path(DEFAULT_REGISTRY)
+
+
 def _reg_store() -> RegulatoryStore:
     global _REG_STORE
     if _REG_STORE is None:
         _REG_STORE = RegulatoryStore()
-        if not _REG_STORE.list_sources():
+        if seed_demo_enabled() and not _REG_STORE.list_sources():
+            from engine.regulatory.demo import seed_demo_source
+
             seed_demo_source(_REG_STORE)
     return _REG_STORE
 
@@ -87,7 +92,9 @@ def _auto_ev_service() -> AutomatedEvidenceService:
     global _AUTO_EV_SERVICE
     if _AUTO_EV_SERVICE is None:
         store = AutomatedEvidenceStore()
-        if not store.list_connectors():
+        if seed_demo_enabled() and not store.list_connectors():
+            from engine.automated_evidence.demo import seed_demo_connector
+
             seed_demo_connector(store)
         _AUTO_EV_SERVICE = AutomatedEvidenceService(store=store)
     return _AUTO_EV_SERVICE
@@ -129,19 +136,47 @@ def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
 
 
 def _resolve_program(qs: dict):
-    """Resolve program snapshot from program_id (portfolio) or program path."""
+    """Resolve program snapshot from program_id / path. No demo fallback."""
     program_path = qs.get("program", [None])[0]
     program_id = qs.get("program_id", [None])[0]
+    registry = _active_registry()
     if program_path:
         path = Path(program_path)
         if path.is_file():
             return load_program_snapshot(path)
+        return None
     if program_id:
-        for program, _ in load_portfolio_programs(DEFAULT_REGISTRY):
+        for program, _ in load_portfolio_programs(registry):
             if program.program_id == program_id:
                 return program
-    # default Michele demo
-    return load_program_snapshot(DEFAULT_PROGRAM)
+        return None
+    programs = load_portfolio_programs(registry)
+    if len(programs) == 1:
+        return programs[0][0]
+    if seed_demo_enabled() and DEFAULT_PROGRAM.is_file():
+        return load_program_snapshot(DEFAULT_PROGRAM)
+    return None
+
+
+def _empty_workspace_html(nav_qs: str) -> bytes:
+    from html import escape
+    from urllib.parse import parse_qsl as _pq
+
+    from engine.i18n import normalize_lang
+
+    lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
+    body = f"""
+<div class="page-head">
+<h1>{escape(t(lang, 'empty.title'))}</h1>
+<p class="meta">{escape(t(lang, 'empty.meta'))}</p>
+</div>
+"""
+    return render_shell(
+        f"{t(lang, 'empty.title')} — WayFold Compliance",
+        with_lang(nav_qs, lang),
+        body,
+        lang=lang,
+    ).encode("utf-8")
 
 
 def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
@@ -285,7 +320,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             actor_tenants, is_super = auth
             rows = build_portfolio(
-                actor_tenant_ids=actor_tenants, is_superuser=is_super
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                registry_path=_active_registry(),
             )
             nav = _nav_qs(qs)
             return self._send(
@@ -300,7 +337,9 @@ class Handler(BaseHTTPRequestHandler):
                 return
             actor_tenants, is_super = auth
             rows = build_portfolio(
-                actor_tenant_ids=actor_tenants, is_superuser=is_super
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                registry_path=_active_registry(),
             )
             body = json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8")
             return self._send(200, body, "application/json")
@@ -381,6 +420,7 @@ class Handler(BaseHTTPRequestHandler):
                     store,
                     actor_tenant_ids=actor_tenants,
                     is_superuser=is_super,
+                    registry_path=_active_registry(),
                 )
                 if path == "/change":
                     return self._send(
@@ -750,6 +790,15 @@ class Handler(BaseHTTPRequestHandler):
             program = _resolve_program(qs)
         except Exception as exc:  # noqa: BLE001
             return self._deny(404, f"program_not_found: {exc}")
+
+        if program is None:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            nav = _nav_qs(qs)
+            if path.startswith("/api/"):
+                return self._deny(404, "program_not_found")
+            return self._send(200, _empty_workspace_html(nav), "text/html; charset=utf-8")
 
         auth = self._gate(qs, program.tenant_id)
         if auth is None:

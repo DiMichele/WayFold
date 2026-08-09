@@ -17,7 +17,11 @@ from .domain import (
     FindingStatus,
 )
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[1] / "data" / "automated_evidence"
+from engine.runtime_paths import data_root
+
+
+def _default_root() -> Path:
+    return data_root() / "automated_evidence"
 
 
 def _now() -> str:
@@ -44,7 +48,7 @@ class AutomatedEvidenceStore:
     """JSON store for connectors + automated evidence (outside CISO DB)."""
 
     def __init__(self, root: Path | None = None):
-        self.root = root or DEFAULT_ROOT
+        self.root = root or _default_root()
         self.root.mkdir(parents=True, exist_ok=True)
         self._connectors = self.root / "connectors.json"
         self._evidence = self.root / "evidence.json"

@@ -7,7 +7,8 @@
 
 param(
     [switch]$SetupTls,
-    [switch]$SkipSync
+    [switch]$SkipSync,
+    [switch]$WipeDb
 )
 
 $ErrorActionPreference = "Stop"
@@ -58,14 +59,18 @@ if (-not $SkipSync) {
     if ($LASTEXITCODE -ne 0) { throw "scp failed" }
     Remove-Item $Archive -Force
 
+    $wipeLine = if ($WipeDb) { "touch data/.wipe_db" } else { "true" }
+    if ($WipeDb) { Write-Host "-> WipeDb: reset GRC DB + engine stores on VPS" }
+
     Invoke-RemoteBash @"
 set -euo pipefail
 cd $RemoteDir
-# Preserve local db/data across deploys
 tar -xzf wayfold-compliance-deploy.tgz
 rm -f wayfold-compliance-deploy.tgz
 chmod +x deploy/update-remote.sh deploy/setup-nginx-tls.sh 2>/dev/null || true
 sed -i 's/\r$//' deploy/update-remote.sh deploy/setup-nginx-tls.sh 2>/dev/null || true
+mkdir -p data
+$wipeLine
 bash deploy/update-remote.sh
 "@
 }
