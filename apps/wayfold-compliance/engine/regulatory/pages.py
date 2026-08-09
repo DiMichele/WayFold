@@ -6,16 +6,9 @@ from html import escape
 from urllib.parse import parse_qsl
 
 from engine.i18n import DEFAULT_LANG, normalize_lang, t, with_lang
+from engine.ui_components import page_header
+from engine.ui_labels import review_label
 from engine.ui_shell import render_shell, table_wrap
-
-_NAV_KEYS = (
-    ("nav.portfolio", "/portfolio"),
-    ("nav.sources", "/sources"),
-    ("nav.changes", "/changes"),
-    ("nav.fw_suggestions", "/suggestions"),
-    ("nav.ai", "/ai/suggestions"),
-)
-
 
 def _resolve_lang(nav_qs: str, lang: str | None) -> str:
     if lang:
@@ -23,9 +16,14 @@ def _resolve_lang(nav_qs: str, lang: str | None) -> str:
     return normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
 
 
-def _shell(title: str, nav_qs: str, body: str, *, lang: str) -> str:
+def _shell(title: str, nav_qs: str, body: str, *, lang: str, active_path: str) -> str:
     return render_shell(
-        title, with_lang(nav_qs, lang), body, nav_keys=_NAV_KEYS, lang=lang
+        title,
+        with_lang(nav_qs, lang),
+        body,
+        lang=lang,
+        active_path=active_path,
+        breadcrumb=title.split(" — ")[0],
     )
 
 
@@ -52,13 +50,16 @@ def sources_page(sources, nav_qs: str, lang: str | None = None) -> str:
 <th>{escape(t(lang,'col.hash'))}</th><th>{escape(t(lang,'col.action'))}</th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="8">{escape(t(lang,"sources.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'sources.title'))}</h1>
-<p class="meta">{escape(t(lang,'sources.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'sources.eyebrow'), title=t(lang,'sources.title'), subtitle=t(lang,'sources.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'sources.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'sources.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/sources",
+    )
 
 
 def changes_page(changes, nav_qs: str, lang: str | None = None) -> str:
@@ -68,26 +69,29 @@ def changes_page(changes, nav_qs: str, lang: str | None = None) -> str:
         "<tr>"
         f"<td><a href='/change?{nav_qs}&change_id={escape(c.id)}'><code>{escape(c.id)}</code></a></td>"
         f"<td>{escape(c.source_id)}</td>"
-        f"<td><span class='badge'>{escape(c.status.value)}</span></td>"
-        f"<td><span class='badge'>{escape(c.relevance)}</span></td>"
+        f"<td><span class='badge warning'>{escape(review_label(lang, c.status.value))}</span></td>"
+        f"<td><span class='badge info'>{escape(c.relevance)}</span></td>"
         f"<td>{escape(c.detected_at)}</td>"
         f"<td>{escape(c.summary)}</td>"
         "</tr>"
         for c in changes
     )
-    table = f"""<table><thead><tr>
+    table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.change'))}</th><th>{escape(t(lang,'col.source'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.relevance'))}</th>
 <th>{escape(t(lang,'col.detected'))}</th><th>{escape(t(lang,'col.summary'))}</th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="6">{escape(t(lang,"changes.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'changes.title'))}</h1>
-<p class="meta">{escape(t(lang,'changes.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'changes.eyebrow'), title=t(lang,'changes.title'), subtitle=t(lang,'changes.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'changes.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'changes.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/changes",
+    )
 
 
 def change_detail_page(change, impact, nav_qs: str, lang: str | None = None) -> str:
@@ -126,7 +130,13 @@ def change_detail_page(change, impact, nav_qs: str, lang: str | None = None) -> 
 <h2>{escape(t(lang,'change.diff'))}</h2>
 <pre class="diff">{escape(change.raw_diff or '(empty)')}</pre>
 """
-    return _shell(f"{t(lang,'col.change')} — {change.id}", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'col.change')} — {change.id}",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/changes",
+    )
 
 
 def suggestions_page(suggestions, nav_qs: str, lang: str | None = None) -> str:
@@ -151,10 +161,13 @@ def suggestions_page(suggestions, nav_qs: str, lang: str | None = None) -> str:
 <th>{escape(t(lang,'col.rationale'))}</th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"fw_sugg.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'fw_sugg.title'))}</h1>
-<p class="meta">{escape(t(lang,'fw_sugg.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'nav.section.knowledge'), title=t(lang,'fw_sugg.title'), subtitle=t(lang,'fw_sugg.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'fw_sugg.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'fw_sugg.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/suggestions",
+    )

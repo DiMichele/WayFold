@@ -1,11 +1,25 @@
-"""Dense consultant HTML pages — WayFold ecosystem visual language + i18n."""
+"""Dense consultant HTML pages — WayFold Compliance design system + i18n."""
 
 from __future__ import annotations
 
 from html import escape
 from urllib.parse import parse_qsl, urlencode
 
+from engine.dates import format_display_date, is_overdue
 from engine.i18n import DEFAULT_LANG, lang_from_qs, normalize_lang, t, with_lang
+from engine.ui_components import (
+    client_initials,
+    empty_state,
+    framework_chips,
+    mapping_badge,
+    metric_card,
+    page_header,
+    priority_badge,
+    progress_bar,
+    row_action,
+    status_badge,
+)
+from engine.ui_labels import format_number, format_percent, status_label
 from engine.ui_shell import render_shell, table_wrap
 
 
@@ -27,108 +41,202 @@ def _lang(nav_qs: str, lang: str | None = None) -> str:
     return normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
 
 
-def _shell(title: str, nav_qs: str, body: str, *, lang: str) -> str:
-    return render_shell(title, with_lang(nav_qs, lang), body, lang=lang)
+def _shell(
+    title: str,
+    nav_qs: str,
+    body: str,
+    *,
+    lang: str,
+    active_path: str,
+    breadcrumb: str | None = None,
+) -> str:
+    return render_shell(
+        title,
+        with_lang(nav_qs, lang),
+        body,
+        lang=lang,
+        active_path=active_path,
+        breadcrumb=breadcrumb or title.split(" — ")[0],
+    )
 
 
 def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
     lang = _lang(nav_qs, lang)
     nav_qs = with_lang(nav_qs, lang)
+    clients = len({r.tenant_id for r in rows})
+    gaps = sum(r.critical_gaps + r.high_priority_open for r in rows)
+    overdue = sum(r.overdue_tasks for r in rows)
+    unmapped = sum(r.unmapped for r in rows)
+
     body_rows = []
     for r in rows:
-        ready = (
-            f"{r.implementation_readiness:.0%}"
-            if r.implementation_readiness is not None
-            else "n/a"
-        )
+        ready = format_percent(r.implementation_readiness, lang=lang)
+        ratio = r.implementation_readiness
         client_qs = _with_program(nav_qs, r.program_id)
+        href = f"/client?{client_qs}"
         body_rows.append(
             "<tr>"
-            f"<td><a href='/client?{client_qs}'>{escape(r.tenant_name)}</a></td>"
-            f"<td>{escape(r.program_name)}</td>"
-            f"<td>{escape(', '.join(r.frameworks))}</td>"
-            f"<td>{ready}</td>"
-            f"<td>{r.critical_gaps}</td>"
-            f"<td>{r.high_priority_open}</td>"
-            f"<td>{r.overdue_tasks}</td>"
-            f"<td>{escape(r.next_deadline or '—')}</td>"
-            f"<td>{escape(r.last_activity or '—')}</td>"
-            f"<td>{r.unmapped}</td>"
+            f"<td><div class='client-cell'>"
+            f"<div class='client-logo' aria-hidden='true'>{escape(client_initials(r.tenant_name))}</div>"
+            f"<div><div class='client-name'><a href='{href}'>{escape(r.tenant_name)}</a></div>"
+            f"<div class='client-meta'>{escape(r.program_name)}</div></div></div></td>"
+            f"<td>{framework_chips(r.frameworks)}</td>"
+            f"<td><div class='readiness-cell'><strong>{escape(ready)}</strong>"
+            f"{progress_bar(ratio)}</div></td>"
+            f"<td>{format_number(r.critical_gaps, lang=lang)}</td>"
+            f"<td>{format_number(r.overdue_tasks, lang=lang)}</td>"
+            f"<td>{escape(format_display_date(r.next_deadline, lang=lang))}</td>"
+            f"<td>{row_action(href, label=t(lang,'action.open'))}</td>"
             "</tr>"
         )
-    table = f"""<table><thead><tr>
-<th>{escape(t(lang,'col.client'))}</th><th>{escape(t(lang,'col.program'))}</th>
-<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.readiness'))}</th>
-<th>{escape(t(lang,'col.critical_gaps'))}</th><th>{escape(t(lang,'col.high_open'))}</th>
-<th>{escape(t(lang,'col.overdue'))}</th><th>{escape(t(lang,'col.next_deadline'))}</th>
-<th>{escape(t(lang,'col.last_activity'))}</th><th>{escape(t(lang,'col.unmapped'))}</th>
-</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="10">{escape(t(lang,"portfolio.empty"))}</td></tr>'}</tbody></table>"""
+
+    table = f"""<table class="data-table"><thead><tr>
+<th>{escape(t(lang,'col.client'))}</th>
+<th>{escape(t(lang,'col.framework'))}</th>
+<th>{escape(t(lang,'col.readiness'))}</th>
+<th>{escape(t(lang,'col.critical_gaps'))}</th>
+<th>{escape(t(lang,'col.overdue'))}</th>
+<th>{escape(t(lang,'col.next_deadline'))}</th>
+<th></th>
+</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="7">{escape(t(lang,"portfolio.empty"))}</td></tr>'}</tbody></table>"""
+
+    metrics = f"""
+<div class="grid grid-4" style="margin-bottom:14px">
+{metric_card(label=t(lang,'portfolio.metric.clients'), value=format_number(clients, lang=lang), icon_name='building')}
+{metric_card(label=t(lang,'portfolio.metric.gaps'), value=format_number(gaps, lang=lang), icon_name='gap', tone='warning' if gaps else '')}
+{metric_card(label=t(lang,'portfolio.metric.overdue'), value=format_number(overdue, lang=lang), icon_name='clock', tone='danger' if overdue else '')}
+{metric_card(label=t(lang,'portfolio.metric.unmapped'), value=format_number(unmapped, lang=lang), icon_name='network')}
+</div>"""
+
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'portfolio.title'))}</h1>
-<p class="meta">{escape(t(lang,'portfolio.meta', n=len(rows)))}</p>
+{page_header(eyebrow=t(lang,'portfolio.eyebrow'), title=t(lang,'portfolio.title'), subtitle=t(lang,'portfolio.meta'))}
+{metrics}
+<div class="panel">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang,'portfolio.table'))}</div></div>
+  {table_wrap(table)}
 </div>
-{table_wrap(table)}
 """
-    return _shell(f"{t(lang,'portfolio.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'portfolio.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/portfolio",
+        breadcrumb=t(lang, "portfolio.title"),
+    )
 
 
 def client_page(dash, nav_qs: str, lang: str | None = None) -> str:
     lang = _lang(nav_qs, lang)
     nav_qs = with_lang(nav_qs, lang)
-    fw = "".join(
-        f"<li>{escape(f['framework_name'])} "
-        f"<code>{escape(f['framework_version'])}</code></li>"
-        for f in dash.frameworks
-    )
-    ready = "".join(
-        "<tr>"
-        f"<td>{escape(r['framework_name'])}</td>"
-        f"<td>{escape(r['framework_version'])}</td>"
-        f"<td>{(r['implementation_readiness'] or 0):.0%}</td>"
-        f"<td>{r['fully_covered']}/{r['partially_covered']}/{r['not_covered']}/"
-        f"{r['unmapped']}/{r['not_applicable']}</td>"
-        "</tr>"
-        for r in dash.readiness
-    )
-    status = " · ".join(f"{k}={v}" for k, v in dash.status_counts.items() if v)
+
+    fw_cards = []
+    for f in dash.frameworks:
+        ready_row = next(
+            (r for r in dash.readiness if r["framework_name"] == f["framework_name"]),
+            None,
+        )
+        fully = ready_row["fully_covered"] if ready_row else 0
+        partial = ready_row["partially_covered"] if ready_row else 0
+        unmapped = ready_row["unmapped"] if ready_row else 0
+        ratio = ready_row["implementation_readiness"] if ready_row else None
+        fw_cards.append(
+            f"""<div class="framework-card">
+  <div class="client-name">{escape(f['framework_name'])}</div>
+  <div class="client-meta">{escape(t(lang,'col.version'))}: <code>{escape(f['framework_version'])}</code>
+   · {escape(format_percent(ratio, lang=lang))}</div>
+  {progress_bar(ratio)}
+  <div class="framework-stats">
+    <div class="mini-stat"><strong>{fully}</strong><span>{escape(t(lang,'client.fully'))}</span></div>
+    <div class="mini-stat"><strong>{partial}</strong><span>{escape(t(lang,'client.partial'))}</span></div>
+    <div class="mini-stat"><strong>{unmapped}</strong><span>{escape(t(lang,'col.unmapped'))}</span></div>
+  </div>
+</div>"""
+        )
+
+    status_badges = " ".join(
+        f"{status_badge(lang, k)} <span class='client-meta'>{v}</span>"
+        for k, v in dash.status_counts.items()
+        if v
+    ) or escape(t(lang, "client.none"))
+
     workload = "".join(
         f"<li>{escape(o)}: {n} {escape(t(lang,'client.open_controls'))}</li>"
         for o, n in dash.workload_by_owner.items()
     ) or f"<li>{escape(t(lang,'client.none'))}</li>"
     deadlines = "".join(
-        f"<li>{escape(d['due_date'] or '')} "
-        f"{escape(d['control_ref'] or '')}: {escape(d['name'])} "
-        f"({escape(t(lang,'col.owner'))}={escape(d['owner'] or '—')})</li>"
+        f"<li>{escape(format_display_date(d['due_date'], lang=lang))} "
+        f"<code>{escape(d['control_ref'] or '')}</code>: {escape(d['name'])} "
+        f"({escape(t(lang,'col.owner'))}: {escape(d['owner'] or '—')})</li>"
         for d in dash.deadlines_next_30_days
     ) or f"<li>{escape(t(lang,'client.none'))}</li>"
     impact = "".join(
         f"<li><code>{escape(i['canonical_control_ref'] or '')}</code> "
         f"{escape(i['summary'])}</li>"
         for i in dash.top_impact
+    ) or f"<li>{escape(t(lang,'client.none'))}</li>"
+
+    ready = "".join(
+        "<tr>"
+        f"<td>{escape(r['framework_name'])}</td>"
+        f"<td><code>{escape(r['framework_version'])}</code></td>"
+        f"<td><div class='readiness-cell'><strong>{escape(format_percent(r['implementation_readiness'], lang=lang))}</strong>"
+        f"{progress_bar(r['implementation_readiness'])}</div></td>"
+        f"<td>{r['fully_covered']}</td><td>{r['partially_covered']}</td>"
+        f"<td>{r['not_covered']}</td><td>{r['unmapped']}</td><td>{r['not_applicable']}</td>"
+        "</tr>"
+        for r in dash.readiness
     )
-    ready_table = f"""<table><thead><tr>
+    ready_table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.version'))}</th>
 <th>{escape(t(lang,'col.readiness'))}</th>
-<th>FULLY/PARTIAL/NOT/UNMAPPED/N/A</th></tr></thead>
-<tbody>{ready}</tbody></table>"""
+<th>{escape(t(lang,'client.fully'))}</th><th>{escape(t(lang,'client.partial'))}</th>
+<th>{escape(t(lang,'client.not_covered'))}</th><th>{escape(t(lang,'col.unmapped'))}</th>
+<th>{escape(t(lang,'status.not_applicable'))}</th>
+</tr></thead><tbody>{ready}</tbody></table>"""
+
+    metrics = f"""
+<div class="grid grid-4" style="margin-bottom:14px">
+{metric_card(label=t(lang,'client.unified'), value=format_number(dash.unified_controls, lang=lang), icon_name='shield')}
+{metric_card(label=t(lang,'client.missing_evidence'), value=format_number(dash.missing_evidence, lang=lang), icon_name='paperclip')}
+{metric_card(label=t(lang,'client.open_tasks'), value=format_number(dash.open_tasks, lang=lang), icon_name='checklist')}
+{metric_card(label=t(lang,'client.overdue_tasks'), value=format_number(dash.overdue_tasks, lang=lang), icon_name='clock', tone='danger' if dash.overdue_tasks else '')}
+</div>"""
+
     body = f"""
-<div class="page-head">
-<h1>{escape(dash.tenant_name)}</h1>
-<p class="meta">{escape(dash.program_name)} · {dash.raw_requirements} {escape(t(lang,'client.raw'))}
- · {dash.unified_controls} {escape(t(lang,'client.unified'))} · {dash.unmapped_count} {escape(t(lang,'client.unmapped'))}</p>
+{page_header(eyebrow=t(lang,'client.eyebrow'), title=dash.tenant_name, subtitle=t(lang,'client.subtitle'))}
+<div class="client-summary">
+  <div class="client-logo" style="width:42px;height:42px">{escape(client_initials(dash.tenant_name))}</div>
+  <div>
+    <div class="client-summary-title" style="font-size:15px;font-weight:750">{escape(dash.tenant_name)}</div>
+    <div class="client-meta">{escape(dash.program_name)} · {dash.raw_requirements} {escape(t(lang,'client.raw'))}
+ · {dash.unified_controls} {escape(t(lang,'client.unified'))} · {dash.unmapped_count} {escape(t(lang,'client.unmapped'))}</div>
+  </div>
 </div>
-<h2>{escape(t(lang,'client.frameworks'))}</h2><ul class="compact">{fw}</ul>
-<h2>{escape(t(lang,'client.impl_status'))}</h2><p class="meta">{escape(status)}</p>
-<p class="meta">{escape(t(lang,'client.missing_evidence'))}: {dash.missing_evidence} · {escape(t(lang,'client.open_tasks'))}: {dash.open_tasks}
- · {escape(t(lang,'client.overdue_tasks'))}: {dash.overdue_tasks}</p>
+{metrics}
+<h2>{escape(t(lang,'client.frameworks'))}</h2>
+<div class="grid grid-3" style="margin-bottom:14px">{''.join(fw_cards)}</div>
+<h2>{escape(t(lang,'client.impl_status'))}</h2>
+<p class="meta">{status_badges}</p>
 <h2>{escape(t(lang,'client.readiness'))}</h2>
 {table_wrap(ready_table)}
-<h2>{escape(t(lang,'client.workload'))}</h2><ul class="compact">{workload}</ul>
-<h2>{escape(t(lang,'client.deadlines_30'))}</h2><ul class="compact">{deadlines}</ul>
-<h2>{escape(t(lang,'client.top_impact'))}</h2><ul class="compact">{impact}</ul>
+<div class="grid grid-2">
+  <div class="panel"><div class="panel-head"><div class="panel-title">{escape(t(lang,'client.workload'))}</div></div>
+  <div class="panel-body"><ul class="compact">{workload}</ul></div></div>
+  <div class="panel"><div class="panel-head"><div class="panel-title">{escape(t(lang,'client.deadlines_30'))}</div></div>
+  <div class="panel-body"><ul class="compact">{deadlines}</ul></div></div>
+</div>
+<div class="panel" style="margin-top:14px"><div class="panel-head"><div class="panel-title">{escape(t(lang,'client.top_impact'))}</div></div>
+<div class="panel-body"><ul class="compact">{impact}</ul></div></div>
 """
-    return _shell(f"{dash.tenant_name} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{dash.tenant_name} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/client",
+        breadcrumb=dash.tenant_name,
+    )
 
 
 def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -> str:
@@ -136,48 +244,72 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
     nav_qs = with_lang(nav_qs, lang)
     opts_status = ["", "IMPLEMENTED", "IN_PROGRESS", "NOT_IMPLEMENTED", "UNMAPPED", "NOT_APPLICABLE"]
     status_opts = "".join(
-        f"<option value='{s}' {'selected' if filter_values.get('status')==s else ''}>{s or '—'}</option>"
+        f"<option value='{s}' {'selected' if filter_values.get('status')==s else ''}>"
+        f"{escape(status_label(lang, s) if s else '—')}</option>"
         for s in opts_status
     )
     mapped_val = filter_values.get("mapped", "")
+
+    critical = sum(
+        1
+        for r in rows
+        if (r.priority or "").upper() == "HIGH"
+        and (r.status or "").upper() == "NOT_IMPLEMENTED"
+    )
+    high = sum(1 for r in rows if (r.priority or "").upper() == "HIGH")
+    partial = sum(1 for r in rows if (r.mapping or "").upper() == "PARTIAL")
+    unmapped_n = sum(1 for r in rows if not r.mapped or (r.mapping or "").upper() == "UNMAPPED")
+    overdue_n = sum(1 for r in rows if r.deadline and is_overdue(r.deadline))
+
     body_rows = []
     for r in rows:
         if r.canonical_control_ref:
             ctrl_qs = _with_control(nav_qs, r.canonical_control_ref)
             ctrl_cell = (
-                f"<a href='/control?{ctrl_qs}'><code>{escape(r.canonical_control_ref)}</code></a>"
-                f"<br>{escape(r.control_name or '')}"
+                f"<a href='/control?{ctrl_qs}'><span class='control-code'>{escape(r.canonical_control_ref)}</span></a>"
+                f"<div class='control-title'>{escape(r.control_name or '')}</div>"
             )
         else:
-            ctrl_cell = "—<br>"
+            ctrl_cell = "—"
         body_rows.append(
             "<tr>"
-            f"<td>{escape(r.framework_name)}<br><code>{escape(r.framework_version)}</code></td>"
-            f"<td><strong>{escape(r.requirement_code)}</strong><br>{escape(r.requirement_title)}</td>"
+            f"<td>{priority_badge(lang, r.priority) if r.priority else '—'}</td>"
+            f"<td><strong>{escape(r.requirement_code)}</strong><div class='client-meta'>{escape(r.requirement_title)}</div></td>"
+            f"<td>{escape(r.framework_name)}<div class='client-meta'><code>{escape(r.framework_version)}</code></div></td>"
             f"<td>{ctrl_cell}</td>"
-            f"<td><span class='badge'>{escape(r.mapping)}</span></td>"
-            f"<td>{escape(r.status)}</td>"
+            f"<td>{escape(r.gap or '—')}</td>"
             f"<td>{escape(r.owner or '—')}</td>"
-            f"<td>{escape(r.deadline or '—')}</td>"
-            f"<td>{r.evidence_count}</td>"
-            f"<td>{r.open_task_count}</td>"
-            f"<td>{escape(r.gap)}</td>"
-            f"<td>{escape(r.notes)}</td>"
+            f"<td class='{'overdue' if r.deadline and is_overdue(r.deadline) else ''}'>"
+            f"{escape(format_display_date(r.deadline, lang=lang))}</td>"
+            f"<td>{status_badge(lang, r.status)}</td>"
+            f"<td>{mapping_badge(lang, r.mapping)}</td>"
             "</tr>"
         )
-    table = f"""<table><thead><tr>
-<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.requirement'))}</th>
-<th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.mapping'))}</th>
-<th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
-<th>{escape(t(lang,'col.deadline'))}</th><th>{escape(t(lang,'col.evidence'))}</th>
-<th>{escape(t(lang,'col.tasks'))}</th><th>{escape(t(lang,'col.gap'))}</th>
-<th>{escape(t(lang,'col.notes'))}</th>
-</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="11">{escape(t(lang,"gaps.empty"))}</td></tr>'}</tbody></table>"""
+
+    table = f"""<table class="data-table"><thead><tr>
+<th>{escape(t(lang,'col.severity'))}</th>
+<th>{escape(t(lang,'col.requirement'))}</th>
+<th>{escape(t(lang,'col.framework'))}</th>
+<th>{escape(t(lang,'col.control'))}</th>
+<th>{escape(t(lang,'col.gap'))} / {escape(t(lang,'col.delta'))}</th>
+<th>{escape(t(lang,'col.owner'))}</th>
+<th>{escape(t(lang,'col.deadline'))}</th>
+<th>{escape(t(lang,'col.status'))}</th>
+<th>{escape(t(lang,'col.mapping'))}</th>
+</tr></thead><tbody>{''.join(body_rows) or f'<tr><td colspan="9">{escape(t(lang,"gaps.empty"))}</td></tr>'}</tbody></table>"""
+
+    summary = f"""
+<div class="gap-summary">
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.critical'))}</div><div class="gap-stat-value text-danger">{critical}</div></div>
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.high'))}</div><div class="gap-stat-value">{high}</div></div>
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.partial'))}</div><div class="gap-stat-value text-warning">{partial}</div></div>
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.unmapped'))}</div><div class="gap-stat-value">{unmapped_n}</div></div>
+  <div class="gap-stat"><div class="gap-stat-label">{escape(t(lang,'gaps.stat.overdue'))}</div><div class="gap-stat-value text-danger">{overdue_n}</div></div>
+</div>"""
+
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'gaps.title'))}</h1>
-<p class="meta">{escape(t(lang,'gaps.meta', n=len(rows)))}</p>
-</div>
+{page_header(eyebrow=t(lang,'gaps.eyebrow'), title=t(lang,'gaps.title'), subtitle=t(lang,'gaps.meta', n=len(rows)))}
+{summary}
 <form class="filters" method="get" action="/gaps">
   <input type="hidden" name="lang" value="{escape(lang)}">
   <input type="hidden" name="superuser" value="{escape(filter_values.get('superuser',''))}">
@@ -203,47 +335,86 @@ def gaps_page(rows, nav_qs: str, filter_values: dict, lang: str | None = None) -
     </select>
   </label>
   <label>{escape(t(lang,'gaps.search'))}<input name="search" value="{escape(filter_values.get('search',''))}"></label>
-  <button type="submit">{escape(t(lang,'gaps.filter'))}</button>
+  <button type="submit" class="btn primary">{escape(t(lang,'gaps.filter'))}</button>
 </form>
-{table_wrap(table)}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'gaps.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'gaps.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/gaps",
+        breadcrumb=t(lang, "gaps.title"),
+    )
 
 
 def control_page(detail, nav_qs: str, lang: str | None = None) -> str:
     lang = _lang(nav_qs, lang)
     nav_qs = with_lang(nav_qs, lang)
-    cov_rows = "".join(
-        "<tr>"
-        f"<td>{escape(c.framework_name)}<br><code>{escape(c.framework_version)}</code></td>"
-        f"<td><strong>{escape(c.requirement_code)}</strong><br>{escape(c.requirement_title)}</td>"
-        f"<td><span class='badge'>{escape(c.relation)}</span></td>"
-        f"<td>{escape(c.uncovered_delta or '—')}</td>"
-        f"<td>{escape(c.rationale or '—')}</td>"
-        "</tr>"
-        for c in detail.framework_coverage
-    )
-    table = f"""<table><thead><tr>
-<th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.requirement'))}</th>
-<th>{escape(t(lang,'col.mapping'))}</th><th>{escape(t(lang,'col.delta'))}</th>
-<th>{escape(t(lang,'col.rationale'))}</th>
-</tr></thead><tbody>{cov_rows or f'<tr><td colspan="5">{escape(t(lang,"control.no_coverage"))}</td></tr>'}</tbody></table>"""
+
+    cov_cards = []
+    for c in detail.framework_coverage:
+        delta = (
+            f"<div class='mapping-delta'><strong>Delta</strong><br>{escape(c.uncovered_delta)}</div>"
+            if c.uncovered_delta
+            else ""
+        )
+        cov_cards.append(
+            f"""<div class="mapping-card">
+  <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+    <div>
+      <div class="control-title">{escape(c.framework_name)}</div>
+      <div class="client-meta"><code>{escape(c.framework_version)}</code> · {escape(c.requirement_code)}</div>
+      <div class="client-meta">{escape(c.requirement_title)}</div>
+    </div>
+    {mapping_badge(lang, c.relation)}
+  </div>
+  {delta}
+</div>"""
+        )
+
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'control.title'))} <code>{escape(detail.control_ref)}</code></h1>
-<p class="meta">{escape(detail.name)} · {escape(t(lang,'col.status'))} {escape(detail.status)}
- · {escape(t(lang,'col.owner'))} {escape(detail.owner or '—')} · {escape(t(lang,'col.deadline'))} {escape(detail.due_date or '—')}
- · {escape(t(lang,'col.priority'))} {escape(detail.priority or '—')}</p>
-<p class="meta">{escape(t(lang,'col.evidence'))}: {detail.evidence_count} · {escape(t(lang,'col.tasks'))}: {detail.open_task_count}
- · {escape(t(lang,'col.notes'))}: {escape(detail.gap_notes or '—')}</p>
+{page_header(
+    eyebrow=t(lang,'control.eyebrow'),
+    title=detail.name or detail.control_ref,
+    subtitle=t(lang,'control.subtitle'),
+    actions_html=(
+        f"<a class='btn ghost' href='/gaps?{nav_qs}'>{escape(t(lang,'control.back_gaps'))}</a>"
+        f"<a class='btn' href='/evidence?{nav_qs}'>{escape(t(lang,'control.evidence_view'))}</a>"
+        f"<a class='btn' href='/tasks?{nav_qs}'>{escape(t(lang,'control.task_view'))}</a>"
+    ),
+)}
+<div class="panel" style="margin-bottom:14px">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang,'control.implementation'))}</div></div>
+  <div class="panel-body">
+    <div class="detail-grid">
+      <div class="field"><label>{escape(t(lang,'col.control'))}</label><div class="field-value"><code>{escape(detail.control_ref)}</code></div></div>
+      <div class="field"><label>{escape(t(lang,'col.status'))}</label><div class="field-value">{status_badge(lang, detail.status)}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.priority'))}</label><div class="field-value">{priority_badge(lang, detail.priority)}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.owner'))}</label><div class="field-value">{escape(detail.owner or '—')}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.deadline'))}</label><div class="field-value">{escape(format_display_date(detail.due_date, lang=lang))}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.evidence'))}</label><div class="field-value">{detail.evidence_count}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.tasks'))}</label><div class="field-value">{detail.open_task_count}</div></div>
+      <div class="field"><label>{escape(t(lang,'col.notes'))}</label><div class="field-value">{escape(detail.gap_notes or '—')}</div></div>
+    </div>
+  </div>
 </div>
-<p class="hint"><a href="/gaps?{nav_qs}">{escape(t(lang,'control.back_gaps'))}</a>
- · <a href="/evidence?{nav_qs}">{escape(t(lang,'control.evidence_view'))}</a>
- · <a href="/tasks?{nav_qs}">{escape(t(lang,'control.task_view'))}</a></p>
-<h2>{escape(t(lang,'control.coverage'))}</h2>
-{table_wrap(table)}
+<div class="panel">
+  <div class="panel-head"><div class="panel-title">{escape(t(lang,'control.coverage'))}</div></div>
+  <div class="panel-body">
+    {''.join(cov_cards) or f"<p class='meta'>{escape(t(lang,'control.no_coverage'))}</p>"}
+  </div>
+</div>
 """
-    return _shell(f"{t(lang,'control.title')} — {detail.control_ref}", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'control.title')} — {detail.control_ref}",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/control",
+        breadcrumb=detail.control_ref,
+    )
 
 
 def owners_page(by_owner: dict, nav_qs: str, lang: str | None = None) -> str:
@@ -256,7 +427,7 @@ def owners_page(by_owner: dict, nav_qs: str, lang: str | None = None) -> str:
             if i.control_ref:
                 ctrl = (
                     f"<a href='/control?{_with_control(nav_qs, i.control_ref)}'>"
-                    f"<code>{escape(i.control_ref)}</code></a>"
+                    f"<span class='control-code'>{escape(i.control_ref)}</span></a>"
                 )
             else:
                 ctrl = "—"
@@ -264,31 +435,46 @@ def owners_page(by_owner: dict, nav_qs: str, lang: str | None = None) -> str:
                 "<tr>"
                 f"<td>{ctrl}</td>"
                 f"<td>{escape(i.name)}</td>"
-                f"<td>{escape(i.status)}</td>"
-                f"<td>{escape(i.priority or '—')}</td>"
-                f"<td>{escape(i.due_date or '—')}</td>"
+                f"<td>{status_badge(lang, i.status)}</td>"
+                f"<td>{priority_badge(lang, i.priority)}</td>"
+                f"<td>{escape(format_display_date(i.due_date, lang=lang))}</td>"
                 f"<td>{i.open_task_count}</td>"
-                f"<td>{escape(', '.join(i.frameworks))}</td>"
+                f"<td>{framework_chips(i.frameworks)}</td>"
                 "</tr>"
             )
         rows = "".join(row_parts)
         table = (
-            f"<table><thead><tr><th>{escape(t(lang,'col.control'))}</th>"
+            f"<table class='data-table'><thead><tr><th>{escape(t(lang,'col.control'))}</th>"
             f"<th>{escape(t(lang,'col.name'))}</th><th>{escape(t(lang,'col.status'))}</th>"
             f"<th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.deadline'))}</th>"
             f"<th>{escape(t(lang,'col.tasks'))}</th><th>{escape(t(lang,'col.framework'))}</th>"
             f"</tr></thead><tbody>{rows}</tbody></table>"
         )
         sections.append(
-            f"<h2>{escape(owner)} <span class='badge'>{len(items)}</span></h2>"
-            f"{table_wrap(table)}"
+            f"<div class='panel' style='margin-bottom:14px'>"
+            f"<div class='panel-head'><div class='panel-title'>{escape(owner)}</div>"
+            f"<div class='panel-head-spacer'></div><span class='badge neutral'>{len(items)}</span></div>"
+            f"{table_wrap(table)}</div>"
         )
     body = (
-        f"<div class='page-head'><h1>{escape(t(lang,'owners.title'))}</h1>"
-        f"<p class='meta'>{escape(t(lang,'owners.meta'))}</p></div>"
-        f"{''.join(sections) or f'<p>{escape(t(lang,'owners.empty'))}</p>'}"
+        page_header(
+            eyebrow=t(lang, "owners.eyebrow"),
+            title=t(lang, "owners.title"),
+            subtitle=t(lang, "owners.meta"),
+        )
+        + (
+            "".join(sections)
+            or empty_state(title=t(lang, "owners.empty"), body=t(lang, "owners.meta"))
+        )
     )
-    return _shell(f"{t(lang,'owners.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'owners.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/owners",
+        breadcrumb=t(lang, "owners.title"),
+    )
 
 
 def deadlines_page(items, nav_qs: str, lang: str | None = None) -> str:
@@ -296,30 +482,34 @@ def deadlines_page(items, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
-        f"<td class='{'overdue' if i.overdue else ''}'>{escape(i.due_date)}</td>"
+        f"<td class='{'overdue' if i.overdue else ''}'>{escape(format_display_date(i.due_date, lang=lang))}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
-        f"<td>{escape(i.control_ref or '')}</td>"
+        f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
         f"<td>{escape(i.name)}</td>"
-        f"<td>{escape(i.status)}</td>"
-        f"<td>{escape(i.priority or '—')}</td>"
+        f"<td>{status_badge(lang, i.status)}</td>"
+        f"<td>{priority_badge(lang, i.priority)}</td>"
         f"<td>{escape(t(lang,'deadlines.overdue') if i.overdue else t(lang,'deadlines.upcoming'))}</td>"
         "</tr>"
         for i in items
     )
-    table = f"""<table><thead><tr>
+    table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.deadline'))}</th><th>{escape(t(lang,'col.owner'))}</th>
 <th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.priority'))}</th>
 <th>{escape(t(lang,'col.flag'))}</th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"deadlines.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'deadlines.title'))}</h1>
-<p class="meta">{escape(t(lang,'deadlines.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'deadlines.eyebrow'), title=t(lang,'deadlines.title'), subtitle=t(lang,'deadlines.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'deadlines.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'deadlines.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/deadlines",
+        breadcrumb=t(lang, "deadlines.title"),
+    )
 
 
 def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
@@ -327,30 +517,34 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
-        f"<td>{escape(i.control_ref or '')}</td>"
+        f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
         f"<td>{escape(i.name)}</td>"
-        f"<td>{escape(i.status)}</td>"
+        f"<td>{status_badge(lang, i.status)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
         f"<td>{i.evidence_count}</td>"
-        f"<td>{escape(t(lang,'evidence.missing') if i.missing else t(lang,'evidence.ok'))}</td>"
-        f"<td>{escape(', '.join(i.frameworks))}</td>"
+        f"<td>{'<span class="badge danger">' + escape(t(lang,'evidence.missing')) + '</span>' if i.missing else '<span class="badge success">' + escape(t(lang,'evidence.ok')) + '</span>'}</td>"
+        f"<td>{framework_chips(i.frameworks)}</td>"
         "</tr>"
         for i in items
     )
-    table = f"""<table><thead><tr>
+    table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
 <th>{escape(t(lang,'col.evidence'))}</th><th>{escape(t(lang,'col.flag'))}</th>
 <th>{escape(t(lang,'col.framework'))}</th>
 </tr></thead><tbody>{rows}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'evidence.title'))}</h1>
-<p class="meta">{escape(t(lang,'evidence.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'evidence.eyebrow'), title=t(lang,'evidence.title'), subtitle=t(lang,'evidence.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'evidence.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'evidence.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/evidence",
+        breadcrumb=t(lang, "evidence.title"),
+    )
 
 
 def tasks_page(items, nav_qs: str, lang: str | None = None) -> str:
@@ -358,33 +552,36 @@ def tasks_page(items, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
-        f"<td>{escape(i.control_ref or '')}</td>"
+        f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
         f"<td>{escape(i.name)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
-        f"<td class='{'overdue' if i.overdue else ''}'>{escape(i.due_date or '—')}</td>"
-        f"<td>{escape(i.priority or '—')}</td>"
+        f"<td class='{'overdue' if i.overdue else ''}'>{escape(format_display_date(i.due_date, lang=lang))}</td>"
+        f"<td>{priority_badge(lang, i.priority)}</td>"
         f"<td>{i.open_task_count}</td>"
         f"<td>{escape(t(lang,'deadlines.overdue') if i.overdue else t(lang,'tasks.open'))}</td>"
         "</tr>"
         for i in items
     )
-    table = f"""<table><thead><tr>
+    table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.owner'))}</th><th>{escape(t(lang,'col.deadline'))}</th>
 <th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.open'))}</th>
 <th>{escape(t(lang,'col.flag'))}</th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"tasks.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'tasks.title'))}</h1>
-<p class="meta">{escape(t(lang,'tasks.meta'))}</p>
-</div>
-{table_wrap(table)}
+{page_header(eyebrow=t(lang,'tasks.eyebrow'), title=t(lang,'tasks.title'), subtitle=t(lang,'tasks.meta'))}
+<div class="panel">{table_wrap(table)}</div>
 """
-    return _shell(f"{t(lang,'tasks.title')} — WayFold Compliance", nav_qs, body, lang=lang)
+    return _shell(
+        f"{t(lang,'tasks.title')} — WayFold Compliance",
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/tasks",
+        breadcrumb=t(lang, "tasks.title"),
+    )
 
 
-# silence unused import warning helpers used by callers
 __all__ = [
     "portfolio_page",
     "client_page",

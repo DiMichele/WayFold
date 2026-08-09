@@ -163,19 +163,21 @@ def _empty_workspace_html(nav_qs: str) -> bytes:
     from urllib.parse import parse_qsl as _pq
 
     from engine.i18n import normalize_lang
+    from engine.ui_components import empty_state, page_header
 
     lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
-    body = f"""
-<div class="page-head">
-<h1>{escape(t(lang, 'empty.title'))}</h1>
-<p class="meta">{escape(t(lang, 'empty.meta'))}</p>
-</div>
-"""
+    body = page_header(
+        eyebrow="WayFold Compliance",
+        title=t(lang, "empty.title"),
+        subtitle=t(lang, "empty.meta"),
+    ) + empty_state(title=t(lang, "empty.title"), body=t(lang, "empty.meta"))
     return render_shell(
         f"{t(lang, 'empty.title')} — WayFold Compliance",
         with_lang(nav_qs, lang),
         body,
         lang=lang,
+        active_path="/portfolio",
+        breadcrumb=t(lang, "empty.title"),
     ).encode("utf-8")
 
 
@@ -183,29 +185,58 @@ def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
     from html import escape
     from urllib.parse import parse_qsl as _pq
 
+    from engine.dates import format_display_date
     from engine.i18n import normalize_lang
+    from engine.ui_components import (
+        coverage_pill,
+        page_header,
+        priority_badge,
+        progress_bar,
+        status_badge,
+    )
+    from engine.ui_labels import format_percent
 
     lang = normalize_lang(dict(_pq(nav_qs)).get("lang", "it"))
     rows = []
     for c in checklist.controls:
-        cov = "<br>".join(
-            f"{x.framework_name} {x.requirement_code} "
-            f"<strong>{x.relation.value}</strong>"
-            + (f" — delta: {x.uncovered_delta}" if x.uncovered_delta else "")
+        cov = "".join(
+            coverage_pill(
+                x.framework_name.split()[0] if x.framework_name else "?",
+                x.relation.value if hasattr(x.relation, "value") else x.relation,
+                lang,
+            )
+            + (
+                f"<div class='client-meta'>{escape(x.requirement_code)}"
+                + (f" · delta: {escape(x.uncovered_delta)}" if x.uncovered_delta else "")
+                + "</div>"
+                if x.requirement_code or x.uncovered_delta
+                else ""
+            )
             for x in c.framework_coverage
+        )
+        href = ""
+        if c.canonical_control_ref:
+            from urllib.parse import parse_qsl, urlencode
+
+            data = dict(parse_qsl(nav_qs, keep_blank_values=False))
+            data["control_ref"] = c.canonical_control_ref
+            href = f"/control?{urlencode(data)}"
+        code_html = (
+            f"<a href='{href}'><span class='control-code'>{escape(c.canonical_control_ref or '')}</span></a>"
+            if href
+            else f"<span class='control-code'>{escape(c.canonical_control_ref or '')}</span>"
         )
         rows.append(
             "<tr>"
-            f"<td>{escape(c.canonical_control_ref or '')}</td>"
-            f"<td>{escape(c.name)}</td>"
-            f"<td>{escape(c.status.value)}</td>"
-            f"<td>{cov}</td>"
-            f"<td>{escape(c.owner or '')}</td>"
-            f"<td>{escape(c.due_date or '')}</td>"
-            f"<td>{escape(c.priority or '')}</td>"
+            f"<td>{code_html}<div class='control-title'>{escape(c.name)}</div>"
+            f"<div class='control-desc'>{escape(c.gap_notes or '')}</div></td>"
+            f"<td>{status_badge(lang, c.status.value if hasattr(c.status,'value') else c.status)}</td>"
+            f"<td><div class='coverage-list'>{cov or '—'}</div></td>"
+            f"<td>{escape(c.owner or '—')}</td>"
+            f"<td>{escape(format_display_date(c.due_date, lang=lang))}</td>"
+            f"<td>{priority_badge(lang, c.priority)}</td>"
             f"<td>{c.evidence_count}</td>"
             f"<td>{c.open_task_count}</td>"
-            f"<td>{escape(c.gap_notes or '')}</td>"
             "</tr>"
         )
     unmapped = "".join(
@@ -214,40 +245,40 @@ def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
     )
     ready_rows = "".join(
         "<tr>"
-        f"<td>{escape(r.framework_name)}</td><td>{escape(r.framework_version)}</td>"
+        f"<td>{escape(r.framework_name)}</td><td><code>{escape(r.framework_version)}</code></td>"
         f"<td>{r.fully_covered}</td><td>{r.partially_covered}</td>"
         f"<td>{r.not_covered}</td><td>{r.unmapped}</td>"
         f"<td>{r.not_applicable}</td>"
-        f"<td>{(r.implementation_readiness or 0):.0%}</td>"
+        f"<td><div class='readiness-cell'><strong>{escape(format_percent(r.implementation_readiness, lang=lang))}</strong>"
+        f"{progress_bar(r.implementation_readiness)}</div></td>"
         "</tr>"
         for r in readiness
     )
     impact_items = "".join(f"<li>{escape(i.readable_summary)}</li>" for i in impact[:10])
-    main_table = f"""<table>
+    main_table = f"""<table class="data-table">
 <thead><tr>
-<th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
+<th>{escape(t(lang,'col.control'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'control.coverage'))}</th>
 <th>{escape(t(lang,'col.owner'))}</th><th>{escape(t(lang,'col.deadline'))}</th>
 <th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.evidence'))}</th>
-<th>{escape(t(lang,'col.tasks'))}</th><th>{escape(t(lang,'col.gap'))}</th>
+<th>{escape(t(lang,'col.tasks'))}</th>
 </tr></thead>
 <tbody>{''.join(rows)}</tbody>
 </table>"""
-    ready_table = f"""<table><thead><tr>
+    ready_table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.version'))}</th>
-<th>FULLY</th><th>PARTIAL</th><th>NOT</th>
-<th>UNMAPPED</th><th>N/A</th><th>{escape(t(lang,'checklist.impl_ready'))}</th>
+<th>{escape(t(lang,'checklist.fully'))}</th><th>{escape(t(lang,'checklist.partial'))}</th>
+<th>{escape(t(lang,'checklist.not'))}</th>
+<th>{escape(t(lang,'col.unmapped'))}</th><th>{escape(t(lang,'checklist.na'))}</th>
+<th>{escape(t(lang,'checklist.impl_ready'))}</th>
 </tr></thead><tbody>{ready_rows}</tbody></table>"""
     body = f"""
-<div class="page-head">
-<h1>{escape(t(lang,'checklist.title'))}</h1>
-<p class="meta">{escape(checklist.program_name)} · {checklist.raw_requirement_count} {escape(t(lang,'client.raw'))}
- · {checklist.unified_control_count} {escape(t(lang,'client.unified'))}
- · {len(checklist.unmapped)} {escape(t(lang,'client.unmapped'))}</p>
-</div>
-<section>
-{table_wrap(main_table)}
-</section>
+{page_header(
+    eyebrow=t(lang,'checklist.eyebrow'),
+    title=t(lang,'checklist.title'),
+    subtitle=f"{checklist.program_name} · {t(lang,'checklist.meta')}",
+)}
+<div class="panel" style="margin-bottom:14px">{table_wrap(main_table)}</div>
 <section>
 <h2>{escape(t(lang,'checklist.unmapped'))}</h2>
 <ul class="compact">{unmapped or f'<li>{escape(t(lang,"client.none"))}</li>'}</ul>
@@ -266,6 +297,8 @@ def _html_checklist(checklist, readiness, impact, nav_qs: str = "") -> str:
         with_lang(nav_qs, lang),
         body,
         lang=lang,
+        active_path="/checklist",
+        breadcrumb=t(lang, "checklist.title"),
     )
 
 

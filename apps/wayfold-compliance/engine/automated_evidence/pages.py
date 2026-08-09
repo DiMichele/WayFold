@@ -8,23 +8,20 @@ from engine.ui_shell import render_shell, table_wrap
 
 from .domain import AutomatedEvidenceRecord, ConnectorConfig
 
-_NAV_KEYS = (
-    ("nav.portfolio", "/portfolio"),
-    ("nav.evidence", "/evidence"),
-    ("nav.auto_evidence", "/auto-evidence"),
-    ("nav.connectors", "/connectors"),
-)
-
-
 def _resolve_lang(nav_qs: str, lang: str | None) -> str:
     if lang:
         return normalize_lang(lang)
     return normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
 
 
-def _shell(title: str, nav_qs: str, body: str, *, lang: str) -> str:
+def _shell(title: str, nav_qs: str, body: str, *, lang: str, active_path: str) -> str:
     return render_shell(
-        title, with_lang(nav_qs, lang), body, nav_keys=_NAV_KEYS, lang=lang
+        title,
+        with_lang(nav_qs, lang),
+        body,
+        lang=lang,
+        active_path=active_path,
+        breadcrumb=title.split(" — ")[0],
     )
 
 
@@ -58,7 +55,13 @@ def connectors_page(items: list[ConnectorConfig], nav_qs: str, lang: str | None 
 </div>
 {table_wrap(table)}
 """
-    return _shell(t(lang, "auto.conn.title"), nav_qs, body, lang=lang)
+    return _shell(
+        t(lang, "auto.conn.title"),
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/connectors",
+    )
 
 
 def evidence_page(items: list[AutomatedEvidenceRecord], nav_qs: str, lang: str | None = None) -> str:
@@ -97,4 +100,10 @@ def evidence_page(items: list[AutomatedEvidenceRecord], nav_qs: str, lang: str |
 </div>
 {table_wrap(table)}
 """
-    return _shell(t(lang, "auto.ev.title"), nav_qs, body, lang=lang)
+    return _shell(
+        t(lang, "auto.ev.title"),
+        nav_qs,
+        body,
+        lang=lang,
+        active_path="/auto-evidence",
+    )
