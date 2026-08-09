@@ -157,10 +157,10 @@ def login_page_html(
         if lang != "en"
         else "WayFold Compliance — consultant access"
     )
-  user_label = "Username" if lang == "en" else "Utente"
-  pass_label = "Password"
-  submit = "Accedi" if lang != "en" else "Sign in"
-  return f"""<!doctype html>
+    user_label = "Username" if lang == "en" else "Utente"
+    pass_label = "Password"
+    submit = "Accedi" if lang != "en" else "Sign in"
+    return f"""<!doctype html>
 <html lang="{escape(lang)}"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
