@@ -34,11 +34,27 @@ class FrameworkRequirement:
     source_url: str = ""
     order: int = 0
     description: str = ""
-    req_type: str = "Requisito"  # Requisito | Articolo | Misura | Controllo normativo
+    req_type: str = "Requisito"  # CONTROL | CLAUSE | REQUIREMENT | Requisito | …
     source_reference: str = ""
     conditions: str = ""
     frequency: str = ""
     is_leaf: bool = True
+    source_status: str = ""
+    source_row: int | None = None
+    provenance: str = ""
+
+
+@dataclass
+class AssessmentQuestion:
+    id: str
+    requirement_id: str
+    question: str
+    source_code: str = ""
+    answer_options: str = ""
+    service_model: dict[str, Any] = field(default_factory=dict)
+    qualification_levels: dict[str, Any] = field(default_factory=dict)
+    implementation_hint: str = ""
+    source_row: int | None = None
 
 
 @dataclass
@@ -50,13 +66,17 @@ class FrameworkVersionRecord:
     version: str
     status: str
     requirements: list[FrameworkRequirement] = field(default_factory=list)
+    assessment_questions: list[AssessmentQuestion] = field(default_factory=list)
     effective_date: str | None = None
     publication_date: str | None = None
     notes: str = ""
     source_url: str = ""
+    source_status: str = "SOURCE_UNVERIFIED"
+    metadata_status: str = "INCOMPLETE"
     cloned_from: str | None = None
     created_at: str = ""
     published_at: str | None = None
+    import_counts: dict[str, Any] = field(default_factory=dict)
 
 
 class ImmutabilityError(PermissionError):
@@ -93,6 +113,11 @@ def _req_from(raw: dict[str, Any]) -> FrameworkRequirement:
     parent = raw.get("parent_id")
     if parent is not None:
         parent = str(parent) or None
+    source_row = raw.get("source_row")
+    try:
+        source_row_i = int(source_row) if source_row is not None and source_row != "" else None
+    except (TypeError, ValueError):
+        source_row_i = None
     return FrameworkRequirement(
         id=str(raw.get("id") or ""),
         code=str(raw.get("code") or ""),
@@ -107,6 +132,32 @@ def _req_from(raw: dict[str, Any]) -> FrameworkRequirement:
         conditions=str(raw.get("conditions") or ""),
         frequency=str(raw.get("frequency") or ""),
         is_leaf=bool(raw.get("is_leaf", True)),
+        source_status=str(raw.get("source_status") or ""),
+        source_row=source_row_i,
+        provenance=str(raw.get("provenance") or ""),
+    )
+
+
+def _aq_from(raw: dict[str, Any]) -> AssessmentQuestion:
+    source_row = raw.get("source_row")
+    try:
+        source_row_i = int(source_row) if source_row is not None and source_row != "" else None
+    except (TypeError, ValueError):
+        source_row_i = None
+    return AssessmentQuestion(
+        id=str(raw.get("id") or ""),
+        requirement_id=str(raw.get("requirement_id") or raw.get("requirementId") or ""),
+        question=str(raw.get("question") or ""),
+        source_code=str(raw.get("source_code") or raw.get("sourceCode") or ""),
+        answer_options=str(raw.get("answer_options") or raw.get("answerOptions") or ""),
+        service_model=dict(raw.get("service_model") or raw.get("serviceModel") or {}),
+        qualification_levels=dict(
+            raw.get("qualification_levels") or raw.get("qualificationLevels") or {}
+        ),
+        implementation_hint=str(
+            raw.get("implementation_hint") or raw.get("implementationHint") or ""
+        ),
+        source_row=source_row_i,
     )
 
 
@@ -119,13 +170,17 @@ def _ver_from(raw: dict[str, Any]) -> FrameworkVersionRecord:
         version=str(raw.get("version") or ""),
         status=str(raw.get("status") or VersionStatus.DRAFT.value),
         requirements=[_req_from(r) for r in raw.get("requirements") or []],
+        assessment_questions=[_aq_from(q) for q in raw.get("assessment_questions") or []],
         effective_date=raw.get("effective_date"),
         publication_date=raw.get("publication_date"),
         notes=str(raw.get("notes") or ""),
         source_url=str(raw.get("source_url") or ""),
+        source_status=str(raw.get("source_status") or "SOURCE_UNVERIFIED"),
+        metadata_status=str(raw.get("metadata_status") or "INCOMPLETE"),
         cloned_from=raw.get("cloned_from"),
         created_at=str(raw.get("created_at") or ""),
         published_at=raw.get("published_at"),
+        import_counts=dict(raw.get("import_counts") or {}),
     )
 
 
@@ -407,13 +462,17 @@ def clone_draft(version_id: str, *, new_version: str) -> FrameworkVersionRecord:
         version=new_version,
         status=VersionStatus.DRAFT.value,
         requirements=copy.deepcopy(src.requirements),
+        assessment_questions=copy.deepcopy(src.assessment_questions),
         effective_date=None,
         publication_date=None,
         notes=src.notes,
         source_url=src.source_url,
+        source_status=src.source_status,
+        metadata_status=src.metadata_status or "INCOMPLETE",
         cloned_from=src.id,
         created_at=_now(),
         published_at=None,
+        import_counts=dict(src.import_counts or {}),
     )
     return upsert_version(draft)
 

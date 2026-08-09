@@ -1,5 +1,23 @@
 # DECISIONS — WayFold Compliance
 
+## [2026-08-09] Production KB from MultiCompliance legacy matrix
+
+Scelto:
+- Fonte iniziale KB = Matrice_MultiCompliance.xlsx (legacy/internal), non seed demo.
+- ISO Annex A = solo categorie Organizzativo/Personale/Fisico/Tecnologico → 93 CONTROL; clausole incomplete = CLAUSE + SOURCE_PARTIAL.
+- Reg.Cloud: normalizzare 1 requirement per codice (91) + AssessmentQuestion per riga (808).
+- CSA senza dati: skip, non inventare.
+- Import sempre DRAFT + SOURCE_UNVERIFIED / METADATA_INCOMPLETE fino a publish manuale.
+- Mapping legacy = NEEDS_REVIEW candidates; mai readiness.
+- Workbook reale fuori dal tree pubblico; fixture sanitizzata per CI.
+- admin/admin resta finché l'utente non ruota da Profilo.
+
+Motivazione: milestone operativa reale senza falsificare readiness o corpus.
+
+Rivedere se: catalogue ufficiale fornito dall'utente sostituisce la matrice.
+
+---
+
 ## [2026-08-09] Architecture realignment — stop dual GRC core drift
 
 Scelto:

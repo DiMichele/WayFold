@@ -4,6 +4,13 @@ vendor/
 **/*.sqlite3-*
 engine/data/
 
+# Private legacy import sources (may contain client-sensitive overlays)
+.local/
+import/source/
+docs/Matrice_MultiCompliance.xlsx
+**/DEMO-DATA-CLEANUP-PLAN.json
+**/backups/
+
 # Secrets / env
 .env
 .env.*

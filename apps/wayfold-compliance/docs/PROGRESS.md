@@ -13,6 +13,26 @@
 
 Status: **PARTIAL** — core fixes + JSON/XLSX pipeline landed; full E2E browser import/export hardening ongoing.
 
+## Production cleanup + real KB (2026-08-09)
+
+Status: **IN PROGRESS → deploy**
+
+- ISO Annex A count fixed to **93** (CONTROL); clauses SOURCE_PARTIAL separate
+- Reg.Cloud normalized: 808 rows → 91 requirements + 808 assessment questions
+- NIS2 50 / PSNC 58 normalized; CSA skipped
+- Demo cleanup planner/applier (`engine.demo_cleanup`); seed remains off in prod
+- Import wizard multi-package; requirements pagination 25/50/100
+- Workbook moved to private `.local/import-source/`; sanitized CI fixture under `engine/fixtures/import/`
+- Docs: PRODUCTION-CLEANUP-REPORT, KB-INITIAL-IMPORT-REPORT, KB-SOURCE-PROVENANCE, UI-CONSOLIDATION, OPERATING-GUIDE
+
+Ready for real client data: **pending live verify after deploy**
+
+---
+
+## Foundation + Legacy import architecture (2026-08-09)
+
+Status: **PARTIAL** — core fixes + JSON/XLSX pipeline landed; full E2E browser import/export hardening ongoing.
+
 - Profilo utente `/profile` + cambio password (directory utenti, non `.auth.env`)
 - `live-verify.sh` read-only; `enable-temporary-review-account.sh` esplicito
 - `WAYFOLD_SEED_REVIEW_DEMO=0` default; wipe DB richiede `WAYFOLD_ALLOW_DESTRUCTIVE_RESET=I_UNDERSTAND_THIS_DELETES_DATA`

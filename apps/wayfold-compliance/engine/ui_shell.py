@@ -116,6 +116,21 @@ code,.control-code,td code{white-space:nowrap}
   border:0;background:transparent;padding:10px 12px;font-weight:650;color:var(--wf-muted);border-bottom:2px solid transparent
 }
 .tabs a.active,.tabs button.active{color:var(--wf-primary);border-bottom-color:var(--wf-primary)}
+.summary-row{display:flex;flex-wrap:wrap;gap:14px 22px;padding:10px 0 16px;font-size:13px}
+.summary-row label{display:block;font-size:10px;font-weight:700;color:var(--wf-muted);text-transform:uppercase;letter-spacing:.06em}
+.filters.compact{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 12px}
+.filters.compact input,.filters.compact select{border:1px solid var(--wf-border);border-radius:8px;padding:7px 9px;background:#fff;font-size:12.5px}
+.row-menu{position:relative;display:inline-block}
+.row-menu>summary{list-style:none;cursor:pointer;padding:4px 8px;border-radius:8px;font-weight:700}
+.row-menu>summary::-webkit-details-marker{display:none}
+.row-menu[open]>summary,.row-menu>summary:hover{background:var(--wf-primary-soft);color:var(--wf-primary)}
+.row-menu a{display:block;padding:6px 10px;font-size:12.5px;font-weight:600}
+.stepper.compact{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;font-size:12.5px;color:var(--wf-muted)}
+.stepper .step.active{color:var(--wf-primary);font-weight:700}
+.stepper .step.done{color:var(--wf-ink)}
+.step-num{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;border:1px solid currentColor;font-size:11px;margin-right:4px}
+.badge{display:inline-block;padding:2px 7px;border-radius:999px;background:var(--wf-primary-soft);color:var(--wf-primary);font-size:11px;font-weight:650;margin:0 2px}
+.pager{margin:8px 0 12px}
 @media(max-width:900px){.form-grid{grid-template-columns:1fr}}
 .nav-label{
   padding:4px 10px 7px;color:#667287;font-size:10px;font-weight:700;
@@ -459,10 +474,13 @@ def render_shell(
       <a class="lang-switch" href="/profile{q}" style="text-decoration:none" aria-label="Profilo">
         {icon("users")}<span>Profilo</span>
       </a>
+      <a class="lang-switch" href="/profile?tab=password{q}" style="text-decoration:none" aria-label="Cambia password">
+        {icon("settings")}<span>Cambia password</span>
+      </a>
       <form method="post" action="/logout{q}" style="margin:0">
         <input type="hidden" name="csrf_token" value="" id="wf-logout-csrf">
         <button type="submit" class="lang-switch" style="border:0;background:transparent;width:100%;cursor:pointer;text-align:left" aria-label="{escape(t(lang, 'nav.logout'))}">
-          {icon("x")}<span>{escape(t(lang, 'nav.logout'))}</span>
+          {icon("x")}<span>Esci</span>
         </button>
       </form>
       <script>document.getElementById('wf-logout-csrf').value=

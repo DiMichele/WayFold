@@ -878,16 +878,22 @@ class Handler(BaseHTTPRequestHandler):
                 return
             from engine import import_pages
 
-            step = 2 if path.endswith("/preview") else 1
             preview = None
-            if step == 2:
+            step = 1
+            if path.endswith("/preview"):
                 sid = qs.get("staging", [""])[0]
+                step = int(qs.get("step", ["2"])[0] or 2)
                 if sid:
                     from engine.runtime_paths import data_root
 
                     meta_path = data_root() / "import_staging" / f"{sid}.meta.json"
                     if meta_path.is_file():
-                        preview = json.loads(meta_path.read_text(encoding="utf-8")).get("meta")
+                        blob = json.loads(meta_path.read_text(encoding="utf-8"))
+                        preview = dict(blob.get("meta") or {})
+                        if qs.get("publisher", [""])[0]:
+                            preview["publisher"] = qs.get("publisher", [""])[0]
+                        if qs.get("jurisdiction", [""])[0]:
+                            preview["jurisdiction"] = qs.get("jurisdiction", [""])[0]
             html = import_pages.import_wizard_page(_nav_qs(qs), step=step, preview=preview)
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
@@ -1121,6 +1127,14 @@ class Handler(BaseHTTPRequestHandler):
                     meta=framework_registry.get_framework(fw_id),
                     mappings=maps,
                     coverage=coverage,
+                    page=int(qs.get("page", ["1"])[0] or 1),
+                    page_size=int(qs.get("page_size", ["50"])[0] or 50),
+                    q=qs.get("q", [""])[0],
+                    type_filter=qs.get("type", [""])[0],
+                    section_filter=qs.get("section", [""])[0],
+                    mapping_filter=qs.get("mapping", [""])[0],
+                    leaf_only=qs.get("leaf_only", [""])[0] in {"1", "true", "yes"},
+                    unmapped_only=qs.get("unmapped_only", [""])[0] in {"1", "true", "yes"},
                 ).encode("utf-8"),
                 "text/html; charset=utf-8",
             )
@@ -2195,15 +2209,18 @@ class Handler(BaseHTTPRequestHandler):
                     "publisher": (form.get("publisher") or [""])[0],
                     "jurisdiction": (form.get("jurisdiction") or [""])[0],
                 }
-                rec = import_pages.apply_staged(sid, data_root(), metadata=metadata, actor=actor)
-                audit_mod.record_event(
-                    actor_user_id=actor,
-                    action="FRAMEWORK_IMPORTED_DRAFT",
-                    entity_type="FrameworkVersion",
-                    entity_id=rec.id,
-                    new_value={"framework_id": rec.framework_id, "version": rec.version},
+                recs = import_pages.apply_staged(sid, data_root(), metadata=metadata, actor=actor)
+                for rec in recs:
+                    audit_mod.record_event(
+                        actor_user_id=actor,
+                        action="FRAMEWORK_IMPORTED_DRAFT",
+                        entity_type="FrameworkVersion",
+                        entity_id=rec.id,
+                        new_value={"framework_id": rec.framework_id, "version": rec.version},
+                    )
+                return self._redirect(
+                    f"/kb/import/preview?staging={sid}&step=5&{_nav_qs(qs)}"
                 )
-                return self._redirect(f"/frameworks?{_nav_qs(qs)}")
             return self._deny(404, "not found")
 
         # Binary evidence upload MUST read raw bytes before any text decode
