@@ -9,9 +9,24 @@
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
 **Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
 
+## Product Completion & Production Hardening
+
+Authentication: PASS — workspace anonimo chiuso; login/logout; cookie HttpOnly/SameSite/Secure; idle 45m / absolute 8h  
+RBAC: PASS — SUPER_ADMIN / CONSULTANT / CLIENT_ADMIN / CLIENT_MEMBER / VIEWER + assignments  
+Evidence: PASS — storage privato + download autorizzato `/api/evidence/{id}/download`  
+Knowledge Base: PASS — `/frameworks` + detail + versioni  
+Mappings: PASS — `/mappings` con filtri FULL/PARTIAL/SUPPORTING + unmapped  
+Audit: PASS — JSONL append-only + `/audit`  
+Security: PASS headers/CSP/SSRF; MFA PARTIAL (TOTP hook)  
+Backup: PASS documentato + restore isolato  
+Tests: `test_production_hardening` + suite esistenti  
+Deployment: `deploy/deploy-compliance.ps1` → https://compliance.wayfold.xyz/  
+
+Ready for real client data: **NO** (temporary review credential + MFA enroll incompleto)
+
 ## Product Review Dataset
 
-Status: **READY FOR EXTERNAL REVIEW** (NOT ready for real client data)
+Status: **READY FOR FINAL EXTERNAL REVIEW** (NOT ready for real client data)
 
 Seed command:
 

@@ -81,8 +81,8 @@ class UnifiedComplianceTests(unittest.TestCase):
         impact = rank_control_impact(self.program, self.checklist)
         self.assertTrue(impact)
         top = impact[0]
-        self.assertIn("requirements", top.readable_summary)
-        self.assertIn("frameworks", top.readable_summary)
+        self.assertIn("requisiti", top.readable_summary)
+        self.assertIn("framework", top.readable_summary)
         # Open IR control should rank high
         refs = [r.canonical_control_ref for r in impact]
         self.assertIn("CTRL-IR-001", refs)

@@ -289,3 +289,57 @@ Non ancora in questo gate (P0 residuo):
 Rivedere quando:
 - serve IdP/SSO reale o multi-utente consulente;
 - si apre staging `compliance-dev` con seed Michele.
+
+---
+
+## [2026-08-09] Authentication / authorization boundary (engine)
+
+Scelto:
+- Sessione cookie firmata con `role` + `tenant_ids` + idle/absolute timeout.
+- RBAC prodotto su ruoli `SUPER_ADMIN|CONSULTANT|CLIENT_ADMIN|CLIENT_MEMBER|VIEWER`.
+- `SUPER_ADMIN` bypass tenant; `CONSULTANT` limitato da `consultant_assignments.json`.
+- Credenziale env temporanea = SUPER_ADMIN esplicita (`TEMPORARY REVIEW CREDENTIAL`), non hardcoded.
+
+Motivazione: chiudere il modello “login = superuser globale” prima del review esterno finale.
+
+---
+
+## [2026-08-09] Evidence download strategy
+
+Scelto:
+- Filesystem privato sotto `WAYFOLD_DATA_DIR/evidence/{tenant}/{id}/`.
+- Stream solo tramite middleware authz (`/api/evidence/{id}/download`).
+- Nessun URL statico pubblico; signed URL object-storage deferibile.
+
+---
+
+## [2026-08-09] Audit event model
+
+Scelto:
+- Append-only JSONL `audit/events.jsonl` con scrubbing secret.
+- UI `/audit` filtrabile; eventi minimi prodotto (login, control, evidence, mapping, report, AI).
+
+---
+
+## [2026-08-09] Report snapshot architecture
+
+Scelto:
+- Snapshot JSON persistiti in `report_snapshots/` al generate-time.
+- Indipendenti da mutazioni successive del ProgramSnapshot.
+
+---
+
+## [2026-08-09] MFA mechanism
+
+Scelto:
+- TOTP puro Python (`engine/mfa.py`) senza dipendenze esterne.
+- Enforcement enroll UI completo = PARTIAL / blocker soft prima di REAL CLIENT DATA.
+- Temporary review credential può bypassare MFA enrolled.
+
+---
+
+## [2026-08-09] CSP strategy
+
+Scelto:
+- CSP compatibile app HTML attuale: `default-src 'self'`, fonts Google, `style-src`/`script-src` con `'unsafe-inline'` (no `'unsafe-eval'`).
+- `frame-ancestors 'self'` + headers nginx HSTS/XCTO/Referrer/Permissions-Policy.
