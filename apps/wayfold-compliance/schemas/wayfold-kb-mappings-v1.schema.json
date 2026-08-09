@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wayfold.xyz/schemas/wayfold-kb-mappings-v1.schema.json",
+  "title": "WayFold MappingSet Package v1",
+  "type": "object",
+  "required": ["schemaVersion", "mappingSet", "mappings"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "mappingSet": {
+      "type": "object",
+      "required": ["id", "revision", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "frameworkVersionId": { "type": "string" },
+        "revision": { "type": "integer", "minimum": 1 },
+        "status": { "enum": ["DRAFT", "PUBLISHED"] }
+      }
+    },
+    "mappings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "requirementId", "canonicalControlId", "relation", "reviewStatus"],
+        "properties": {
+          "id": { "type": "string" },
+          "requirementId": { "type": "string" },
+          "canonicalControlId": { "type": "string" },
+          "relation": { "enum": ["FULL", "PARTIAL", "SUPPORTING"] },
+          "rationale": { "type": "string" },
+          "uncoveredDelta": { "type": "string" },
+          "confidence": { "type": "number" },
+          "reviewStatus": { "type": "string" },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "candidates": { "type": "array" }
+  }
+}

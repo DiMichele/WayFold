@@ -1,0 +1,3751 @@
+{
+  "schemaVersion": "1.0",
+  "mappingSet": {
+    "id": "ms-adf44bc34a86ec1a",
+    "revision": 1,
+    "status": "DRAFT"
+  },
+  "candidates": [
+    {
+      "id": "lmc-d9402ec748e063cc",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 3,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d02a3dd698146952",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.AE-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.AE-03"
+      },
+      "sourceRow": 10,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-c273c458570d01ed",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-06"
+      },
+      "sourceRow": 22,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6c89362fb4d67b6e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-02"
+      },
+      "sourceRow": 22,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0908dd892bcda892",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-05"
+      },
+      "sourceRow": 23,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-322910b10ade7f85",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 27,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ad1b0015dec09da4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 28,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f5f90ac1079a529c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 29,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5b51a6835af4908e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 30,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8cde2e48eb1718e4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.RA-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 40,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-12052c355410643e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-02"
+      },
+      "sourceRow": 42,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7b4c408e0869fe6b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 01"
+      },
+      "sourceRow": 42,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-cb10358c2437c050",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 03"
+      },
+      "sourceRow": 59,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-2813bca199987937",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 78,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-1f4f94fac500f961",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-04"
+      },
+      "sourceRow": 80,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6fdb3928d47f72b0",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.GV-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.GV-01"
+      },
+      "sourceRow": 81,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d39b83503cdff002",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.AN-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.AN-05"
+      },
+      "sourceRow": 86,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-28b4e84794c9cc26",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-04"
+      },
+      "sourceRow": 87,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e6574037aecf5755",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 88,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-2e3f20a4779b184b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 89,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a6b7330800c37ec2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-01"
+      },
+      "sourceRow": 90,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-59e1e1beb4da5620",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 91,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a8860b2aa89d4f78",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.DP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.DP-01"
+      },
+      "sourceRow": 92,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-37c5cc6ce695dfad",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.CO-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.CO-01"
+      },
+      "sourceRow": 93,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-06e06a751e9b96e9",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-12"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-12"
+      },
+      "sourceRow": 94,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-30f310981ddaefca",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 95,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-31bedf76c4e19d5d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 95,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-1048b06fa786f8c4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-09"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-09"
+      },
+      "sourceRow": 98,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-b85299d877f41a60",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-04"
+      },
+      "sourceRow": 99,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-318b0232e0b69f70",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 100,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-154a875af0d3b441",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-01"
+      },
+      "sourceRow": 102,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-367bd010bb3484aa",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-01"
+      },
+      "sourceRow": 102,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9e8837d20a5652bf",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-07"
+      },
+      "sourceRow": 103,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5161539a23ea31ef",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-01 (1)"
+      },
+      "sourceRow": 104,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-253f4966a79fca33",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-03"
+      },
+      "sourceRow": 104,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-065a8367dc5b46d2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-01"
+      },
+      "sourceRow": 105,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ab6bb225a598e0d6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-09"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-09"
+      },
+      "sourceRow": 106,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-be303f06b9fbead3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-05"
+      },
+      "sourceRow": 111,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9ce8ca4fd3fb8ca6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.RA-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 120,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ae6d0fa64e0650b4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-08"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-08"
+      },
+      "sourceRow": 122,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9e56928f339d2041",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-09"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-09"
+      },
+      "sourceRow": 124,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-1cb023b6b92135e1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-02"
+      },
+      "sourceRow": 129,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-83d4b5a8f627ee8d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-02"
+      },
+      "sourceRow": 131,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f022089243d9ace1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 07"
+      },
+      "sourceRow": 131,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-13e0564062d994d9",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 08"
+      },
+      "sourceRow": 132,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f51794b45e84289b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-03"
+      },
+      "sourceRow": 133,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8d06caf8f054e858",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.RA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-1"
+      },
+      "sourceRow": 135,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-679b6f9c01bf4354",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RC.RP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RC.RP-01"
+      },
+      "sourceRow": 137,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5782d61bb618cc4b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-08"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-08"
+      },
+      "sourceRow": 141,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a2ea68732c8f26a6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.CO-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.CO-01"
+      },
+      "sourceRow": 142,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9954645d6679625e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-03"
+      },
+      "sourceRow": 143,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-00970e59891d851a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-01"
+      },
+      "sourceRow": 143,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3ca84fbee7ccbc21",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-01"
+      },
+      "sourceRow": 146,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d30a0467d2a1f029",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-04"
+      },
+      "sourceRow": 147,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-43e108c12db81f00",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-05"
+      },
+      "sourceRow": 149,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8dc4ef2560d5af12",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-03"
+      },
+      "sourceRow": 154,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6ce0d3881d23bb5d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 06"
+      },
+      "sourceRow": 165,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f02e9cf938fc93fb",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-04 (1)"
+      },
+      "sourceRow": 281,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9aa83048e2006f1f",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-03"
+      },
+      "sourceRow": 281,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-417d58c0a1c196e2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.AN-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.AN-05"
+      },
+      "sourceRow": 285,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-eb8aa48a85ddc677",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 289,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9b965b69e8ca0f8d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 290,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-834b1101e677952b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 292,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4f3b0dae6f1e5f17",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 292,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-155c3202fdde5924",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-04"
+      },
+      "sourceRow": 294,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-79c688a570b0d741",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-07"
+      },
+      "sourceRow": 295,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d64c17579a37540a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 296,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-1046527915aea27b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.AN-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.AN-05"
+      },
+      "sourceRow": 299,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7b86aaf6155219d5",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 309,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-1be850cf770c22ab",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-04"
+      },
+      "sourceRow": 309,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-208b3541a61e38a3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-04 (2)"
+      },
+      "sourceRow": 313,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d585ff85d52e5322",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-01"
+      },
+      "sourceRow": 313,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0a189401fe9e7251",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.CO-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.CO-01"
+      },
+      "sourceRow": 327,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-36d625eb6e71c9ff",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.DP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.DP-01"
+      },
+      "sourceRow": 330,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-99a358136ce18ea7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-01 (3)"
+      },
+      "sourceRow": 332,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7ce1e0e0d2edddd5",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 332,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-93d7d17b97bf8404",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 333,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a2a559d783494b6f",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RC.IM-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RC.IM-02"
+      },
+      "sourceRow": 356,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-01407ef5949308e7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.RP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.RP-01"
+      },
+      "sourceRow": 359,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f2e6e92159d62fd2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 418,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-24ecbe0077ce472b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-01"
+      },
+      "sourceRow": 420,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-120a38b50f260be4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-08"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-08"
+      },
+      "sourceRow": 422,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d276d947ad029f39",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-01"
+      },
+      "sourceRow": 434,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3433031dd300bc09",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-02"
+      },
+      "sourceRow": 434,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-85b9b6cb6a33fd7b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-05"
+      },
+      "sourceRow": 437,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-88877ea478f4784b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-05"
+      },
+      "sourceRow": 438,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-65b2ba930da5dfe3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 448,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-edfca3e7ca5e90aa",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 457,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-b9bdc438f9d67642",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.RA-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 460,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f399e2b77ec504a4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.AE-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.AE-03"
+      },
+      "sourceRow": 467,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9b7148cbc73deb0d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RC.CO-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RC.CO-03"
+      },
+      "sourceRow": 475,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a511231bf413004b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RC.CO-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RC.CO-03"
+      },
+      "sourceRow": 475,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e49d3f8dea155d0c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-01"
+      },
+      "sourceRow": 484,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-eca808ee1dd37d5d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-03"
+      },
+      "sourceRow": 497,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a61c00f858b80dc1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-03"
+      },
+      "sourceRow": 499,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4228aeabf2b68180",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.DP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.DP-01"
+      },
+      "sourceRow": 502,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3726f4cc29a9de19",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.DP-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.DP-01"
+      },
+      "sourceRow": 503,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ae91a0ff18694c24",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.RA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-1"
+      },
+      "sourceRow": 519,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-79220eafad81ba19",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.MI-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.MI-03"
+      },
+      "sourceRow": 524,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-de66944ece632427",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 05"
+      },
+      "sourceRow": 532,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0396007dbb0d890b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-02"
+      },
+      "sourceRow": 536,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-aa06f8d7570d889b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.GV-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RM-03"
+      },
+      "sourceRow": 547,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-826c8bd1cd107997",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-01"
+      },
+      "sourceRow": 549,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-554e2ebcd2878ac4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-01"
+      },
+      "sourceRow": 550,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-51e241ef0373980c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-01"
+      },
+      "sourceRow": 551,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-03c5b0453a150c2b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-02"
+      },
+      "sourceRow": 552,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a12fbaa3768fff66",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-02"
+      },
+      "sourceRow": 553,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7ab5acd2506c6250",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.PO-02"
+      },
+      "sourceRow": 554,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-fb22050d182e9451",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-01"
+      },
+      "sourceRow": 555,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6b83543fae9b630c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-01"
+      },
+      "sourceRow": 556,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-15cbbd3c24529ed6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-01"
+      },
+      "sourceRow": 557,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4a74a59fc738c3ba",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-01"
+      },
+      "sourceRow": 558,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8a9418662a9ebec3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-04"
+      },
+      "sourceRow": 559,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6e9abc43b7be4229",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-04"
+      },
+      "sourceRow": 560,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3005ef1119002062",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-04"
+      },
+      "sourceRow": 561,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-cecd672f47fa9037",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-04"
+      },
+      "sourceRow": 562,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-01786cbb63b1266e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.IM-04"
+      },
+      "sourceRow": 563,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-55a3a2114abd8933",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.AM-01"
+      },
+      "sourceRow": 564,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9abd72b39988475a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-02"
+      },
+      "sourceRow": 565,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-16c9676e2c5e836b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.AM-02"
+      },
+      "sourceRow": 566,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-673f734aeb9dc55a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.OC-04"
+      },
+      "sourceRow": 567,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d01796d70d0fc311",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.AM-03"
+      },
+      "sourceRow": 568,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f423b87be66d34b3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.AM-04"
+      },
+      "sourceRow": 569,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7b6e1eef888f3766",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-01 (4)"
+      },
+      "sourceRow": 570,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-fae71a76500693da",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.GV-04"
+      },
+      "sourceRow": 571,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3a4856ca139b780c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-06"
+      },
+      "sourceRow": 572,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-59a2263c8718fd6c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RA-06"
+      },
+      "sourceRow": 573,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-fb5c4a121df28fb7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-06"
+      },
+      "sourceRow": 574,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6329e148e6251e11",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-06"
+      },
+      "sourceRow": 575,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3dd0c9df04944e5e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-06"
+      },
+      "sourceRow": 576,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-229cf9f3d993d769",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.RM-02"
+      },
+      "sourceRow": 577,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-822368df74326d96",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-01"
+      },
+      "sourceRow": 578,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8678a8e23762d709",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-01"
+      },
+      "sourceRow": 579,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-628a17d4cf398c7e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-01"
+      },
+      "sourceRow": 580,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-01d2d52262bb2067",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-08"
+      },
+      "sourceRow": 581,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-2912b5c4b7c2d593",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-08"
+      },
+      "sourceRow": 582,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f02d4b223b163880",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-08"
+      },
+      "sourceRow": 583,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a684003b560af997",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-08"
+      },
+      "sourceRow": 584,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a245389aec8211af",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-08"
+      },
+      "sourceRow": 585,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-97499b3e94bf0b95",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-02"
+      },
+      "sourceRow": 586,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-91f308532cd920e4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-04 (3)"
+      },
+      "sourceRow": 587,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-21ec8e48a28121bf",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-04 (4)"
+      },
+      "sourceRow": 588,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0a591d4670be10cd",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 589,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-c7109425b425a235",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 590,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ba7bfd07e0a7cb17",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 591,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-152ba1b4f23cf891",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 592,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-278e986fb411e6d1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 593,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-66b6a6bc553f3c6b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 594,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3a3b0bf43a1a446f",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 595,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9cbd90af845dfc83",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 596,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-36716a978ab23a77",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "ID.RA-05"
+      },
+      "sourceRow": 597,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0cb6fe5c8a62287d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RC.RP-01"
+      },
+      "sourceRow": 598,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f90842ae72a7490c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.CO-01"
+      },
+      "sourceRow": 599,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4d8a7e040691ab2b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.MI-02"
+      },
+      "sourceRow": 600,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-65c7035483bbda26",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.RP-01"
+      },
+      "sourceRow": 601,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-076a8282b1a29b4e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RS.MA-01"
+      },
+      "sourceRow": 602,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9a02cba1b2a60f25",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RS.MA-01"
+      },
+      "sourceRow": 603,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-07f5d8358384b579",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RS.MA-01"
+      },
+      "sourceRow": 604,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e282f07f2e050f29",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RS.CO-02"
+      },
+      "sourceRow": 605,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5ce921b5b79b55d7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RS.CO-02"
+      },
+      "sourceRow": 606,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e232d6a2aa4c7fc4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "RC.RP-01"
+      },
+      "sourceRow": 607,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7a67f46320147d71",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-06"
+      },
+      "sourceRow": 608,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-775c8e53f3eb49f6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-03 (1)"
+      },
+      "sourceRow": 609,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a61fea78ebe9688b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-03 (2)"
+      },
+      "sourceRow": 610,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8c58b5cd495eecea",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 02"
+      },
+      "sourceRow": 611,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5cd39c5e5fc9a06d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-02"
+      },
+      "sourceRow": 612,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8a230fa3d6fcf7c0",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-02"
+      },
+      "sourceRow": 613,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f6fc1826bad6ab19",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-04"
+      },
+      "sourceRow": 614,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ee689e710e73c877",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-04"
+      },
+      "sourceRow": 615,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-abd1123056e783ad",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-04"
+      },
+      "sourceRow": 616,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3f62860adcec96dc",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-04"
+      },
+      "sourceRow": 617,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-49da2635eaaff229",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.RR-04"
+      },
+      "sourceRow": 618,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e0c2fbeed1000362",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-01"
+      },
+      "sourceRow": 619,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8ac4d1e8980caed5",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-02"
+      },
+      "sourceRow": 620,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-60e2732dc09b3ffa",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-02"
+      },
+      "sourceRow": 621,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4f8f25fb741ebdc5",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-04"
+      },
+      "sourceRow": 622,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d03456e974e46626",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-05"
+      },
+      "sourceRow": 623,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d909d4451a174cef",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-07"
+      },
+      "sourceRow": 624,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-b6da8ebf72a740b2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "GV.SC-07"
+      },
+      "sourceRow": 625,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-066bec9fa247babd",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-01"
+      },
+      "sourceRow": 626,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-faae313cea21d833",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-01"
+      },
+      "sourceRow": 627,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-7d5250a5a3ed555d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-01"
+      },
+      "sourceRow": 628,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9f95ab398ec2daaa",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-01"
+      },
+      "sourceRow": 629,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-4b71bf24bc1ff2e0",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-03"
+      },
+      "sourceRow": 630,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-44e4e916b0c85e7d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-03"
+      },
+      "sourceRow": 631,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9345fea48b0f9728",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-03"
+      },
+      "sourceRow": 632,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-46c4ba1c36c8bf90",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-05"
+      },
+      "sourceRow": 633,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8366dc48c8841403",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-05"
+      },
+      "sourceRow": 634,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-bb6f188b1b76e8a1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 635,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0bebb52b8166a826",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 636,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-80161b59685e44e4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-02"
+      },
+      "sourceRow": 637,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9105f5f13c1d3971",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-01"
+      },
+      "sourceRow": 638,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ec6ea6b84d8ea3d7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-02"
+      },
+      "sourceRow": 639,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-77507ae29dbec2c3",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-02"
+      },
+      "sourceRow": 640,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e5915127a7d72c70",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-02"
+      },
+      "sourceRow": 641,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-03fcbded472d3585",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-02"
+      },
+      "sourceRow": 642,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-eb46ed55b0db5bd6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.GV-01"
+      },
+      "sourceRow": 643,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-46e27b6dd2d6f7b7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 644,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-b991731fc546b3b1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 645,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-fb053ff9cc3d4241",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 646,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e43f4d2b03c63e98",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 647,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-07bf7e5a8fb9b9ac",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 648,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-a97e00fc6e5816f1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 649,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-bf385e596e840276",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 650,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-67e8b10e05014420",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 651,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-07e8b255ae30fa13",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-01"
+      },
+      "sourceRow": 652,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-562fefef1df0f3e2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-02"
+      },
+      "sourceRow": 653,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0e69cbfe902b0c86",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-02"
+      },
+      "sourceRow": 654,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d420cf30555e80e8",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-11"
+      },
+      "sourceRow": 655,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-92367e97b2248b8a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-11"
+      },
+      "sourceRow": 656,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8bbb9e36c6205b98",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-11"
+      },
+      "sourceRow": 657,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ac0f30e553946ad6",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-11"
+      },
+      "sourceRow": 658,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-600483693a6c1aea",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "N.A."
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.DS-11"
+      },
+      "sourceRow": 659,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0f41333f1d9b2616",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AA-05"
+      },
+      "sourceRow": 674,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-28999ae77d10f7e1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 682,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3d6826e651972aa2",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AT-01"
+      },
+      "sourceRow": 682,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0c52730c750f535b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-02"
+      },
+      "sourceRow": 696,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-aba8b43ebf35e6be",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-04"
+      },
+      "sourceRow": 697,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8d01e80c0c31d200",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 702,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-ac2318ab071f38a7",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 704,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-2194a275dafa9aa1",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-07"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-07"
+      },
+      "sourceRow": 715,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-6aa2f72631666a3a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-03"
+      },
+      "sourceRow": 716,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-21f2422f56bec235",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-03"
+      },
+      "sourceRow": 716,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-64e5c6ad5477ed4f",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.DS-05"
+      },
+      "sourceRow": 717,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d7b8a5b442f3c9f4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-01"
+      },
+      "sourceRow": 718,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-3420bf77041e1970",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AC-04"
+      },
+      "sourceRow": 721,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-c09c818bb4e50015",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.AE-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.AE-03"
+      },
+      "sourceRow": 722,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-8309f6ecf7f85b9f",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-05"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-05"
+      },
+      "sourceRow": 723,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d7265837f329a18c",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.PT-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.PT-01"
+      },
+      "sourceRow": 724,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-c20dc3529cf06392",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.IP-03"
+      },
+      "sourceRow": 725,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f8849be07c65bf88",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AT-02"
+      },
+      "sourceRow": 735,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-2db5cd7a7b8b3f0a",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.DS-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR-DS-06"
+      },
+      "sourceRow": 736,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-bc534451b93c0b6e",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.AT-02"
+      },
+      "sourceRow": 738,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-93a1d4dc29e381fe",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AT-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.AT-02"
+      },
+      "sourceRow": 738,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-5b244c20706c5f82",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "RS.CO-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "RS.CO-01"
+      },
+      "sourceRow": 742,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f13a57bbb3e442ea",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-08"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-08"
+      },
+      "sourceRow": 743,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-34c9dd0e719b2184",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.IP-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.PS-06"
+      },
+      "sourceRow": 744,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-0ddbc18e42c4ecb0",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "DE.CM-09"
+      },
+      "sourceRow": 745,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-d14feda5fc92da14",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-04"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-04"
+      },
+      "sourceRow": 745,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f20b96abf8f8b04d",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-06"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-06 04"
+      },
+      "sourceRow": 751,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-9b2dee54b0118655",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "DE.CM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "DE.CM-01"
+      },
+      "sourceRow": 761,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-e3e5d57d205f5ef4",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.AC-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "nis2-legacy",
+        "code": "PR.IR-01 (2)"
+      },
+      "sourceRow": 780,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-88b1cb3393976eeb",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.SC-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.SC-01"
+      },
+      "sourceRow": 787,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-43b5667f15055a74",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-02"
+      },
+      "sourceRow": 791,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-f9033e2c8b0b9378",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 792,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-eac766da7ddc63d8",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-03"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-03"
+      },
+      "sourceRow": 794,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-c6f5b921ffb38280",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "PR.MA-02"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "PR.MA-02"
+      },
+      "sourceRow": 797,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-09b90625e7c2788b",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-01"
+      },
+      "sourceRow": 799,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    },
+    {
+      "id": "lmc-38029eeae0ce2670",
+      "sourceFrameworkRequirement": {
+        "framework": "reg-cloud-legacy",
+        "code": "ID.AM-01"
+      },
+      "targetFrameworkRequirement": {
+        "framework": "psnc-legacy",
+        "code": "ID.AM-01"
+      },
+      "sourceRow": 800,
+      "reason": "legacy_row_alignment",
+      "status": "NEEDS_REVIEW",
+      "relation": null
+    }
+  ],
+  "importSource": {
+    "importSource": "Matrice_MultiCompliance.xlsx",
+    "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+    "importBatchId": "batch-696f3930c809d4c5",
+    "importedAt": "2026-08-09T12:46:36+00:00"
+  }
+}

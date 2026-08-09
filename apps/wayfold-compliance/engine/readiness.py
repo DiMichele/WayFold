@@ -4,6 +4,7 @@ from collections import defaultdict
 
 from .checklist import build_unified_checklist
 from .domain import (
+    ApplicabilityStatus,
     CoverageRelation,
     FrameworkReadinessRow,
     ImplementationStatus,
@@ -75,6 +76,10 @@ def framework_readiness(
                 req_best[cov.requirement_id] = cand
 
     unmapped_ids = {u.requirement_id for u in checklist.unmapped}
+    from engine.applicability import decisions_by_requirement
+
+    applicability = {d.requirement_id: d for d in program.applicability_decisions}
+    applicability.update(decisions_by_requirement(program.program_id))
     by_fw: dict[str, dict] = {}
     seen_req: set[str] = set()
 
@@ -100,8 +105,12 @@ def framework_readiness(
         if req.id in unmapped_ids:
             cov = RequirementCoverage.UNMAPPED
         else:
-            rel, status = req_best.get(req.id, (None, None))
-            cov = _requirement_coverage(rel, status, req.result)
+            app = applicability.get(req.id)
+            if app is not None and app.status == ApplicabilityStatus.NOT_APPLICABLE:
+                cov = RequirementCoverage.NOT_APPLICABLE
+            else:
+                rel, status = req_best.get(req.id, (None, None))
+                cov = _requirement_coverage(rel, status, req.result)
         bucket["breakdown"][req.id] = cov
         bucket["counts"][cov.value] += 1
         if cov != RequirementCoverage.NOT_APPLICABLE:

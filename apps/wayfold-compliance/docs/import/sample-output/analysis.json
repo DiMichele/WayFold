@@ -1,0 +1,219 @@
+{
+  "importSource": "Matrice_MultiCompliance.xlsx",
+  "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+  "analyzedAt": "2026-08-09T12:46:36+00:00",
+  "sheets": [
+    {
+      "name": "Matrice_Multicompliance Corp.",
+      "rows": 112,
+      "columns": 15,
+      "headers": [
+        "",
+        "Ambito di Applicazione",
+        "27001",
+        "Categoria",
+        "Numero",
+        "Titolo",
+        "Descrizione Requisito",
+        "22301",
+        "Descrizione",
+        "Quesito",
+        "Politica di Riferimento",
+        "Evidenze/Punti di Controllo",
+        "Owner Interno",
+        "Owner Esterno",
+        "Persone da coinvolgere in riunione"
+      ],
+      "classification": "ISO_CORPORATE"
+    },
+    {
+      "name": "Azioni PTR Business Open - NO M",
+      "rows": 12,
+      "columns": 12,
+      "headers": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "classification": "CLIENT_REMEDIATION"
+    },
+    {
+      "name": "Matrice_Multicompliance Buss.",
+      "rows": 810,
+      "columns": 31,
+      "headers": [
+        "Ambito di Applicazione",
+        "Reg.Cloud",
+        "Infra",
+        "IaaS",
+        "PaaS",
+        "Quesito",
+        "Descrizione Requisito",
+        "Opzioni di risposta",
+        "L1",
+        "L2",
+        "L3",
+        "L4",
+        "NIS2-ID",
+        "Descrizione",
+        "Requisito",
+        "PSNC-ID",
+        "Quesito",
+        "CSA STAR-ID",
+        "Quesito",
+        "Politica di Riferimento",
+        "Contratto di Servizio",
+        "Evidenza esempio Punto di Controllo Regolamento cloud",
+        "Evidenza esempio Punto di Controllo NIS2",
+        "Evidenza esempio Punto di Controllo PSNC",
+        "Owner",
+        "Owner PSN",
+        "Periodicita'",
+        "Attivita' Sul Controllo",
+        "Raccomandazione",
+        "",
+        ""
+      ],
+      "classification": "BUSINESS_FRAMEWORKS"
+    },
+    {
+      "name": "Foglio2",
+      "rows": 1,
+      "columns": 1,
+      "headers": [],
+      "classification": "IGNORE"
+    },
+    {
+      "name": "Foglio1",
+      "rows": 131,
+      "columns": 5,
+      "headers": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "classification": "PSNC_STAGING_REFERENCE"
+    },
+    {
+      "name": "OLD_Matrice Multi-Compliance",
+      "rows": 155,
+      "columns": 15,
+      "headers": [
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        ""
+      ],
+      "classification": "LEGACY_REFERENCE_ONLY"
+    }
+  ],
+  "counts": {
+    "iso_annex_a": 96,
+    "reg_cloud_rows": 808,
+    "reg_cloud_codes": 91,
+    "nis2_rows": 117,
+    "nis2_codes": 50,
+    "psnc_rows": 133,
+    "psnc_codes": 58,
+    "csa_populated_rows": 0
+  },
+  "corp": {
+    "annex_a_rows": 96,
+    "norma_rows": 0,
+    "missing_scope": 0
+  },
+  "business": {
+    "reg_cloud_rows": 808,
+    "reg_cloud_codes": 91,
+    "nis2_rows": 117,
+    "nis2_codes": 50,
+    "psnc_rows": 133,
+    "psnc_codes": 58,
+    "csa_rows": 0
+  },
+  "remediation": {
+    "rows": 10
+  },
+  "psnc_crosscheck": {
+    "business_only": [
+      "ID.AM-06 01",
+      "ID.AM-06 02",
+      "ID.AM-06 03",
+      "ID.AM-06 04",
+      "ID.AM-06 05",
+      "ID.AM-06 06",
+      "ID.AM-06 07",
+      "ID.AM-06 08",
+      "ID.GV-01",
+      "PR-DS-06"
+    ],
+    "staging_only": [
+      "ID.AM-06"
+    ],
+    "matched_estimate": 48
+  },
+  "issues": [
+    {
+      "id": "issue-377b14d178afd9c7",
+      "severity": "INFO",
+      "code": "INCOMPLETE_FRAMEWORK",
+      "sheet": "Matrice_Multicompliance Corp.",
+      "row": null,
+      "column": "",
+      "originalValue": "",
+      "suggestedAction": "Marcare sezione Norma come INCOMPLETE_SOURCE"
+    },
+    {
+      "id": "issue-53f371fa95e9fffd",
+      "severity": "INFO",
+      "code": "UNNAMED_COLUMN",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": null,
+      "column": "UNNAMED_LEGACY_FIELD_30",
+      "originalValue": "",
+      "suggestedAction": "Documentare significato; non inventare header"
+    },
+    {
+      "id": "issue-8623492146e999ce",
+      "severity": "INFO",
+      "code": "UNNAMED_COLUMN",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": null,
+      "column": "UNNAMED_LEGACY_FIELD_31",
+      "originalValue": "",
+      "suggestedAction": "Documentare significato; non inventare header"
+    },
+    {
+      "id": "issue-8b404a7df2b703aa",
+      "severity": "WARNING",
+      "code": "MISSING_SCOPE",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": 810,
+      "column": "Ambito",
+      "originalValue": "",
+      "suggestedAction": ""
+    }
+  ]
+}

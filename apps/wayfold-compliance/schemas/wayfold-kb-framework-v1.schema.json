@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wayfold.xyz/schemas/wayfold-kb-framework-v1.schema.json",
+  "title": "WayFold Knowledge Base Framework Package v1",
+  "type": "object",
+  "required": ["schemaVersion", "framework", "version", "requirements"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "framework": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string" },
+        "shortName": { "type": "string" },
+        "type": { "type": "string" },
+        "publisher": { "type": "string" },
+        "jurisdiction": { "type": "string" },
+        "description": { "type": "string" },
+        "officialSource": { "type": "string" },
+        "legacyName": { "type": "string" }
+      }
+    },
+    "version": {
+      "type": "object",
+      "required": ["label", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "status": { "enum": ["DRAFT", "PUBLISHED", "RETIRED"] },
+        "publicationDate": { "type": ["string", "null"] },
+        "effectiveDate": { "type": ["string", "null"] },
+        "metadataStatus": { "enum": ["COMPLETE", "INCOMPLETE"] }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "code", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "sourceCode": { "type": "string" },
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "type": { "type": "string" },
+          "section": { "type": "string" },
+          "parentId": { "type": ["string", "null"] },
+          "order": { "type": "integer" },
+          "isLeaf": { "type": "boolean" },
+          "sourceReference": { "type": "string" },
+          "sourceRow": { "type": "integer" },
+          "conditions": { "type": "string" },
+          "frequency": { "type": "string" },
+          "tags": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "assessmentQuestions": { "type": "array" },
+    "applicability": { "type": "array" },
+    "importSource": { "type": "object" },
+    "sourceStatus": { "type": "string" }
+  },
+  "additionalProperties": true
+}

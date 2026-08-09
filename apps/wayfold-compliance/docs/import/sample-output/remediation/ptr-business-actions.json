@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "candidates": [
+    {
+      "id": "rem-bc0289e5b34c93cd",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 3,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-2f04d97e3bfd7e3b",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 4,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-43fe4297039a353c",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 5,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-d06f7a8389a8645e",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 6,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-be01a39ef51db4ed",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 7,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-e632161db820d0d8",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 8,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-8feb70f797aa382e",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 9,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-5f47a861bf539f52",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 10,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-05e6fbd2dee32031",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 11,
+      "status": "NEEDS_REVIEW"
+    },
+    {
+      "id": "rem-bba2eba26d7aa0d7",
+      "title": "",
+      "source": "Azioni PTR Business Open - NO M",
+      "sourceRow": 12,
+      "status": "NEEDS_REVIEW"
+    }
+  ],
+  "importSource": {
+    "importSource": "Matrice_MultiCompliance.xlsx",
+    "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+    "importBatchId": "batch-696f3930c809d4c5",
+    "importedAt": "2026-08-09T12:46:36+00:00"
+  }
+}

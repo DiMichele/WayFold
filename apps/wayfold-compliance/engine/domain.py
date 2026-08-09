@@ -34,6 +34,38 @@ class ReviewStatus(str, Enum):
     HUMAN_REVIEWED = "HUMAN_REVIEWED"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
+    NEEDS_REVIEW = "NEEDS_REVIEW"
+
+
+class FindingScope(str, Enum):
+    CONTROL = "CONTROL"
+    REQUIREMENT = "REQUIREMENT"
+    EVIDENCE = "EVIDENCE"
+    TASK = "TASK"
+
+
+class ApplicabilityStatus(str, Enum):
+    APPLICABLE = "APPLICABLE"
+    NOT_APPLICABLE = "NOT_APPLICABLE"
+
+
+@dataclass(frozen=True)
+class ApplicabilityDecision:
+    program_id: str
+    requirement_id: str
+    status: ApplicabilityStatus
+    rationale: str
+    decided_by: str
+    decided_at: str
+
+
+@dataclass(frozen=True)
+class EvidenceExpectation:
+    """When set on a control/requirement, missing evidence may produce a finding."""
+
+    evidence_required: bool = False
+    minimum_evidence: int = 0
+    suggested_evidence: str = ""
 
 
 @dataclass(frozen=True)
@@ -147,6 +179,8 @@ class ProgramSnapshot:
     available_framework_versions: list[dict[str, Any]] = field(default_factory=list)
     owner: str = ""
     description: str = ""
+    applicability_decisions: list[ApplicabilityDecision] = field(default_factory=list)
+    evidence_expectations: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass

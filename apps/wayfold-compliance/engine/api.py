@@ -104,7 +104,9 @@ from engine import report_snapshots
 from engine import control_catalog
 from engine.users import (
     authenticate,
+    change_password,
     effective_tenant_ids,
+    get_user,
     list_users,
     load_assignments,
 )
@@ -576,7 +578,22 @@ class Handler(BaseHTTPRequestHandler):
         for key, value in headers.items():
             self.send_header(key, value)
         self.end_headers()
-        self.wfile.write(body)
+        if not getattr(self, "_head_only", False):
+            self.wfile.write(body)
+
+    def do_HEAD(self):  # noqa: N802
+        """HEAD without side effects on mutating GET routes."""
+        parsed = urlparse(self.path)
+        path = parsed.path.rstrip("/") or "/"
+        if path in {"/logout"}:
+            return self._send(200, b"", "text/html; charset=utf-8")
+        if path == "/api/report/snapshot":
+            return self._deny(405, "method_not_allowed")
+        self._head_only = True
+        try:
+            self.do_GET()
+        finally:
+            self._head_only = False
 
     def _redirect(self, location: str, *, extra_headers: dict[str, str] | None = None):
         self.send_response(302)
@@ -591,6 +608,34 @@ class Handler(BaseHTTPRequestHandler):
     def _request_is_secure(self) -> bool:
         proto = (self.headers.get("X-Forwarded-Proto") or "").lower()
         return proto == "https"
+
+    def _logout_response(self):
+        cookie_hdr = self.headers.get("Cookie")
+        sess = session_from_cookie_header(cookie_hdr)
+        if sess and cookie_hdr:
+            from http.cookies import SimpleCookie
+
+            jar = SimpleCookie()
+            try:
+                jar.load(cookie_hdr)
+                morsel = jar.get("wf_session")
+                if morsel:
+                    revoke_token(morsel.value)
+            except Exception:  # noqa: BLE001
+                pass
+        ctx = getattr(self, "_auth_ctx", None)
+        audit_mod.record_event(
+            actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+            action=audit_mod.LOGOUT,
+            entity_type="Session",
+            entity_id="logout",
+        )
+        return self._redirect(
+            "/login",
+            extra_headers={
+                "Set-Cookie": clear_session_cookie_header(secure=self._request_is_secure())
+            },
+        )
 
     def _gate(
         self,
@@ -753,25 +798,34 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
         if path == "/logout":
-            cookie_hdr = self.headers.get("Cookie")
-            sess = session_from_cookie_header(cookie_hdr)
-            if sess and cookie_hdr:
-                from http.cookies import SimpleCookie
+            return self._logout_response()
 
-                jar = SimpleCookie()
-                try:
-                    jar.load(cookie_hdr)
-                    morsel = jar.get("wf_session")
-                    if morsel:
-                        revoke_token(morsel.value)
-                except Exception:  # noqa: BLE001
-                    pass
-            return self._redirect(
-                "/login",
-                extra_headers={
-                    "Set-Cookie": clear_session_cookie_header(secure=self._request_is_secure())
-                },
+        if path == "/profile":
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            ctx = getattr(self, "_auth_ctx", None)
+            from engine import profile_pages
+
+            user_rec = get_user(ctx.username) if ctx and ctx.username else None
+            tenants = (
+                sorted(effective_tenant_ids(user_rec))
+                if user_rec
+                else list(ctx.actor_tenant_ids if ctx else [])
             )
+            sess = session_from_cookie_header(self.headers.get("Cookie"))
+            html = profile_pages.profile_page(
+                _nav_qs(qs),
+                username=ctx.username if ctx else "",
+                display_name=(user_rec.display_name if user_rec else ctx.username if ctx else ""),
+                role=ctx.role if ctx else "",
+                tenant_ids=tenants,
+                mfa_enabled=bool(user_rec.mfa_enabled) if user_rec else False,
+                temporary_review=bool(user_rec.temporary_review) if user_rec else False,
+                session_issued=sess.issued_at if sess else None,
+                session_expires=sess.expires_at if sess else None,
+            )
+            return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
         if path == "/api/build-info":
             auth = self._gate(qs)
@@ -791,6 +845,51 @@ class Handler(BaseHTTPRequestHandler):
                 json.dumps(info, ensure_ascii=False).encode("utf-8"),
                 "application/json",
             )
+
+        if path == "/api/kb/export":
+            auth = self._gate(qs, permission=PERM_KB_READ)
+            if auth is None:
+                return
+            vid = qs.get("version_id", [""])[0]
+            if not vid:
+                return self._deny(400, "version_id_required")
+            from engine.kb_import import export_framework_package
+
+            try:
+                pkg = export_framework_package(vid)
+            except KeyError:
+                return self._deny(404, "version_not_found")
+            ctx = getattr(self, "_auth_ctx", None)
+            audit_mod.record_event(
+                actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                action="FRAMEWORK_EXPORTED",
+                entity_type="FrameworkVersion",
+                entity_id=vid,
+            )
+            return self._send(
+                200,
+                json.dumps(pkg, ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        if path in {"/kb/import", "/kb/import/preview"}:
+            auth = self._gate(qs, permission=PERM_KB_WRITE)
+            if auth is None:
+                return
+            from engine import import_pages
+
+            step = 2 if path.endswith("/preview") else 1
+            preview = None
+            if step == 2:
+                sid = qs.get("staging", [""])[0]
+                if sid:
+                    from engine.runtime_paths import data_root
+
+                    meta_path = data_root() / "import_staging" / f"{sid}.meta.json"
+                    if meta_path.is_file():
+                        preview = json.loads(meta_path.read_text(encoding="utf-8")).get("meta")
+            html = import_pages.import_wizard_page(_nav_qs(qs), step=step, preview=preview)
+            return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
 
         # Knowledge Base / client-program authoring surfaces
         if path.startswith(
@@ -1050,7 +1149,6 @@ class Handler(BaseHTTPRequestHandler):
                     target_tenant_id=p.tenant_id,
                 ).allowed
             ]
-            authoring_routes.seed_kb(programs)
             program = _resolve_program(qs)
             relation = qs.get("relation", [""])[0].upper()
             review = qs.get("review", [""])[0].upper()
@@ -1305,8 +1403,8 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
 
-        # Report snapshot generate / history
-        if path in {"/api/report/snapshot", "/report/history", "/api/report/history"}:
+        # Report snapshot history (read-only GET)
+        if path in {"/report/history", "/api/report/history"}:
             auth = self._gate(qs, permission=PERM_REPORT_GENERATE)
             if auth is None:
                 return
@@ -1321,27 +1419,6 @@ class Handler(BaseHTTPRequestHandler):
             )
             if not decision.allowed:
                 return self._deny(403, decision.reason)
-            ctx = getattr(self, "_auth_ctx", None)
-            if path == "/api/report/snapshot":
-                snap = report_snapshots.generate_snapshot(
-                    program, generated_by=(ctx.username if ctx else "unknown") or "unknown"
-                )
-                audit_mod.record_event(
-                    actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
-                    action=audit_mod.REPORT_GENERATED,
-                    entity_type="ReportSnapshot",
-                    entity_id=snap.id,
-                    tenant_id=program.tenant_id,
-                    new_value={
-                        "assessment_date": snap.assessment_date,
-                        "baselines": snap.framework_baselines,
-                    },
-                )
-                return self._send(
-                    200,
-                    json.dumps(to_jsonable(snap), ensure_ascii=False).encode("utf-8"),
-                    "application/json",
-                )
             items = report_snapshots.list_snapshots(
                 tenant_id=program.tenant_id, program_id=program.program_id
             )
@@ -1376,6 +1453,9 @@ class Handler(BaseHTTPRequestHandler):
                 ).encode("utf-8"),
                 "text/html; charset=utf-8",
             )
+
+        if path == "/api/report/snapshot":
+            return self._deny(405, "method_not_allowed_use_post")
 
         if path == "/api/report/snapshot/get":
             auth = self._gate(qs, permission=PERM_REPORT_GENERATE)
@@ -1972,14 +2052,159 @@ class Handler(BaseHTTPRequestHandler):
 
         return self._deny(404, "not found")
 
-    def do_HEAD(self):  # noqa: N802
-        """Support HEAD for proxies/health probes without 501."""
-        self.do_GET()
-
     def do_POST(self):  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
         qs = parse_qs(parsed.query)
+
+        if path == "/logout":
+            form = {}
+            length = int(self.headers.get("Content-Length") or "0")
+            if length:
+                raw = self.rfile.read(max(0, min(length, 64_000))).decode("utf-8", "replace")
+                form = parse_qs(raw, keep_blank_values=True)
+            if form and not self._require_csrf(form):
+                return
+            return self._logout_response()
+
+        if path == "/api/report/snapshots":
+            auth = self._gate(qs, permission=PERM_REPORT_GENERATE)
+            if auth is None:
+                return
+            actor_tenants, is_super = auth
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(max(0, min(length, 64_000))).decode("utf-8", "replace")
+            ctype = (self.headers.get("Content-Type") or "").lower()
+            if "application/json" in ctype or raw.strip().startswith("{"):
+                try:
+                    payload = json.loads(raw) if raw.strip() else {}
+                except json.JSONDecodeError:
+                    return self._deny(400, "invalid_json")
+                program_id = str(payload.get("program_id") or "")
+            else:
+                form = parse_qs(raw, keep_blank_values=True)
+                if not self._require_csrf(form):
+                    return
+                program_id = (form.get("program_id") or [""])[0]
+            if program_id:
+                qs = dict(qs)
+                qs["program_id"] = [program_id]
+            program = _resolve_program(qs)
+            if program is None:
+                return self._deny(404, "program_not_found")
+            decision = assert_tenant_access(
+                actor_tenant_ids=actor_tenants,
+                is_superuser=is_super,
+                target_tenant_id=program.tenant_id,
+            )
+            if not decision.allowed:
+                return self._deny(403, decision.reason)
+            ctx = getattr(self, "_auth_ctx", None)
+            snap = report_snapshots.generate_snapshot(
+                program, generated_by=(ctx.username if ctx else "unknown") or "unknown"
+            )
+            audit_mod.record_event(
+                actor_user_id=(ctx.username if ctx else "unknown") or "unknown",
+                action=audit_mod.REPORT_GENERATED,
+                entity_type="ReportSnapshot",
+                entity_id=snap.id,
+                tenant_id=program.tenant_id,
+                new_value={
+                    "assessment_date": snap.assessment_date,
+                    "baselines": snap.framework_baselines,
+                },
+            )
+            return self._send(
+                200,
+                json.dumps(to_jsonable(snap), ensure_ascii=False).encode("utf-8"),
+                "application/json",
+            )
+
+        if path == "/profile/password":
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(max(0, min(length, 64_000))).decode("utf-8", "replace")
+            form = parse_qs(raw, keep_blank_values=True)
+            if not self._require_csrf(form):
+                return
+            ctx = getattr(self, "_auth_ctx", None)
+            username = (ctx.username if ctx else "") or ""
+            current = (form.get("current_password") or [""])[0]
+            new_pw = (form.get("new_password") or [""])[0]
+            confirm = (form.get("confirm_password") or [""])[0]
+            if new_pw != confirm:
+                return self._deny(400, "password_mismatch")
+            try:
+                change_password(username, current, new_pw)
+            except PermissionError:
+                return self._deny(401, "invalid_credentials")
+            except ValueError as exc:
+                return self._deny(400, str(exc))
+            audit_mod.record_event(
+                actor_user_id=username,
+                action="PASSWORD_CHANGED",
+                entity_type="User",
+                entity_id=username,
+            )
+            return self._redirect(f"/profile?{_nav_qs(qs)}")
+
+        if path.startswith("/kb/import"):
+            from engine import import_pages
+            from engine.multipart_util import parse_multipart
+            from engine.runtime_paths import data_root
+
+            auth = self._gate(qs, permission=PERM_KB_WRITE)
+            if auth is None:
+                return
+            ctx = getattr(self, "_auth_ctx", None)
+            actor = (ctx.username if ctx else "unknown") or "unknown"
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(max(0, min(length, 8_000_000)))
+            ctype = self.headers.get("Content-Type") or ""
+            if path == "/kb/import/upload":
+                fields, files = parse_multipart(ctype, raw)
+                form = {k: [v] for k, v in fields.items()}
+                if not self._require_csrf(form):
+                    return
+                file_part = files.get("package")
+                if not file_part:
+                    return self._deny(400, "package_required")
+                meta = import_pages.stage_upload(
+                    file_part.content, file_part.filename or "upload.json", data_root()
+                )
+                audit_mod.record_event(
+                    actor_user_id=actor,
+                    action="IMPORT_ANALYZED",
+                    entity_type="ImportBatch",
+                    entity_id=meta["stagingId"],
+                    new_value={"sha256": meta["sha256"], "filename": meta["filename"]},
+                )
+                return self._redirect(
+                    f"/kb/import/preview?staging={meta['stagingId']}&{_nav_qs(qs)}"
+                )
+            if path == "/kb/import/apply":
+                form = parse_qs(raw.decode("utf-8", "replace"), keep_blank_values=True)
+                if not self._require_csrf(form):
+                    return
+                sid = (form.get("staging_id") or [""])[0]
+                metadata = {
+                    "framework_name": (form.get("framework_name") or [""])[0],
+                    "version_label": (form.get("version_label") or [""])[0],
+                    "publisher": (form.get("publisher") or [""])[0],
+                    "jurisdiction": (form.get("jurisdiction") or [""])[0],
+                }
+                rec = import_pages.apply_staged(sid, data_root(), metadata=metadata, actor=actor)
+                audit_mod.record_event(
+                    actor_user_id=actor,
+                    action="FRAMEWORK_IMPORTED_DRAFT",
+                    entity_type="FrameworkVersion",
+                    entity_id=rec.id,
+                    new_value={"framework_id": rec.framework_id, "version": rec.version},
+                )
+                return self._redirect(f"/frameworks?{_nav_qs(qs)}")
+            return self._deny(404, "not found")
 
         # Binary evidence upload MUST read raw bytes before any text decode
         if path == "/evidence/new":

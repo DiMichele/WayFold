@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "1.0",
+  "framework": {
+    "id": "csa-star-legacy",
+    "name": "CSA STAR",
+    "legacyName": "CSA STAR"
+  },
+  "version": {
+    "label": "legacy",
+    "status": "DRAFT",
+    "metadataStatus": "INCOMPLETE"
+  },
+  "sourceStatus": "NO_SOURCE_DATA",
+  "requirements": [],
+  "provenance": {
+    "importSource": "Matrice_MultiCompliance.xlsx",
+    "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+    "importBatchId": "batch-696f3930c809d4c5",
+    "importedAt": "2026-08-09T12:46:36+00:00"
+  }
+}

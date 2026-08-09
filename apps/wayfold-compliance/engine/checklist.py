@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from .domain import (
+    ApplicabilityStatus,
     ChecklistControlRow,
     ControlImplementationSnapshot,
     CoverageRelation,
@@ -79,10 +80,18 @@ def build_unified_checklist(program: ProgramSnapshot) -> UnifiedChecklist:
     impls = _impl_by_id(program)
     links = program.requirement_implementation_links
 
+    from engine.applicability import decisions_by_requirement
+
+    applicability = {d.requirement_id: d for d in program.applicability_decisions}
+    applicability.update(decisions_by_requirement(program.program_id))
+
     grouped: dict[str, dict] = {}
     unmapped: list[UnmappedRequirementRow] = []
 
     for req in leaves:
+        na = applicability.get(req.id)
+        if na is not None and na.status == ApplicabilityStatus.NOT_APPLICABLE:
+            continue
         # Deduplicate mappings per requirement+control
         raw_maps = maps.get(req.id, [])
         seen_m: set[tuple[str, str]] = set()
@@ -231,6 +240,7 @@ def build_unified_checklist(program: ProgramSnapshot) -> UnifiedChecklist:
         meta={
             "mapping_count": len(program.mappings),
             "implementation_count": len(program.implementations),
+            "evidence_expectations": dict(program.evidence_expectations or {}),
         },
     )
 

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wayfold.xyz/schemas/wayfold-client-overlay-v1.schema.json",
+  "title": "WayFold Client Program Overlay v1",
+  "type": "object",
+  "required": ["schemaVersion", "layer"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "layer": { "const": "CLIENT_PROGRAM_OVERLAY" },
+    "clientSensitive": { "type": "boolean" },
+    "tenantId": { "type": "string" },
+    "programId": { "type": "string" },
+    "rows": { "type": "array" },
+    "importSource": { "type": "object" }
+  }
+}

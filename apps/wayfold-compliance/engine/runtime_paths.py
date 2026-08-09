@@ -24,6 +24,19 @@ def seed_demo_enabled() -> bool:
     return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def seed_review_demo_enabled() -> bool:
+    """Deploy-time demo seed — default OFF in production."""
+    raw = os.environ.get("WAYFOLD_SEED_REVIEW_DEMO", "0")
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def destructive_reset_allowed() -> bool:
+    return (
+        os.environ.get("WAYFOLD_ALLOW_DESTRUCTIVE_RESET", "").strip()
+        == "I_UNDERSTAND_THIS_DELETES_DATA"
+    )
+
+
 def portfolio_registry_path(default_fixtures: Path) -> Path:
     """Dev/tests: fixture registry. Production (SEED_DEMO=0): empty writable registry."""
     override = os.environ.get("WAYFOLD_PORTFOLIO_REGISTRY", "").strip()

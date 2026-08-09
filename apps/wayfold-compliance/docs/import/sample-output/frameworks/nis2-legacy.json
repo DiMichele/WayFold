@@ -1,0 +1,1201 @@
+{
+  "schemaVersion": "1.0",
+  "framework": {
+    "id": "nis2-legacy",
+    "name": "NIS2 (legacy matrix)",
+    "legacyName": "NIS2",
+    "type": "Normativa",
+    "publisher": "",
+    "jurisdiction": "",
+    "officialSource": ""
+  },
+  "version": {
+    "id": "fv-37ed58dac58129c9",
+    "label": "legacy-import",
+    "status": "DRAFT",
+    "publicationDate": null,
+    "effectiveDate": null,
+    "metadataStatus": "INCOMPLETE"
+  },
+  "sourceStatus": "SOURCE_PARTIAL",
+  "requirements": [
+    {
+      "id": "req-24a8c5787cd7dc06",
+      "code": "PR.AA-06",
+      "sourceCode": "PR.AA-06",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "L'accesso fisico agli asset è gestito, monitorato e applicato in misura appropriata al rischio.",
+      "sourceRow": 22,
+      "isLeaf": true,
+      "order": 0
+    },
+    {
+      "id": "req-cb0bdf31b54a89d8",
+      "code": "GV.RR-02",
+      "sourceCode": "GV.RR-02",
+      "title": "È definita, approvata dagli organi di amministrazione e direttivi, e resa nota alle articolazioni competenti del soggett",
+      "description": "I ruoli, le responsabilità e le autorità relative alla gestione del rischio di cybersecurity sono stabiliti, comunicati, compresi e applicati.",
+      "sourceRow": 42,
+      "isLeaf": true,
+      "order": 1
+    },
+    {
+      "id": "req-125c0a9c51995146",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "È mantenuto un registro aggiornato recante l'elenco dei dipendenti che hanno ricevuto la formazione di cui al punto 1, i",
+      "description": "Il personale è sensibilizzato e formato in modo da possedere le conoscenze e le competenze per svolgere compiti di carattere generale tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 95,
+      "isLeaf": true,
+      "order": 2
+    },
+    {
+      "id": "req-de94d3db4d226201",
+      "code": "PR.PS-01",
+      "sourceCode": "PR.PS-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono definite, e documentate in un elenco aggiornato, le loro conf",
+      "description": "Sono stabilite e applicate pratiche di gestione della configurazione",
+      "sourceRow": 102,
+      "isLeaf": true,
+      "order": 3
+    },
+    {
+      "id": "req-5966c42ded902a06",
+      "code": "PR.IR-01 (1)",
+      "sourceCode": "PR.IR-01 (1)",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono definite e documentate le eventuali attività consentite da re",
+      "description": "Le reti e gli ambienti sono protetti dall'accesso logico e dall'uso non autorizzati.",
+      "sourceRow": 104,
+      "isLeaf": true,
+      "order": 4
+    },
+    {
+      "id": "req-4666d54e30656491",
+      "code": "GV.RR-02",
+      "sourceCode": "GV.RR-02",
+      "title": "È mantenuto un elenco aggiornato del personale dell'organizzazione di cui al punto 1 avente specifici ruoli e responsabi",
+      "description": "I ruoli, le responsabilità e le autorità relative alla gestione del rischio di cybersecurity sono stabiliti, comunicati, compresi e applicati.",
+      "sourceRow": 131,
+      "isLeaf": true,
+      "order": 5
+    },
+    {
+      "id": "req-c88cee263505c5b7",
+      "code": "PR.PS-03",
+      "sourceCode": "PR.PS-03",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono mantenuti uno o più registri delle manutenzioni effettuate su",
+      "description": "L'hardware è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 143,
+      "isLeaf": true,
+      "order": 6
+    },
+    {
+      "id": "req-2d6857248545ad9a",
+      "code": "PR.PS-04 (1)",
+      "sourceCode": "PR.PS-04 (1)",
+      "title": "Tutti gli accessi eseguiti da remoto e quelli effettuati con utenze con privilegi amministrativi sono registrati.",
+      "description": "I registri di log sono generati e resi disponibili per il monitoraggio continuo.",
+      "sourceRow": 281,
+      "isLeaf": true,
+      "order": 7
+    },
+    {
+      "id": "req-52f4efc5c536fe0c",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono presenti, aggiornati, mantenuti e configurati in modo adeguat",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 292,
+      "isLeaf": true,
+      "order": 8
+    },
+    {
+      "id": "req-b45885c9ee0a649c",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono utilizzati strumenti di analisi e filtraggio sul flusso di tr",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 309,
+      "isLeaf": true,
+      "order": 9
+    },
+    {
+      "id": "req-ecb64e76d84f63a6",
+      "code": "PR.PS-04 (2)",
+      "sourceCode": "PR.PS-04 (2)",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono conservati in modo sicuro, e possibilmente centralizzato, alm",
+      "description": "I registri di log sono generati e resi disponibili per il monitoraggio continuo.",
+      "sourceRow": 313,
+      "isLeaf": true,
+      "order": 10
+    },
+    {
+      "id": "req-db1f6f1afd502480",
+      "code": "PR.IR-01 (3)",
+      "sourceCode": "PR.IR-01 (3)",
+      "title": "Sono presenti, aggiornati, mantenuti e configurati i sistemi perimetrali, quali firewall.",
+      "description": "Le reti e gli ambienti sono protetti dall'accesso logico e dall'uso non autorizzati.",
+      "sourceRow": 332,
+      "isLeaf": true,
+      "order": 11
+    },
+    {
+      "id": "req-c716ab0a5ee09980",
+      "code": "GV.SC-01",
+      "sourceCode": "GV.SC-01",
+      "title": "In merito all’affidamento di forniture con potenziali impatti sulla sicurezza dei sistemi informativi e di rete, anche m",
+      "description": "Sono stabiliti e accettati dagli stakeholder dell'organizzazione un programma, una strategia, obiettivi, politiche e processi di gestione del rischio di cybersecurity della catena di approvvigionamento.",
+      "sourceRow": 434,
+      "isLeaf": true,
+      "order": 12
+    },
+    {
+      "id": "req-40525af535535034",
+      "code": "RC.CO-03",
+      "sourceCode": "RC.CO-03",
+      "title": "Sono adottate e documentate procedure per comunicare alle parti interne interessate, ivi incluse le articolazioni compet",
+      "description": "Le attività di ripristino e i progressi nel ripristino delle capacità operative sono comunicati agli stakeholder interni ed esterni designati.",
+      "sourceRow": 475,
+      "isLeaf": true,
+      "order": 13
+    },
+    {
+      "id": "req-6abcc81dbcaa2b1d",
+      "code": "GV.RM-03",
+      "sourceCode": "GV.RM-03",
+      "title": "Nell'ambito dei processi di gestione del rischio del soggetto NIS e nel rispetto delle politiche di cui alla misura GV.P",
+      "description": "Le attività e gli esiti della gestione del rischio di cybersecurity sono parte integrante dei processi di gestione del rischio dell'organizzazione.",
+      "sourceRow": 547,
+      "isLeaf": true,
+      "order": 14
+    },
+    {
+      "id": "req-2150352d9ef31fd2",
+      "code": "GV.PO-01",
+      "sourceCode": "GV.PO-01",
+      "title": "Sono adottate e documentate politiche di sicurezza informatica per almeno i seguenti ambiti:\na)\tgestione del rischio;\nb)",
+      "description": "La politica per la gestione del rischio di cybersecurity è stabilita in base al contesto organizzativo, alla strategia di cybersecurity e alle priorità, ed è comunicata e applicata.",
+      "sourceRow": 549,
+      "isLeaf": true,
+      "order": 15
+    },
+    {
+      "id": "req-acbe2e76ba3dd4b2",
+      "code": "GV.PO-01",
+      "sourceCode": "GV.PO-01",
+      "title": "Per gli ambiti di cui al punto 1 sono incluse almeno le politiche in relazione ai requisiti indicati nella tabella 1 in ",
+      "description": "La politica per la gestione del rischio di cybersecurity è stabilita in base al contesto organizzativo, alla strategia di cybersecurity e alle priorità, ed è comunicata e applicata.",
+      "sourceRow": 550,
+      "isLeaf": true,
+      "order": 16
+    },
+    {
+      "id": "req-2bb4164769a51d43",
+      "code": "GV.PO-01",
+      "sourceCode": "GV.PO-01",
+      "title": "Le politiche di cui al punto 1 sono approvate dagli organi di amministrazione e direttivi e rese note alle articolazioni",
+      "description": "La politica per la gestione del rischio di cybersecurity è stabilita in base al contesto organizzativo, alla strategia di cybersecurity e alle priorità, ed è comunicata e applicata.",
+      "sourceRow": 551,
+      "isLeaf": true,
+      "order": 17
+    },
+    {
+      "id": "req-d6662515e183561e",
+      "code": "GV.PO-02",
+      "sourceCode": "GV.PO-02",
+      "title": "Le politiche di cui alla misura GV.PO-01 sono riesaminate e, se opportuno, aggiornate periodicamente e comunque almeno c",
+      "description": "La politica per la gestione del rischio di cybersecurity è revisionata, aggiornata, comunicata e applicata per riflettere i cambiamenti nei requisiti, nelle minacce, nella tecnologia e nella missione dell'organizzazione.",
+      "sourceRow": 552,
+      "isLeaf": true,
+      "order": 18
+    },
+    {
+      "id": "req-c9eb21681ff01727",
+      "code": "GV.PO-02",
+      "sourceCode": "GV.PO-02",
+      "title": "Ai fini del riesame di cui al punto 1, è verificata almeno la conformità delle politiche di cui alla misura GV.PO-01 all",
+      "description": "La politica per la gestione del rischio di cybersecurity è revisionata, aggiornata, comunicata e applicata per riflettere i cambiamenti nei requisiti, nelle minacce, nella tecnologia e nella missione dell'organizzazione.",
+      "sourceRow": 553,
+      "isLeaf": true,
+      "order": 19
+    },
+    {
+      "id": "req-276aebe82e2fa2cb",
+      "code": "GV.PO-02",
+      "sourceCode": "GV.PO-02",
+      "title": "È mantenuto un registro aggiornato contenente gli esiti del riesame di cui al punto 1.",
+      "description": "La politica per la gestione del rischio di cybersecurity è revisionata, aggiornata, comunicata e applicata per riflettere i cambiamenti nei requisiti, nelle minacce, nella tecnologia e nella missione dell'organizzazione.",
+      "sourceRow": 554,
+      "isLeaf": true,
+      "order": 20
+    },
+    {
+      "id": "req-a319563a0a9d0aa9",
+      "code": "ID.IM-01",
+      "sourceCode": "ID.IM-01",
+      "title": "In accordo agli esiti del riesame di cui al punto 1 della misura GV.PO-02, è definito, attuato, documentato e approvato ",
+      "description": "Sono identificati miglioramenti in esito alle valutazioni.",
+      "sourceRow": 555,
+      "isLeaf": true,
+      "order": 21
+    },
+    {
+      "id": "req-bbdd826b9694df8d",
+      "code": "ID.IM-01",
+      "sourceCode": "ID.IM-01",
+      "title": "Gli organi di amministrazione e direttivi sono informati mediante apposite relazioni periodiche sugli esiti dei piani di",
+      "description": "Sono identificati miglioramenti in esito alle valutazioni.",
+      "sourceRow": 556,
+      "isLeaf": true,
+      "order": 22
+    },
+    {
+      "id": "req-f8cbffdc3404bd42",
+      "code": "ID.IM-01",
+      "sourceCode": "ID.IM-01",
+      "title": "È definito, attuato, aggiornato e documentato un piano per la valutazione dell'efficacia delle misure di gestione del ri",
+      "description": "Sono identificati miglioramenti in esito alle valutazioni.",
+      "sourceRow": 557,
+      "isLeaf": true,
+      "order": 23
+    },
+    {
+      "id": "req-aad1f067dedb655b",
+      "code": "ID.IM-01",
+      "sourceCode": "ID.IM-01",
+      "title": "Gli organi di amministrazione e direttivi sono informati mediante apposite relazioni periodiche sul piano di valutazione",
+      "description": "Sono identificati miglioramenti in esito alle valutazioni.",
+      "sourceRow": 558,
+      "isLeaf": true,
+      "order": 24
+    },
+    {
+      "id": "req-138662e9cfeb2a5c",
+      "code": "ID.IM-04",
+      "sourceCode": "ID.IM-04",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti è definito, attuato, aggiornato e documentato un piano di continuit",
+      "description": "I piani di risposta agli incidenti e gli altri piani di cybersecurity che impattano le operazioni sono stabiliti, comunicati, mantenuti e migliorati.",
+      "sourceRow": 559,
+      "isLeaf": true,
+      "order": 25
+    },
+    {
+      "id": "req-84f5460cb0c868e8",
+      "code": "ID.IM-04",
+      "sourceCode": "ID.IM-04",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti è definito, attuato, aggiornato e documentato un piano di ripristin",
+      "description": "I piani di risposta agli incidenti e gli altri piani di cybersecurity che impattano le operazioni sono stabiliti, comunicati, mantenuti e migliorati.",
+      "sourceRow": 560,
+      "isLeaf": true,
+      "order": 26
+    },
+    {
+      "id": "req-9e30c9b530ca16eb",
+      "code": "ID.IM-04",
+      "sourceCode": "ID.IM-04",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti è definito, attuato, aggiornato e documentato un piano per la gesti",
+      "description": "I piani di risposta agli incidenti e gli altri piani di cybersecurity che impattano le operazioni sono stabiliti, comunicati, mantenuti e migliorati.",
+      "sourceRow": 561,
+      "isLeaf": true,
+      "order": 27
+    },
+    {
+      "id": "req-0f2b808f0d21c04b",
+      "code": "ID.IM-04",
+      "sourceCode": "ID.IM-04",
+      "title": "I piani di cui ai punti 1, 2 e 3 sono approvati dagli organi di amministrazione e direttivi.",
+      "description": "I piani di risposta agli incidenti e gli altri piani di cybersecurity che impattano le operazioni sono stabiliti, comunicati, mantenuti e migliorati.",
+      "sourceRow": 562,
+      "isLeaf": true,
+      "order": 28
+    },
+    {
+      "id": "req-184d540385506a78",
+      "code": "ID.IM-04",
+      "sourceCode": "ID.IM-04",
+      "title": "I piani di cui ai punti 1, 2 e 3 sono riesaminati e, se opportuno, aggiornati periodicamente e comunque almeno ogni due ",
+      "description": "I piani di risposta agli incidenti e gli altri piani di cybersecurity che impattano le operazioni sono stabiliti, comunicati, mantenuti e migliorati.",
+      "sourceRow": 563,
+      "isLeaf": true,
+      "order": 29
+    },
+    {
+      "id": "req-993dafb0164c0a2d",
+      "code": "ID.AM-01",
+      "sourceCode": "ID.AM-01",
+      "title": "È mantenuto un inventario aggiornato degli apparati fisici (hardware) che compongono i sistemi informativi e di rete, iv",
+      "description": "Sono mantenuti gli inventari dell'hardware gestito dall'organizzazione.",
+      "sourceRow": 564,
+      "isLeaf": true,
+      "order": 30
+    },
+    {
+      "id": "req-779799c1b7f21ea9",
+      "code": "ID.AM-02",
+      "sourceCode": "ID.AM-02",
+      "title": "È mantenuto un inventario aggiornato dei servizi, dei sistemi e delle applicazioni software che compongono i sistemi inf",
+      "description": "Sono mantenuti gli inventari del software, dei servizi e dei sistemi gestiti dall'organizzazione.",
+      "sourceRow": 566,
+      "isLeaf": true,
+      "order": 31
+    },
+    {
+      "id": "req-318d543f748f7f33",
+      "code": "GV.OC-04",
+      "sourceCode": "GV.OC-04",
+      "title": "È mantenuto un elenco aggiornato dei sistemi informativi e di rete rilevanti.",
+      "description": "Gli obiettivi, le capacità e i servizi critici dai quali gli stakeholder dipendono o che si aspettano dall'organizzazione sono compresi e comunicati.",
+      "sourceRow": 567,
+      "isLeaf": true,
+      "order": 32
+    },
+    {
+      "id": "req-2e82cc00fb050976",
+      "code": "ID.AM-03",
+      "sourceCode": "ID.AM-03",
+      "title": "È mantenuto un inventario aggiornato dei flussi di rete tra i sistemi informativi e di rete del soggetto NIS e l’esterno",
+      "description": "Sono mantenute le rappresentazioni delle comunicazioni di rete, dei flussi di dati di rete interni ed esterni, autorizzati dall'organizzazione.",
+      "sourceRow": 568,
+      "isLeaf": true,
+      "order": 33
+    },
+    {
+      "id": "req-00c2bf2e18004b96",
+      "code": "ID.AM-04",
+      "sourceCode": "ID.AM-04",
+      "title": "È mantenuto un inventario aggiornato dei servizi informatici erogati dai fornitori, ivi inclusi i servizi cloud.",
+      "description": "Sono mantenuti gli inventari dei servizi erogati dai fornitori.",
+      "sourceRow": 569,
+      "isLeaf": true,
+      "order": 34
+    },
+    {
+      "id": "req-612cc2c573f6b0fa",
+      "code": "PR.IR-01 (4)",
+      "sourceCode": "PR.IR-01 (4)",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Le reti e gli ambienti sono protetti dall'accesso logico e dall'uso non autorizzati.",
+      "sourceRow": 570,
+      "isLeaf": true,
+      "order": 35
+    },
+    {
+      "id": "req-7027ab1a10fff84b",
+      "code": "ID.RA-06",
+      "sourceCode": "ID.RA-06",
+      "title": "È definito, documentato, eseguito e monitorato un piano di trattamento del rischio che comprende almeno:\na)\tle opzioni d",
+      "description": "Le risposte al rischio sono scelte, prioritizzate, pianificate, monitorate e comunicate.",
+      "sourceRow": 574,
+      "isLeaf": true,
+      "order": 36
+    },
+    {
+      "id": "req-8a40561f575dff08",
+      "code": "ID.RA-06",
+      "sourceCode": "ID.RA-06",
+      "title": "Qualora per motivate e documentate ragioni normative o tecniche non siano attuati i requisiti di cui alla tabella 2 in a",
+      "description": "Le risposte al rischio sono scelte, prioritizzate, pianificate, monitorate e comunicate.",
+      "sourceRow": 575,
+      "isLeaf": true,
+      "order": 37
+    },
+    {
+      "id": "req-3e1acab681cf0fcd",
+      "code": "ID.RA-06",
+      "sourceCode": "ID.RA-06",
+      "title": "Il piano di cui al punto 1, ivi compresa l’accettazione di eventuali rischi residui, è approvato dagli organi di amminis",
+      "description": "Le risposte al rischio sono scelte, prioritizzate, pianificate, monitorate e comunicate.",
+      "sourceRow": 576,
+      "isLeaf": true,
+      "order": 38
+    },
+    {
+      "id": "req-a49b26f68d96ddf2",
+      "code": "ID.RA-01",
+      "sourceCode": "ID.RA-01",
+      "title": "Le informazioni di cui al punto 1 della misura ID.RA-08 sono utilizzate per identificare eventuali vulnerabilità sui i s",
+      "description": "Le vulnerabilità negli asset sono identificate, confermate e registrate.",
+      "sourceRow": 578,
+      "isLeaf": true,
+      "order": 39
+    },
+    {
+      "id": "req-968e2960c0b18456",
+      "code": "ID.RA-01",
+      "sourceCode": "ID.RA-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, in accordo al piano di gestione delle vulnerabilità di cui alla mi",
+      "description": "Le vulnerabilità negli asset sono identificate, confermate e registrate.",
+      "sourceRow": 579,
+      "isLeaf": true,
+      "order": 40
+    },
+    {
+      "id": "req-d0f87e4036503e1d",
+      "code": "ID.RA-01",
+      "sourceCode": "ID.RA-01",
+      "title": "Le attività di cui al punto 2 sono documentate tramite apposite relazioni che contengono almeno:\na)\tla descrizione gener",
+      "description": "Le vulnerabilità negli asset sono identificate, confermate e registrate.",
+      "sourceRow": 580,
+      "isLeaf": true,
+      "order": 41
+    },
+    {
+      "id": "req-1134b0805f0685b2",
+      "code": "ID.RA-08",
+      "sourceCode": "ID.RA-08",
+      "title": "Sono monitorati almeno i canali di comunicazione del CSIRT Italia, nonché di eventuali CERT e Information Sharing & Anal",
+      "description": "Sono stabiliti processi per la ricezione, l'analisi e la risposta alle divulgazioni di vulnerabilità.",
+      "sourceRow": 581,
+      "isLeaf": true,
+      "order": 42
+    },
+    {
+      "id": "req-9e0a3b46f6874199",
+      "code": "ID.RA-08",
+      "sourceCode": "ID.RA-08",
+      "title": "Le vulnerabilità, ivi comprese quelle identificate ai sensi della misura ID.RA-01 , sono prontamente risolte attraverso ",
+      "description": "Sono stabiliti processi per la ricezione, l'analisi e la risposta alle divulgazioni di vulnerabilità.",
+      "sourceRow": 582,
+      "isLeaf": true,
+      "order": 43
+    },
+    {
+      "id": "req-e4b5cb6ad4b566df",
+      "code": "ID.RA-08",
+      "sourceCode": "ID.RA-08",
+      "title": "È definito, attuato, aggiornato e documentato un piano di gestione delle vulnerabilità che comprende almeno:\na)\tle modal",
+      "description": "Sono stabiliti processi per la ricezione, l'analisi e la risposta alle divulgazioni di vulnerabilità.",
+      "sourceRow": 583,
+      "isLeaf": true,
+      "order": 44
+    },
+    {
+      "id": "req-772a14d536b076b5",
+      "code": "ID.RA-08",
+      "sourceCode": "ID.RA-08",
+      "title": "Il piano di cui al punto 3 è approvato dagli organi di amministrazione e direttivi.",
+      "description": "Sono stabiliti processi per la ricezione, l'analisi e la risposta alle divulgazioni di vulnerabilità.",
+      "sourceRow": 584,
+      "isLeaf": true,
+      "order": 45
+    },
+    {
+      "id": "req-2aced03452a32bf6",
+      "code": "ID.RA-08",
+      "sourceCode": "ID.RA-08",
+      "title": "Ai fini di cui al punto 1, sono monitorati anche i canali dei fornitori del software ritenuto critico.",
+      "description": "Sono stabiliti processi per la ricezione, l'analisi e la risposta alle divulgazioni di vulnerabilità.",
+      "sourceRow": 585,
+      "isLeaf": true,
+      "order": 46
+    },
+    {
+      "id": "req-8a9c511d5e6a5f53",
+      "code": "PR.PS-02",
+      "sourceCode": "PR.PS-02",
+      "title": "Fatte salve motivate e documentate ragioni normative o tecniche, sono installati, senza ingiustificato ritardo, gli ulti",
+      "description": "Il software è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 586,
+      "isLeaf": true,
+      "order": 47
+    },
+    {
+      "id": "req-ac45dfb80c9b7507",
+      "code": "PR.PS-04 (3)",
+      "sourceCode": "PR.PS-04 (3)",
+      "title": "In accordo agli esiti della valutazione rischio di cui alla misura ID.RA-05, sono definite e documentate le tempistiche ",
+      "description": "I registri di log sono generati e resi disponibili per il monitoraggio continuo.",
+      "sourceRow": 587,
+      "isLeaf": true,
+      "order": 48
+    },
+    {
+      "id": "req-6a368214ecba27fb",
+      "code": "PR.PS-04 (4)",
+      "sourceCode": "PR.PS-04 (4)",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "I registri di log sono generati e resi disponibili per il monitoraggio continuo.",
+      "sourceRow": 588,
+      "isLeaf": true,
+      "order": 49
+    },
+    {
+      "id": "req-3c065636934ac6de",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Sono definiti e documentati i livelli di servizio attesi (SL) dei servizi e delle attività del soggetto NIS anche ai fin",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 589,
+      "isLeaf": true,
+      "order": 50
+    },
+    {
+      "id": "req-d0b7e026f00030f6",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 590,
+      "isLeaf": true,
+      "order": 51
+    },
+    {
+      "id": "req-d86b5552a2ab16ba",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, ai fini di cui al punto 1, sono monitorati gli accessi da remoto, ",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 591,
+      "isLeaf": true,
+      "order": 52
+    },
+    {
+      "id": "req-3412d3eb653e4ec4",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, ai fini di cui al punto 1, sono definiti, monitorati e documentati",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 592,
+      "isLeaf": true,
+      "order": 53
+    },
+    {
+      "id": "req-71eb5d518612d6da",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Le reti e i servizi di rete sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 593,
+      "isLeaf": true,
+      "order": 54
+    },
+    {
+      "id": "req-c0b2058883492fdd",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "In accordo al piano di gestione dei rischi per la sicurezza informatica di cui alla misura GV.RM-03, è eseguita e docume",
+      "description": "Minacce, vulnerabilità, probabilità e impatti sono utilizzati per comprendere il rischio inerente e per informare la prioritizzazione della risposta al rischio.",
+      "sourceRow": 594,
+      "isLeaf": true,
+      "order": 55
+    },
+    {
+      "id": "req-c39e07be7fc8346d",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "La valutazione del rischio di cui al punto 1 è eseguita a intervalli pianificati e comunque almeno ogni due anni, nonché",
+      "description": "Minacce, vulnerabilità, probabilità e impatti sono utilizzati per comprendere il rischio inerente e per informare la prioritizzazione della risposta al rischio.",
+      "sourceRow": 595,
+      "isLeaf": true,
+      "order": 56
+    },
+    {
+      "id": "req-99f9ca2ed606800a",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "La valutazione del rischio cui al punto 1 è approvata dagli organi di amministrazione e direttivi.",
+      "description": "Minacce, vulnerabilità, probabilità e impatti sono utilizzati per comprendere il rischio inerente e per informare la prioritizzazione della risposta al rischio.",
+      "sourceRow": 596,
+      "isLeaf": true,
+      "order": 57
+    },
+    {
+      "id": "req-a48836d46eb14172",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "La valutazione del rischio di cui al punto 1 è effettuata considerando almeno le minacce interne ed esterne, le vulnerab",
+      "description": "Minacce, vulnerabilità, probabilità e impatti sono utilizzati per comprendere il rischio inerente e per informare la prioritizzazione della risposta al rischio.",
+      "sourceRow": 597,
+      "isLeaf": true,
+      "order": 58
+    },
+    {
+      "id": "req-bbabaa034cfa2302",
+      "code": "RS.MA-01",
+      "sourceCode": "RS.MA-01",
+      "title": "È definito, attuato, aggiornato e documentato un piano per la gestione degli incidenti di sicurezza informatica e la not",
+      "description": "Il piano di risposta agli incidenti è eseguito in coordinamento con le terze parti interessate una volta dichiarato un incidente.",
+      "sourceRow": 602,
+      "isLeaf": true,
+      "order": 59
+    },
+    {
+      "id": "req-9d5095c35c2d24fe",
+      "code": "RS.MA-01",
+      "sourceCode": "RS.MA-01",
+      "title": "Il piano di cui al punto 1 è approvato dagli organi di amministrazione e direttivi.",
+      "description": "Il piano di risposta agli incidenti è eseguito in coordinamento con le terze parti interessate una volta dichiarato un incidente.",
+      "sourceRow": 603,
+      "isLeaf": true,
+      "order": 60
+    },
+    {
+      "id": "req-89e0fce379a0596b",
+      "code": "RS.MA-01",
+      "sourceCode": "RS.MA-01",
+      "title": "Il piano di cui al punto 1 è riesaminato e, se opportuno, aggiornato periodicamente e comunque almeno ogni due anni, non",
+      "description": "Il piano di risposta agli incidenti è eseguito in coordinamento con le terze parti interessate una volta dichiarato un incidente.",
+      "sourceRow": 604,
+      "isLeaf": true,
+      "order": 61
+    },
+    {
+      "id": "req-1ffdc26f7fcea7a6",
+      "code": "RS.CO-02",
+      "sourceCode": "RS.CO-02",
+      "title": "In accordo al piano per la gestione degli incidenti di cui alla misura RS.MA-01, sono documentate e adottate procedure p",
+      "description": "Gli stakeholder interni ed esterni sono informati degli incidenti.",
+      "sourceRow": 605,
+      "isLeaf": true,
+      "order": 62
+    },
+    {
+      "id": "req-37b85bdf3f778ac7",
+      "code": "RS.CO-02",
+      "sourceCode": "RS.CO-02",
+      "title": "Sono documentate e adottate procedure per informare il pubblico sugli incidenti occorsi, qualora intimato dall’Agenzia p",
+      "description": "Gli stakeholder interni ed esterni sono informati degli incidenti.",
+      "sourceRow": 606,
+      "isLeaf": true,
+      "order": 63
+    },
+    {
+      "id": "req-4b2dfa4f63817fb9",
+      "code": "RC.RP-01",
+      "sourceCode": "RC.RP-01",
+      "title": "Nell'ambito del piano per la gestione degli incidenti di cui alla misura RS.MA-01, sono adottate e documentate procedure",
+      "description": "La parte del piano di risposta agli incidenti relativa al rispristino viene eseguita una volta avviata dal processo di risposta agli incidenti.",
+      "sourceRow": 607,
+      "isLeaf": true,
+      "order": 64
+    },
+    {
+      "id": "req-4a5bb8301495cb48",
+      "code": "PR.AA-06",
+      "sourceCode": "PR.AA-06",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, l’accesso fisico è protetto.",
+      "description": "L'accesso fisico agli asset è gestito, monitorato e applicato in misura appropriata al rischio.",
+      "sourceRow": 608,
+      "isLeaf": true,
+      "order": 65
+    },
+    {
+      "id": "req-b7d4e853ccfbf30b",
+      "code": "PR.IR-03 (1)",
+      "sourceCode": "PR.IR-03 (1)",
+      "title": "In accordo agli esiti della valutazione del rischio di cui alla misura ID.RA-05, sono utilizzati sistemi di comunicazion",
+      "description": "Sono implementati meccanismi per soddisfare i requisiti di resilienza in situazioni normali e avverse.",
+      "sourceRow": 609,
+      "isLeaf": true,
+      "order": 66
+    },
+    {
+      "id": "req-289b75a9241aaf34",
+      "code": "PR.IR-03 (2)",
+      "sourceCode": "PR.IR-03 (2)",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "Sono implementati meccanismi per soddisfare i requisiti di resilienza in situazioni normali e avverse.",
+      "sourceRow": 610,
+      "isLeaf": true,
+      "order": 67
+    },
+    {
+      "id": "req-a96bd6591fe08a18",
+      "code": "GV.RR-02",
+      "sourceCode": "GV.RR-02",
+      "title": "All’interno dell’organizzazione per la sicurezza informatica di cui al punto 1, sono inclusi il punto di contatto e il s",
+      "description": "I ruoli, le responsabilità e le autorità relative alla gestione del rischio di cybersecurity sono stabiliti, comunicati, compresi e applicati.",
+      "sourceRow": 612,
+      "isLeaf": true,
+      "order": 68
+    },
+    {
+      "id": "req-dec1e33a53a9b492",
+      "code": "GV.RR-02",
+      "sourceCode": "GV.RR-02",
+      "title": "I ruoli e le responsabilità di cui al punto 1 sono riesaminati e, se opportuno, aggiornati periodicamente e comunque alm",
+      "description": "I ruoli, le responsabilità e le autorità relative alla gestione del rischio di cybersecurity sono stabiliti, comunicati, compresi e applicati.",
+      "sourceRow": 613,
+      "isLeaf": true,
+      "order": 69
+    },
+    {
+      "id": "req-bfbd6d0e02274574",
+      "code": "GV.RR-04",
+      "sourceCode": "GV.RR-04",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, il personale autorizzato ad accedervi è individuato previa valutaz",
+      "description": "La cybersecurity è inclusa nelle pratiche delle risorse umane.",
+      "sourceRow": 614,
+      "isLeaf": true,
+      "order": 70
+    },
+    {
+      "id": "req-9610688752419fcb",
+      "code": "GV.RR-04",
+      "sourceCode": "GV.RR-04",
+      "title": "Gli amministratori di sistema dei sistemi informativi e di rete sono individuati previa valutazione dell’esperienza, cap",
+      "description": "La cybersecurity è inclusa nelle pratiche delle risorse umane.",
+      "sourceRow": 615,
+      "isLeaf": true,
+      "order": 71
+    },
+    {
+      "id": "req-7c79322860465064",
+      "code": "GV.RR-04",
+      "sourceCode": "GV.RR-04",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "La cybersecurity è inclusa nelle pratiche delle risorse umane.",
+      "sourceRow": 616,
+      "isLeaf": true,
+      "order": 72
+    },
+    {
+      "id": "req-af01218d7355afd9",
+      "code": "GV.RR-04",
+      "sourceCode": "GV.RR-04",
+      "title": "In accordo agli esiti della valutazione del rischio di cui alla misura ID.RA-05, sono definiti a livello contrattuale gl",
+      "description": "La cybersecurity è inclusa nelle pratiche delle risorse umane.",
+      "sourceRow": 617,
+      "isLeaf": true,
+      "order": 73
+    },
+    {
+      "id": "req-08f356666c18ddad",
+      "code": "GV.RR-04",
+      "sourceCode": "GV.RR-04",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "La cybersecurity è inclusa nelle pratiche delle risorse umane.",
+      "sourceRow": 618,
+      "isLeaf": true,
+      "order": 74
+    },
+    {
+      "id": "req-8c2505497e5ce064",
+      "code": "GV.SC-01",
+      "sourceCode": "GV.SC-01",
+      "title": "Per i requisiti di sicurezza di cui al punto 1, lettera b), sono considerati, ove applicabile, almeno i seguenti ambiti:",
+      "description": "Sono stabiliti e accettati dagli stakeholder dell'organizzazione un programma, una strategia, obiettivi, politiche e processi di gestione del rischio di cybersecurity della catena di approvvigionamento.",
+      "sourceRow": 619,
+      "isLeaf": true,
+      "order": 75
+    },
+    {
+      "id": "req-a557ac7352a1fb41",
+      "code": "GV.SC-02",
+      "sourceCode": "GV.SC-02",
+      "title": "Nell'ambito dell'organizzazione per la sicurezza informatica di cui alla misura GV.RR-02, sono definiti e resi noti alle",
+      "description": "I ruoli e le responsabilità in materia di cybersecurity per fornitori, clienti e partner sono stabiliti, comunicati e coordinati internamente ed esternamente.",
+      "sourceRow": 620,
+      "isLeaf": true,
+      "order": 76
+    },
+    {
+      "id": "req-e742f9804fcef480",
+      "code": "GV.SC-02",
+      "sourceCode": "GV.SC-02",
+      "title": "Il personale di cui al punto 1 avente specifici ruoli e responsabilità è incluso nell’elenco di cui al punto 2 della mis",
+      "description": "I ruoli e le responsabilità in materia di cybersecurity per fornitori, clienti e partner sono stabiliti, comunicati e coordinati internamente ed esternamente.",
+      "sourceRow": 621,
+      "isLeaf": true,
+      "order": 77
+    },
+    {
+      "id": "req-171c18e608ef3435",
+      "code": "GV.SC-04",
+      "sourceCode": "GV.SC-04",
+      "title": "È mantenuto un inventario aggiornato dei fornitori, le cui forniture hanno un potenziale impatto sulla sicurezza dei sis",
+      "description": "I fornitori sono noti e prioritizzati in base alla criticità.",
+      "sourceRow": 622,
+      "isLeaf": true,
+      "order": 78
+    },
+    {
+      "id": "req-d040e9da70bffd63",
+      "code": "GV.SC-05",
+      "sourceCode": "GV.SC-05",
+      "title": "Fatte salve motivate e documentate ragioni normative o tecniche, i requisiti di sicurezza di cui alla misura GV.SC-01, p",
+      "description": "I requisiti per affrontare i rischi di cybersecurity nella catena di approvvigionamento sono stabiliti, prioritizzati e integrati nei contratti e in altri tipi di accordi con i fornitori e altre terze parti rilevanti.",
+      "sourceRow": 623,
+      "isLeaf": true,
+      "order": 79
+    },
+    {
+      "id": "req-aecc4010311f2975",
+      "code": "GV.SC-07",
+      "sourceCode": "GV.SC-07",
+      "title": "Nell’ambito della valutazione del rischio di cui alla misura ID.RA-05, è valutato e documentato il rischio associato all",
+      "description": "I rischi posti da un fornitore, dai suoi prodotti e servizi e da altre terze parti sono compresi, registrati, prioritizzati, valutati, trattati e monitorati nel corso della relazione.",
+      "sourceRow": 624,
+      "isLeaf": true,
+      "order": 80
+    },
+    {
+      "id": "req-126ec48589bb5de9",
+      "code": "GV.SC-07",
+      "sourceCode": "GV.SC-07",
+      "title": "È verificata periodicamente e documentata la conformità delle forniture ai requisiti di cui alla misura GV.SC-05.",
+      "description": "I rischi posti da un fornitore, dai suoi prodotti e servizi e da altre terze parti sono compresi, registrati, prioritizzati, valutati, trattati e monitorati nel corso della relazione.",
+      "sourceRow": 625,
+      "isLeaf": true,
+      "order": 81
+    },
+    {
+      "id": "req-f0db33a397fd31b0",
+      "code": "PR.AA-01",
+      "sourceCode": "PR.AA-01",
+      "title": "Tutte le utenze, ivi incluse quelle con privilegi amministrativi e quelle utilizzate per l’accesso remoto, sono censite,",
+      "description": "Le identità e le credenziali degli utenti, dei servizi e dell'hardware autorizzati sono gestite dall'organizzazione.",
+      "sourceRow": 626,
+      "isLeaf": true,
+      "order": 82
+    },
+    {
+      "id": "req-6abafe4d95dfc95b",
+      "code": "PR.AA-01",
+      "sourceCode": "PR.AA-01",
+      "title": "Le credenziali (ad esempio nome utente e password) relative alle utenze sono robuste e aggiornate in accordo agli esiti ",
+      "description": "Le identità e le credenziali degli utenti, dei servizi e dell'hardware autorizzati sono gestite dall'organizzazione.",
+      "sourceRow": 627,
+      "isLeaf": true,
+      "order": 83
+    },
+    {
+      "id": "req-ff0fc03ea8d4ae47",
+      "code": "PR.AA-01",
+      "sourceCode": "PR.AA-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono verificate   periodicamente le utenze e le relative autorizza",
+      "description": "Le identità e le credenziali degli utenti, dei servizi e dell'hardware autorizzati sono gestite dall'organizzazione.",
+      "sourceRow": 628,
+      "isLeaf": true,
+      "order": 84
+    },
+    {
+      "id": "req-cfb5605f6684c13d",
+      "code": "PR.AA-01",
+      "sourceCode": "PR.AA-01",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Le identità e le credenziali degli utenti, dei servizi e dell'hardware autorizzati sono gestite dall'organizzazione.",
+      "sourceRow": 629,
+      "isLeaf": true,
+      "order": 85
+    },
+    {
+      "id": "req-71fbeaa29248fc0f",
+      "code": "PR.AA-03",
+      "sourceCode": "PR.AA-03",
+      "title": "Le modalità di autenticazione delle utenze per accedere ai sistemi informativi e di rete sono commisurate al rischio. A ",
+      "description": "Utenti, servizi e hardware sono autenticati",
+      "sourceRow": 630,
+      "isLeaf": true,
+      "order": 86
+    },
+    {
+      "id": "req-0528f66dae61ff69",
+      "code": "PR.AA-03",
+      "sourceCode": "PR.AA-03",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti e in accordo agli esiti della valutazione del rischio di cui alla m",
+      "description": "Utenti, servizi e hardware sono autenticati",
+      "sourceRow": 631,
+      "isLeaf": true,
+      "order": 87
+    },
+    {
+      "id": "req-cf87c2627cffb916",
+      "code": "PR.AA-03",
+      "sourceCode": "PR.AA-03",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Utenti, servizi e hardware sono autenticati",
+      "sourceRow": 632,
+      "isLeaf": true,
+      "order": 88
+    },
+    {
+      "id": "req-c1cb8dfa8b53069a",
+      "code": "PR.AA-05",
+      "sourceCode": "PR.AA-05",
+      "title": "È assicurata la completa distinzione tra utenze con e senza privilegi amministrativi degli amministratori di sistema all",
+      "description": "I permessi, i diritti e le autorizzazioni di accesso sono definiti in una politica, gestiti, applicati e rivisti e incorporano i principi del minimo privilegio e della separazione dei compiti.",
+      "sourceRow": 633,
+      "isLeaf": true,
+      "order": 89
+    },
+    {
+      "id": "req-550152adbec058b9",
+      "code": "PR.AA-05",
+      "sourceCode": "PR.AA-05",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "I permessi, i diritti e le autorizzazioni di accesso sono definiti in una politica, gestiti, applicati e rivisti e incorporano i principi del minimo privilegio e della separazione dei compiti.",
+      "sourceRow": 634,
+      "isLeaf": true,
+      "order": 90
+    },
+    {
+      "id": "req-0866f1f61e13cd0f",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "È definito, attuato, aggiornato e documentato un piano di formazione in materia di sicurezza informatica del personale, ",
+      "description": "Il personale è sensibilizzato e formato in modo da possedere le conoscenze e le competenze per svolgere compiti di carattere generale tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 635,
+      "isLeaf": true,
+      "order": 91
+    },
+    {
+      "id": "req-328819e162a2e3e1",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "Il piano di formazione di cui al punto 1 è approvato dagli organi di amministrazione e direttivi.",
+      "description": "Il personale è sensibilizzato e formato in modo da possedere le conoscenze e le competenze per svolgere compiti di carattere generale tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 636,
+      "isLeaf": true,
+      "order": 92
+    },
+    {
+      "id": "req-ec80a756b0d9d958",
+      "code": "PR.AT-02",
+      "sourceCode": "PR.AT-02",
+      "title": "Il piano di cui alla misura PR.AT-01 prevede una formazione dedicata al personale con ruoli specializzati, ossia che ric",
+      "description": "Gli individui che ricoprono ruoli specializzati sono sensibilizzati e formati in modo da possedere le conoscenze e le competenze per svolgere i pertinenti compiti tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 637,
+      "isLeaf": true,
+      "order": 93
+    },
+    {
+      "id": "req-24642c8d18f71b94",
+      "code": "PR.PS-01",
+      "sourceCode": "PR.PS-01",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "Sono stabilite e applicate pratiche di gestione della configurazione",
+      "sourceRow": 638,
+      "isLeaf": true,
+      "order": 94
+    },
+    {
+      "id": "req-fe7a8b4767d3d8be",
+      "code": "PR.PS-02",
+      "sourceCode": "PR.PS-02",
+      "title": "Fatte salve motivate e documentate ragioni normative o tecniche, in accordo agli esiti della valutazione del rischio di ",
+      "description": "Il software è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 639,
+      "isLeaf": true,
+      "order": 95
+    },
+    {
+      "id": "req-80a9e70532e3f027",
+      "code": "PR.PS-02",
+      "sourceCode": "PR.PS-02",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "Il software è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 640,
+      "isLeaf": true,
+      "order": 96
+    },
+    {
+      "id": "req-64b5aec79c85537a",
+      "code": "PR.PS-02",
+      "sourceCode": "PR.PS-02",
+      "title": "Fatte salve motivate e documentate ragioni normative o tecniche e in accordo agli esiti della valutazione del rischio di",
+      "description": "Il software è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 641,
+      "isLeaf": true,
+      "order": 97
+    },
+    {
+      "id": "req-9828a1e07e38e81a",
+      "code": "PR.PS-02",
+      "sourceCode": "PR.PS-02",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "Il software è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 642,
+      "isLeaf": true,
+      "order": 98
+    },
+    {
+      "id": "req-69f2003fc4c5b53e",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti e in accordo agli esiti della valutazione del rischio di cui alla m",
+      "description": "La riservatezza, l'integrità e la disponibilità dei dati a riposo (data-at-rest) sono protette.",
+      "sourceRow": 650,
+      "isLeaf": true,
+      "order": 99
+    },
+    {
+      "id": "req-97fad696428921f7",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Fatte salve e documentate ragioni normative o tecniche, è disabilitata l'auto esecuzione dei supporti rimovibili ed è ef",
+      "description": "La riservatezza, l'integrità e la disponibilità dei dati a riposo (data-at-rest) sono protette.",
+      "sourceRow": 651,
+      "isLeaf": true,
+      "order": 100
+    },
+    {
+      "id": "req-e2b61654ecf3d639",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "La riservatezza, l'integrità e la disponibilità dei dati a riposo (data-at-rest) sono protette.",
+      "sourceRow": 652,
+      "isLeaf": true,
+      "order": 101
+    },
+    {
+      "id": "req-f395b99350a7f041",
+      "code": "PR.DS-02",
+      "sourceCode": "PR.DS-02",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, ivi inclusi quelli di comunicazione vocale, video e testuale, e in",
+      "description": "La riservatezza, l'integrità e la disponibilità dei dati in transito (data-in-transit) sono protette.",
+      "sourceRow": 653,
+      "isLeaf": true,
+      "order": 102
+    },
+    {
+      "id": "req-d94fe4278f2f5d34",
+      "code": "PR.DS-02",
+      "sourceCode": "PR.DS-02",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "La riservatezza, l'integrità e la disponibilità dei dati in transito (data-in-transit) sono protette.",
+      "sourceRow": 654,
+      "isLeaf": true,
+      "order": 103
+    },
+    {
+      "id": "req-2214106831b8b6ce",
+      "code": "PR.DS-11",
+      "sourceCode": "PR.DS-11",
+      "title": "In accordo alle esigenze di continuità operativa e di ripristino in caso di disastro individuate nei piani di cui alla m",
+      "description": "I backup dei dati sono creati, protetti, mantenuti e verificati.",
+      "sourceRow": 655,
+      "isLeaf": true,
+      "order": 104
+    },
+    {
+      "id": "req-6597f28294daf963",
+      "code": "PR.DS-11",
+      "sourceCode": "PR.DS-11",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "I backup dei dati sono creati, protetti, mantenuti e verificati.",
+      "sourceRow": 656,
+      "isLeaf": true,
+      "order": 105
+    },
+    {
+      "id": "req-21d826500c72c2ce",
+      "code": "PR.DS-11",
+      "sourceCode": "PR.DS-11",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, è assicurata la riservatezza e l’integrità delle informazioni cont",
+      "description": "I backup dei dati sono creati, protetti, mantenuti e verificati.",
+      "sourceRow": 657,
+      "isLeaf": true,
+      "order": 106
+    },
+    {
+      "id": "req-731c6deb2b9af91a",
+      "code": "PR.DS-11",
+      "sourceCode": "PR.DS-11",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, in accordo agli esiti della valutazione del rischio di cui alla mi",
+      "description": "I backup dei dati sono creati, protetti, mantenuti e verificati.",
+      "sourceRow": 658,
+      "isLeaf": true,
+      "order": 107
+    },
+    {
+      "id": "req-63c56342e245e684",
+      "code": "PR.DS-11",
+      "sourceCode": "PR.DS-11",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione ai punti",
+      "description": "I backup dei dati sono creati, protetti, mantenuti e verificati.",
+      "sourceRow": 659,
+      "isLeaf": true,
+      "order": 108
+    },
+    {
+      "id": "req-aba770c1b14ab572",
+      "code": "PR.AA-05",
+      "sourceCode": "PR.AA-05",
+      "title": "I permessi sono assegnati alle utenze in accordo ai principi del minimo privilegio e della separazione delle funzioni, t",
+      "description": "I permessi, i diritti e le autorizzazioni di accesso sono definiti in una politica, gestiti, applicati e rivisti e incorporano i principi del minimo privilegio e della separazione dei compiti.",
+      "sourceRow": 674,
+      "isLeaf": true,
+      "order": 109
+    },
+    {
+      "id": "req-4fb803314ccf4f0c",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "È mantenuto un registro aggiornato recante l'elenco dei dipendenti che hanno ricevuto la formazione di cui al punto 1, i",
+      "description": "Il personale è sensibilizzato e formato in modo da possedere le conoscenze e le competenze per svolgere compiti di carattere generale tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 682,
+      "isLeaf": true,
+      "order": 110
+    },
+    {
+      "id": "req-a3e09f1b6e94b76b",
+      "code": "PR.PS-03",
+      "sourceCode": "PR.PS-03",
+      "title": "Per almeno i sistemi informativi e di rete rilevanti, sono adottate e documentate procedure per il trasferimento fisico ",
+      "description": "L'hardware è mantenuto, sostituito e rimosso in base al rischio.",
+      "sourceRow": 716,
+      "isLeaf": true,
+      "order": 111
+    },
+    {
+      "id": "req-eb8cb5c279caea0d",
+      "code": "PR.AT-02",
+      "sourceCode": "PR.AT-02",
+      "title": "È mantenuto un registro aggiornato recante l'elenco dei dipendenti che hanno ricevuto la formazione di cui al punto 1, i",
+      "description": "Gli individui che ricoprono ruoli specializzati sono sensibilizzati e formati in modo da possedere le conoscenze e le competenze per svolgere i pertinenti compiti tenendo conto dei rischi di cybersecurity.",
+      "sourceRow": 738,
+      "isLeaf": true,
+      "order": 112
+    },
+    {
+      "id": "req-d37221e517251f8e",
+      "code": "PR.PS-06",
+      "sourceCode": "PR.PS-06",
+      "title": "Sono adottate e documentate pratiche di sviluppo sicuro del codice nello sviluppo del software.",
+      "description": "Le pratiche di sviluppo sicuro del software sono integrate e le loro prestazioni sono monitorate durante l'intero ciclo di vita del software.",
+      "sourceRow": 744,
+      "isLeaf": true,
+      "order": 113
+    },
+    {
+      "id": "req-5fb9a8d6855c34f9",
+      "code": "DE.CM-09",
+      "sourceCode": "DE.CM-09",
+      "title": "Fatte salve motivate e documentate ragioni normative o tecniche, sono presenti, aggiornati, mantenuti e configurati in m",
+      "description": "L'hardware e il software di elaborazione, gli ambienti di runtime e i loro dati sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 745,
+      "isLeaf": true,
+      "order": 114
+    },
+    {
+      "id": "req-fbc2aef6a0c0adbf",
+      "code": "PR.IR-01 (2)",
+      "sourceCode": "PR.IR-01 (2)",
+      "title": "È mantenuto un elenco aggiornato dei sistemi informativi e di rete ai quali è possibile accedere da remoto con la descri",
+      "description": "Le reti e gli ambienti sono protetti dall'accesso logico e dall'uso non autorizzati.",
+      "sourceRow": 780,
+      "isLeaf": true,
+      "order": 115
+    },
+    {
+      "id": "req-d8db82f14e026439",
+      "code": "DE.CM-09",
+      "sourceCode": "DE.CM-09",
+      "title": "Nel rispetto delle politiche di cui alla misura GV.PO-01, sono adottate e documentate le procedure in relazione al punto",
+      "description": "L'hardware e il software di elaborazione, gli ambienti di runtime e i loro dati sono monitorati per individuare eventi potenzialmente avversi.",
+      "sourceRow": 810,
+      "isLeaf": true,
+      "order": 116
+    }
+  ],
+  "assessmentQuestions": [],
+  "applicability": [],
+  "importSource": {
+    "importSource": "Matrice_MultiCompliance.xlsx",
+    "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+    "importBatchId": "batch-696f3930c809d4c5",
+    "importedAt": "2026-08-09T12:46:36+00:00"
+  }
+}

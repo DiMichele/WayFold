@@ -1,0 +1,1361 @@
+{
+  "schemaVersion": "1.0",
+  "framework": {
+    "id": "psnc-legacy",
+    "name": "PSNC (legacy matrix)",
+    "legacyName": "PSNC",
+    "type": "Normativa",
+    "publisher": "",
+    "jurisdiction": "",
+    "officialSource": ""
+  },
+  "version": {
+    "id": "fv-8dfb221c3327c8b7",
+    "label": "legacy-import",
+    "status": "DRAFT",
+    "publicationDate": null,
+    "effectiveDate": null,
+    "metadataStatus": "INCOMPLETE"
+  },
+  "sourceStatus": "SOURCE_PARTIAL",
+  "requirements": [
+    {
+      "id": "req-39329544fd34ed2e",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "Gli strumenti tecnici di cui ai punti 1 e 2 sono impiegati anche per i fini di cui alla funzione DE.",
+      "description": "Gli strumenti tecnici di cui ai punti 1 e 2 sono impiegati anche per i fini di cui alla funzione DE.",
+      "sourceRow": 3,
+      "isLeaf": true,
+      "order": 0
+    },
+    {
+      "id": "req-4764b5973d937b06",
+      "code": "DE.AE-03",
+      "sourceCode": "DE.AE-03",
+      "title": "Ai fini di rilevare tempestivamente incidenti con impatto soggetti alla notifica obbligatoria, sono adottati gli strumen",
+      "description": "Ai fini di rilevare tempestivamente incidenti con impatto soggetti alla notifica obbligatoria, sono adottati gli strumenti tecnici e procedurali per:       \na.    acquisire le informazioni da più sensori e sorgenti;\nb.    ottenere tempestivamente eventi, occorsi a carico di dipendenze interne o esterne, con impatti, anche potenziali, sul bene ICT;   \nc.    ricevere e raccogliere informazioni inerenti alla sicurezza dei beni ICT rese note dal CSIRT italiano, da fonti interne o esterne al soggetto;          \nd.    analizzare e correlare, anche in maniera automatizzata, i dati e le informazioni di cui alle lettere a), b) e c), per rilevare tempestivamente eventi di interesse.",
+      "sourceRow": 10,
+      "isLeaf": true,
+      "order": 1
+    },
+    {
+      "id": "req-b3f81794c885007b",
+      "code": "PR.AC-02",
+      "sourceCode": "PR.AC-02",
+      "title": "Con riferimento ai censimenti della categoria ID.AM-1, esiste un documento aggiornato di dettaglio contenente almeno:   ",
+      "description": "Con riferimento ai censimenti della categoria ID.AM-1, esiste un documento aggiornato di dettaglio contenente almeno:     \na. le politiche di sicurezza adottate per la protezione e l'amministrazione degli accessi fisici;        \nb. i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 22,
+      "isLeaf": true,
+      "order": 2
+    },
+    {
+      "id": "req-83fcc76046bc4143",
+      "code": "PR.AC-05",
+      "sourceCode": "PR.AC-05",
+      "title": "Con riferimento ai censimenti di cui alla categoria ID.AM, esiste un documento aggiornato di dettaglio contenente almeno",
+      "description": "Con riferimento ai censimenti di cui alla categoria ID.AM, esiste un documento aggiornato di dettaglio contenente almeno:       \na.    le politiche di sicurezza adottate per la segmentazione/segregazione delle reti;      \nb.    la descrizione delle reti segregate/segmentate;           \nc.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza;               \nd. le modalità con cui porte di rete, protocolli e servizi in uso sono limitati e/o monitorati.",
+      "sourceRow": 23,
+      "isLeaf": true,
+      "order": 3
+    },
+    {
+      "id": "req-b060b53c69fe81c8",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Con riferimento alla sottocategoria ID.AM-1, vengono rilevati dispositivi (anche fisici) non approvati. A tal fine, fatt",
+      "description": "Con riferimento alla sottocategoria ID.AM-1, vengono rilevati dispositivi (anche fisici) non approvati. A tal fine, fatti salvi documentati limiti tecnici, sono presenti almeno dei sistemi di controllo di accesso di rete.",
+      "sourceRow": 27,
+      "isLeaf": true,
+      "order": 4
+    },
+    {
+      "id": "req-60b67ad72e49bc34",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Con riferimento alla sottocategoria ID.AM-2, fatti salvi documentati limiti tecnici, sono presenti sistemi di controllo ",
+      "description": "Con riferimento alla sottocategoria ID.AM-2, fatti salvi documentati limiti tecnici, sono presenti sistemi di controllo per il rilevamento dei software non approvati.",
+      "sourceRow": 28,
+      "isLeaf": true,
+      "order": 5
+    },
+    {
+      "id": "req-022087e646f336c1",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Con riferimento alla sottocategoria ID.AM-3, sono presenti sistemi di controllo per il rilevamento delle connessioni non",
+      "description": "Con riferimento alla sottocategoria ID.AM-3, sono presenti sistemi di controllo per il rilevamento delle connessioni non autorizzate",
+      "sourceRow": 29,
+      "isLeaf": true,
+      "order": 6
+    },
+    {
+      "id": "req-60841463ef716e9c",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Con riferimento alle sottocategorie PR.AC-2 e PR.AC-3, viene rilevata la presenza di personale con potenziale accesso fi",
+      "description": "Con riferimento alle sottocategorie PR.AC-2 e PR.AC-3, viene rilevata la presenza di personale con potenziale accesso fisico o remoto non autorizzato alle risorse. A tal fine, sono presenti sistemi di sorveglianza e controllo di accesso, anche automatizzati.",
+      "sourceRow": 30,
+      "isLeaf": true,
+      "order": 7
+    },
+    {
+      "id": "req-7b1062bbe64b0ebb",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "Dopo aver identificato tutti i fattori di rischio e averli analizzati viene effettuata una ponderazione per determinare ",
+      "description": "Dopo aver identificato tutti i fattori di rischio e averli analizzati viene effettuata una ponderazione per determinare il livello di rischio.",
+      "sourceRow": 40,
+      "isLeaf": true,
+      "order": 8
+    },
+    {
+      "id": "req-b1d8862125dd5841",
+      "code": "ID.AM-06 01",
+      "sourceCode": "ID.AM-06 01",
+      "title": "È definita e resa nota alle articolazioni competenti del soggetto l’organizzazione di cybersecurity, anche con riferimen",
+      "description": "È definita e resa nota alle articolazioni competenti del soggetto l’organizzazione di cybersecurity, anche con riferimento ai ruoli e alle responsabilità, per tutto il personale e per eventuali terze parti.",
+      "sourceRow": 42,
+      "isLeaf": true,
+      "order": 9
+    },
+    {
+      "id": "req-b9a8a83f513a6ff8",
+      "code": "ID.AM-06 03",
+      "sourceCode": "ID.AM-06 03",
+      "title": "È nominato, nell'ambito dell'articolazione di cui al punto 2, un incaricato, e un eventuale sostituto, con il compito di",
+      "description": "È nominato, nell'ambito dell'articolazione di cui al punto 2, un incaricato, e un eventuale sostituto, con il compito di gestire l'attuazione delle disposizioni del decreto-legge previste per i soggetti inclusi nel perimetro, in possesso di specifiche professionalità e competenze nella materia della sicurezza cibernetica, che riferisce direttamente al vertice gerarchico del soggetto incluso nel perimetro ed assicura, almeno:\na. l'efficace implementazione delle misure di sicurezza di cui al DPCM 2;\nb. la corretta esecuzione degli adempimenti relativi alla notifica degli incidenti aventi impatto su un bene ICT ai sensi dell'articolo 1, comma 3, lettera a), del decreto-legge;\nc. la collaborazione con il DIS, anche in relazione alle attività connesse all'articolo 5 del decreto-legge e alle attività di prevenzione, preparazione e gestione di crisi cibernetiche affidate al Nucleo per la sicurezza cibernetica (NSC), e con i soggetti incaricati dello svolgimento delle attività di verifica e ispezione di cui all’articolo 1, comma 6, lettera c), del decreto-legge.",
+      "sourceRow": 59,
+      "isLeaf": true,
+      "order": 10
+    },
+    {
+      "id": "req-7a0f42971b08130d",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "Esiste un documento aggiornato che descrive almeno i processi e gli strumenti tecnici impiegati per realizzare i punti 1",
+      "description": "Esiste un documento aggiornato che descrive almeno i processi e gli strumenti tecnici impiegati per realizzare i punti 1,2,3 e 4.",
+      "sourceRow": 78,
+      "isLeaf": true,
+      "order": 11
+    },
+    {
+      "id": "req-6e9231349b983643",
+      "code": "ID.SC-04",
+      "sourceCode": "ID.SC-04",
+      "title": "Esiste un documento aggiornato recante, almeno, le modalità e la cadenza delle  valutazioni per i fornitori e partner te",
+      "description": "Esiste un documento aggiornato recante, almeno, le modalità e la cadenza delle  valutazioni per i fornitori e partner terzi, proporzionate agli esiti dell'analisi del rischio effettuata.",
+      "sourceRow": 80,
+      "isLeaf": true,
+      "order": 12
+    },
+    {
+      "id": "req-c2637e762e8d7ed0",
+      "code": "ID.GV-01",
+      "sourceCode": "ID.GV-01",
+      "title": "Esiste un documento aggiornato che descrive le politiche, i processi e le procedure di cybersecurity. Il documento conti",
+      "description": "Esiste un documento aggiornato che descrive le politiche, i processi e le procedure di cybersecurity. Il documento contiene anche il modello di implementazione.",
+      "sourceRow": 81,
+      "isLeaf": true,
+      "order": 13
+    },
+    {
+      "id": "req-39120d3e63dd1aa9",
+      "code": "RS.AN-05",
+      "sourceCode": "RS.AN-05",
+      "title": "Esiste un documento aggiornato che descrive, almeno:            \na.    le modalità per ricevere, analizzare e rispondere",
+      "description": "Esiste un documento aggiornato che descrive, almeno:            \na.    le modalità per ricevere, analizzare e rispondere almeno alle informazioni raccolte tramite le attività di cui ai punti 1 e 2;     \nb.    i processi, i ruoli, le responsabilità e gli strumenti tecnici per lo svolgimento delle attività di cui ai punti 1 e 2.",
+      "sourceRow": 86,
+      "isLeaf": true,
+      "order": 14
+    },
+    {
+      "id": "req-0d2f3c5fc6851868",
+      "code": "DE.CM-04",
+      "sourceCode": "DE.CM-04",
+      "title": "Esiste un documento aggiornato che descrive, almeno:\na. le politiche di sicurezza adottate in relazione ai punti 1,2 e 3",
+      "description": "Esiste un documento aggiornato che descrive, almeno:\na. le politiche di sicurezza adottate in relazione ai punti 1,2 e 3;\nb. i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 87,
+      "isLeaf": true,
+      "order": 15
+    },
+    {
+      "id": "req-89e7fa95bd339c06",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Esiste un documento aggiornato che descrive, almeno:            \na.    le politiche di sicurezza adottate in relazione a",
+      "description": "Esiste un documento aggiornato che descrive, almeno:            \na.    le politiche di sicurezza adottate in relazione ai punti 1,2,3 e 4;   \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 88,
+      "isLeaf": true,
+      "order": 16
+    },
+    {
+      "id": "req-034aabdc620c06c3",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Esiste un documento aggiornato che descrive, almeno:           \na.    le politiche di sicurezza adottate in relazione ai",
+      "description": "Esiste un documento aggiornato che descrive, almeno:           \na.    le politiche di sicurezza adottate in relazione ai punti 1 e 2;    \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 89,
+      "isLeaf": true,
+      "order": 17
+    },
+    {
+      "id": "req-9e547845c3c85593",
+      "code": "ID.SC-01",
+      "sourceCode": "ID.SC-01",
+      "title": "Esiste un documento aggiornato di dettaglio, che descrive i processi di gestione del rischio inerente la catena di appro",
+      "description": "Esiste un documento aggiornato di dettaglio, che descrive i processi di gestione del rischio inerente la catena di approvvigionamento cyber.",
+      "sourceRow": 90,
+      "isLeaf": true,
+      "order": 18
+    },
+    {
+      "id": "req-ed7dccddadd258d0",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "Esiste un documento aggiornato che descrive, almeno, i processi e gli strumenti tecnici impiegati per realizzare i punti",
+      "description": "Esiste un documento aggiornato che descrive, almeno, i processi e gli strumenti tecnici impiegati per realizzare i punti 2,3,4 e 5.",
+      "sourceRow": 91,
+      "isLeaf": true,
+      "order": 19
+    },
+    {
+      "id": "req-27f4998b2e597601",
+      "code": "DE.DP-01",
+      "sourceCode": "DE.DP-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    i ruoli, i processi e le responsabilità di cu",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    i ruoli, i processi e le responsabilità di cui al punto 2;\nb.    i processi per la diffusione delle nomine, dei ruoli e dei processi di cui ai punti 1 e  2.",
+      "sourceRow": 92,
+      "isLeaf": true,
+      "order": 20
+    },
+    {
+      "id": "req-624b60610cba2e15",
+      "code": "RS.CO-01",
+      "sourceCode": "RS.CO-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:   \na.    le fasi, i processi, dei ruoli e le responsabili",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:   \na.    le fasi, i processi, dei ruoli e le responsabilità di cui ai punti 1 e 2;        \nb.    i processi per la diffusione delle fasi, dei processi, dei ruoli e delle responsabilità di cui ai punti 1 e 2;              \nc.    le modalità per le esercitazioni di cui al punto 3.",
+      "sourceRow": 93,
+      "isLeaf": true,
+      "order": 21
+    },
+    {
+      "id": "req-e1db4a68cc3a9b53",
+      "code": "PR.IP-12",
+      "sourceCode": "PR.IP-12",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:         \na.    le politiche di sicurezza adottate per ges",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:         \na.    le politiche di sicurezza adottate per gestire le vulnerabilità;    \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 94,
+      "isLeaf": true,
+      "order": 22
+    },
+    {
+      "id": "req-e746fe044031058d",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica i contenuti dell'addestramento e della formazione fornita agli ut",
+      "description": "Esiste un documento aggiornato di dettaglio che indica i contenuti dell'addestramento e della formazione fornita agli utenti e le modalità di verifica dell'acquisizione dei contenuti.",
+      "sourceRow": 95,
+      "isLeaf": true,
+      "order": 23
+    },
+    {
+      "id": "req-048bbc3027765add",
+      "code": "PR.IP-09",
+      "sourceCode": "PR.IP-09",
+      "title": "Esiste un documento aggiornato di dettaglio che indica i livelli di servizio attesi dal bene ICT, e, se previsti, dalle ",
+      "description": "Esiste un documento aggiornato di dettaglio che indica i livelli di servizio attesi dal bene ICT, e, se previsti, dalle hot-replica e/o cold-replica nonché dal sito(i) didisaster recovery, anche al fine di caratterizzare gli incidenti di cui all'articolo 1, comma 3, lettera a) del decreto-legge.",
+      "sourceRow": 98,
+      "isLeaf": true,
+      "order": 24
+    },
+    {
+      "id": "req-c5d3268f361d23ff",
+      "code": "PR.IP-04",
+      "sourceCode": "PR.IP-04",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:\na.    le politi",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:\na.    le politiche di sicurezza adottate per il backup delle informazioni;        \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 99,
+      "isLeaf": true,
+      "order": 25
+    },
+    {
+      "id": "req-c65611f9e4b8a8c0",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:\na. le politiche",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:\na. le politiche di sicurezza adottate per la memorizzazione e la protezione dei dati;\nb. i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 100,
+      "isLeaf": true,
+      "order": 26
+    },
+    {
+      "id": "req-e87f7c7e14da9dc4",
+      "code": "PR.IP-01",
+      "sourceCode": "PR.IP-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:            \na. ",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:            \na. le politiche di sicurezza adottate per lo sviluppo di configurazioni di sistemi IT e riferimento alle relative pratiche di riferimento; \nb. l’elenco delle configurazioni dei sistemi IT e di controllo industriale impiegate e il riferimento alle relative pratiche di riferimento\nc.  processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 102,
+      "isLeaf": true,
+      "order": 27
+    },
+    {
+      "id": "req-09cd66e692a75ef5",
+      "code": "PR.AC-07",
+      "sourceCode": "PR.AC-07",
+      "title": "Esiste un documento aggiornato di dettaglio che, con riferimento ai censimenti di cui alla categoria ID.AM e alla valuta",
+      "description": "Esiste un documento aggiornato di dettaglio che, con riferimento ai censimenti di cui alla categoria ID.AM e alla valutazione del rischio di cui alla categoria ID.RA, contiene almeno:        \na.    le modalità di autenticazione disponibili;           \nb.    la loro assegnazione alle categorie di transazioni.",
+      "sourceRow": 103,
+      "isLeaf": true,
+      "order": 28
+    },
+    {
+      "id": "req-700cd7d54192eb70",
+      "code": "PR.AC-03",
+      "sourceCode": "PR.AC-03",
+      "title": "Esiste un documento aggiornato di dettaglio contenente almeno:          \na.    le politiche di sicurezza adottate per la",
+      "description": "Esiste un documento aggiornato di dettaglio contenente almeno:          \na.    le politiche di sicurezza adottate per la definizione delle attività consentite tramite l'accesso remoto e le misure di sicurezza adottate;    \nb.    l'elenco, con riferimento ai censimenti della categoria ID.AM e al modello di cui all'articolo 8 del DPCM 1, delle risorse a cui è possibile accedere da remoto e con quali modalità;                \nc.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 104,
+      "isLeaf": true,
+      "order": 29
+    },
+    {
+      "id": "req-9355b256bb5f45bd",
+      "code": "PR.AC-01",
+      "sourceCode": "PR.AC-01",
+      "title": "Esiste un documento aggiornato di dettaglio contenente almeno:\na. le politiche di sicurezza adottate per l’amministrazio",
+      "description": "Esiste un documento aggiornato di dettaglio contenente almeno:\na. le politiche di sicurezza adottate per l’amministrazione, la verifica, la revoca e l’audit di sicurezza delle identità digitali e delle credenziali di accesso per gli utenti;\nb. i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 105,
+      "isLeaf": true,
+      "order": 30
+    },
+    {
+      "id": "req-e42fb8cae156f020",
+      "code": "PR.IP-09",
+      "sourceCode": "PR.IP-09",
+      "title": "Esiste un documento aggiornato di dettaglio contenente i piani di continuità operativa/disaster recovery, nonché quelli ",
+      "description": "Esiste un documento aggiornato di dettaglio contenente i piani di continuità operativa/disaster recovery, nonché quelli di risposta e di recupero in caso di incidenti, che comprende almeno:         \na.    le politiche e i processi impiegati per identificare le priorità degli eventi;  \nb.    le fasi di attuazione dei piani;             \nc.    i ruoli e le responsabilità del personale;     \nd.    i flussi di comunicazione e reportistica;            \ne.    il raccordo con il CSIRT italiano.",
+      "sourceRow": 106,
+      "isLeaf": true,
+      "order": 31
+    },
+    {
+      "id": "req-c6e7f6df8f0a8151",
+      "code": "PR.PT-05",
+      "sourceCode": "PR.PT-05",
+      "title": "Cfr. punti 1_C., 2_C., 3_C. e 4_S.",
+      "description": "Cfr. punti 1_C., 2_C., 3_C. e 4_S.",
+      "sourceRow": 111,
+      "isLeaf": true,
+      "order": 32
+    },
+    {
+      "id": "req-9c977391fd2cb70d",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "Esiste un documento aggiornato di valutazione del rischio (risk assessment) che comprende almeno:\na. l’identificazione d",
+      "description": "Esiste un documento aggiornato di valutazione del rischio (risk assessment) che comprende almeno:\na. l’identificazione delle minacce, sia interne che esterne, opportunamente descritte e valutate e le relative probabilità di accadimento;\nb. qualora disponibili, le vulnerabilità emerse a seguito dell’esecuzione del piano di cui alla sottocategoria ID.RA-1 e a seguito dell’adozione delle misure di cui alla sottocategoria DE.CM-8;\nc. i potenziali impatti ritenuti significativi sui beni ICT, opportunamente descritti e valutati;\nd. l'identificazione, l'analisi e la ponderazione del rischio.",
+      "sourceRow": 120,
+      "isLeaf": true,
+      "order": 33
+    },
+    {
+      "id": "req-e61980cf663555db",
+      "code": "DE.CM-08",
+      "sourceCode": "DE.CM-08",
+      "title": "Esiste un documento aggiornato recante la tipologia di penetration test e vulnerability assessment previsti.",
+      "description": "Esiste un documento aggiornato recante la tipologia di penetration test e vulnerability assessment previsti.",
+      "sourceRow": 122,
+      "isLeaf": true,
+      "order": 34
+    },
+    {
+      "id": "req-bcbc7a813be074e7",
+      "code": "PR.IP-09",
+      "sourceCode": "PR.IP-09",
+      "title": "Esiste un documento aggiornato recante l'elenco delle attività di istruzione, formazione ed esercitazione svolte.",
+      "description": "Esiste un documento aggiornato recante l'elenco delle attività di istruzione, formazione ed esercitazione svolte.",
+      "sourceRow": 124,
+      "isLeaf": true,
+      "order": 35
+    },
+    {
+      "id": "req-e0572b20a3f783e6",
+      "code": "ID.SC-02",
+      "sourceCode": "ID.SC-02",
+      "title": "Esiste un elenco aggiornato dei fornitori e partner terzi affidatari di forniture di beni, sistemi e servizi di informat",
+      "description": "Esiste un elenco aggiornato dei fornitori e partner terzi affidatari di forniture di beni, sistemi e servizi di information and communication technology (ICT), nonché di dipendenze esterne, corredato dalla relativa documentazione del processo di valutazione di cui al punto 1. L'elenco contiene, ove possibile, i riferimenti agli identificativi della componentistica del bene ICT ove si intendono impiegare i beni, sistemi e servizi, così come indicati nel modello dei beni ICT.",
+      "sourceRow": 129,
+      "isLeaf": true,
+      "order": 36
+    },
+    {
+      "id": "req-f8ccfff5b674840b",
+      "code": "ID.AM-06 07",
+      "sourceCode": "ID.AM-06 07",
+      "title": "Esiste un elenco contenente tutto il personale interno e esterno impiegato nei processi di cybersecurity aventi specific",
+      "description": "Esiste un elenco contenente tutto il personale interno e esterno impiegato nei processi di cybersecurity aventi specifici ruoli e responsabilità. L'elenco è disseminato presso le articolazioni competenti del soggetto.",
+      "sourceRow": 131,
+      "isLeaf": true,
+      "order": 37
+    },
+    {
+      "id": "req-3ab0d4769eb902a6",
+      "code": "ID.AM-06 08",
+      "sourceCode": "ID.AM-06 08",
+      "title": "Esiste un elenco degli omologhi dell'incaricato di cui al punto 3 e del referente tecnico di cui al punto 4 presso terze",
+      "description": "Esiste un elenco degli omologhi dell'incaricato di cui al punto 3 e del referente tecnico di cui al punto 4 presso terze parti, in relazione alle dipendenze esterne, e presso lo stesso soggetto incluso nel perimetro, in relazione alle dipendenze interne.\nL'elenco è disseminato presso le articolazioni competenti del soggetto incluso nel perimetro.",
+      "sourceRow": 132,
+      "isLeaf": true,
+      "order": 38
+    },
+    {
+      "id": "req-c9eb58344694d25a",
+      "code": "PR.AC-03",
+      "sourceCode": "PR.AC-03",
+      "title": "Esiste un log degli accessi da remoto eseguiti",
+      "description": "Esiste un log degli accessi da remoto eseguiti",
+      "sourceRow": 133,
+      "isLeaf": true,
+      "order": 39
+    },
+    {
+      "id": "req-93e9121a98fd732b",
+      "code": "ID.RA-1",
+      "sourceCode": "ID.RA-1",
+      "title": "Esiste un piano aggiornato di verifica e test di sicurezza che descrive l'insieme delle  attività finalizzate alla valut",
+      "description": "Esiste un piano aggiornato di verifica e test di sicurezza che descrive l'insieme delle  attività finalizzate alla valutazione del livello di sicurezza cibernetica dei beni ICT e dell’efficacia delle misure di sicurezza tecniche e procedurali. Il piano contiene, inoltre, la periodicità e le modalità di esecuzione e, ove possibile, i riferimenti agli identificativi della componentistica del bene ICT così come indicati nel modello dei beni ICT.",
+      "sourceRow": 135,
+      "isLeaf": true,
+      "order": 40
+    },
+    {
+      "id": "req-eea18103a9929f8f",
+      "code": "RC.RP-01",
+      "sourceCode": "RC.RP-01",
+      "title": "Esiste un piano di ripristino che prevede, almeno, i processi e le procedure necessarie al ripristino del normale funzio",
+      "description": "Esiste un piano di ripristino che prevede, almeno, i processi e le procedure necessarie al ripristino del normale funzionamento dei beni ICT coinvolti da un incidente di cybersecurity.",
+      "sourceRow": 137,
+      "isLeaf": true,
+      "order": 41
+    },
+    {
+      "id": "req-f0d2670b5948b13d",
+      "code": "DE.CM-08",
+      "sourceCode": "DE.CM-08",
+      "title": "Esiste un registro aggiornato dei penetration test e vulnerability assessment eseguiti corredato dalla relativa document",
+      "description": "Esiste un registro aggiornato dei penetration test e vulnerability assessment eseguiti corredato dalla relativa documentazione.",
+      "sourceRow": 141,
+      "isLeaf": true,
+      "order": 42
+    },
+    {
+      "id": "req-9b9f8daf81273338",
+      "code": "RS.CO-01",
+      "sourceCode": "RS.CO-01",
+      "title": "Esiste un registro aggiornato delle esercitazioni effettuate e dei partecipanti, con le relative lezioni apprese (lesson",
+      "description": "Esiste un registro aggiornato delle esercitazioni effettuate e dei partecipanti, con le relative lezioni apprese (lesson learned)",
+      "sourceRow": 142,
+      "isLeaf": true,
+      "order": 43
+    },
+    {
+      "id": "req-2075b2bd73b47f1f",
+      "code": "PR.MA-01",
+      "sourceCode": "PR.MA-01",
+      "title": "Esiste un registro aggiornato delle manutenzioni e riparazioni eseguite.",
+      "description": "Esiste un registro aggiornato delle manutenzioni e riparazioni eseguite.",
+      "sourceRow": 143,
+      "isLeaf": true,
+      "order": 44
+    },
+    {
+      "id": "req-af2c3673f01b6147",
+      "code": "PR.AC-01",
+      "sourceCode": "PR.AC-01",
+      "title": "Esiste una pianificazione aggiornata degli audit di sicurezza previsti e un registro degli audit di sicurezza effettuati",
+      "description": "Esiste una pianificazione aggiornata degli audit di sicurezza previsti e un registro degli audit di sicurezza effettuati con la relativa documentazione.",
+      "sourceRow": 146,
+      "isLeaf": true,
+      "order": 45
+    },
+    {
+      "id": "req-2fd38b0299764fce",
+      "code": "ID.SC-04",
+      "sourceCode": "ID.SC-04",
+      "title": "Esiste una pianificazione aggiornata degli audit, verifiche, o altre forme di valutazione previste, nonché un registro d",
+      "description": "Esiste una pianificazione aggiornata degli audit, verifiche, o altre forme di valutazione previste, nonché un registro di quelli effettuati e la relativa  documentazione.",
+      "sourceRow": 147,
+      "isLeaf": true,
+      "order": 46
+    },
+    {
+      "id": "req-e47d66f3acf16edb",
+      "code": "PR.PT-05",
+      "sourceCode": "PR.PT-05",
+      "title": "Esistono meccanismi per garantire la continuità di servizio, nel rispetto delle misure di sicurezza qui elencate.",
+      "description": "Esistono meccanismi per garantire la continuità di servizio, nel rispetto delle misure di sicurezza qui elencate.",
+      "sourceRow": 149,
+      "isLeaf": true,
+      "order": 47
+    },
+    {
+      "id": "req-db3b88236f1f7fdb",
+      "code": "PR.AC-03",
+      "sourceCode": "PR.AC-03",
+      "title": "Fatti salvi documentati limiti tecnici, sono implementate adeguate misure di  controllo dell'accesso, adottando sistemi ",
+      "description": "Fatti salvi documentati limiti tecnici, sono implementate adeguate misure di  controllo dell'accesso, adottando sistemi di autenticazione, autorizzazione e registrazione/contabilizzazione centralizzati degli accessi, coadiuvati da sistemi di  autenticazione, la cui sicurezza è proporzionale al rischio.",
+      "sourceRow": 154,
+      "isLeaf": true,
+      "order": 48
+    },
+    {
+      "id": "req-15cd25f7d1988750",
+      "code": "ID.AM-06 06",
+      "sourceCode": "ID.AM-06 06",
+      "title": "I nominativi e gli estremi di contatto dell'incaricato di cui al punto 3 e del referente tecnico di cui al punto 4 sono ",
+      "description": "I nominativi e gli estremi di contatto dell'incaricato di cui al punto 3 e del referente tecnico di cui al punto 4 sono comunicati dal soggetto incluso nel perimetro al DIS, che li trasmette tempestivamente alla Presidenza del Consiglio dei ministri e al Ministero dello sviluppo economico per i profili di rispettiva competenza.",
+      "sourceRow": 165,
+      "isLeaf": true,
+      "order": 49
+    },
+    {
+      "id": "req-438addadc8c9f276",
+      "code": "PR.AC-03",
+      "sourceCode": "PR.AC-03",
+      "title": "Gli accessi da remoto effettuati sono monitorati da parte dell'organizzazione di  cybersecurity.",
+      "description": "Gli accessi da remoto effettuati sono monitorati da parte dell'organizzazione di  cybersecurity.",
+      "sourceRow": 281,
+      "isLeaf": true,
+      "order": 50
+    },
+    {
+      "id": "req-27fa651d54bb9d69",
+      "code": "RS.AN-05",
+      "sourceCode": "RS.AN-05",
+      "title": "Gli esiti delle valutazioni di cui alla sottocategoria DE.AE-3 e dei penetration test e vulnerability assessment di cui ",
+      "description": "Gli esiti delle valutazioni di cui alla sottocategoria DE.AE-3 e dei penetration test e vulnerability assessment di cui alla sottocategoria DE.CM-8, qualora disponibili, sono diffusi alle articolazioni competenti del soggetto e trasmessi al CSIRT italiano.",
+      "sourceRow": 285,
+      "isLeaf": true,
+      "order": 51
+    },
+    {
+      "id": "req-7623149b628608d5",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Gli strumenti tecnici di cui ai punti 1, 2, 3 e 4 sono aggiornati, mantenuti e ben configurati, nel rispetto delle polit",
+      "description": "Gli strumenti tecnici di cui ai punti 1, 2, 3 e 4 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche di cui alle categorie PR.AC, PR.DS, PR.IP e PR.MA e concorrono al rispetto delle politiche di cui alle categorie ID.AM, ID.GV, ID.SC, PR.AC e PR.DS.",
+      "sourceRow": 289,
+      "isLeaf": true,
+      "order": 52
+    },
+    {
+      "id": "req-859f774e6825cc0c",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "Gli strumenti tecnici di cui ai punti 1 e 2 concorrono al rispetto delle politiche di cui alla categoria ID.AM, ID.GV, I",
+      "description": "Gli strumenti tecnici di cui ai punti 1 e 2 concorrono al rispetto delle politiche di cui alla categoria ID.AM, ID.GV, ID.SC, PR.AC e PR.DS.",
+      "sourceRow": 290,
+      "isLeaf": true,
+      "order": 53
+    },
+    {
+      "id": "req-115683d97db76154",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Gli strumenti tecnici di cui ai punti 1 e 2 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche d",
+      "description": "Gli strumenti tecnici di cui ai punti 1 e 2 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche di cui alle categorie PR.AC, PR.DS, PR.IP e PR.MA e concorrono al rispetto delle politiche di cui alla categoria ID.AM, ID.GV, ID.SC, PR.AC e PR.DS.",
+      "sourceRow": 292,
+      "isLeaf": true,
+      "order": 54
+    },
+    {
+      "id": "req-525685dbbd223123",
+      "code": "DE.CM-04",
+      "sourceCode": "DE.CM-04",
+      "title": "Gli strumenti tecnici di cui ai punti 1 e 2 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche d",
+      "description": "Gli strumenti tecnici di cui ai punti 1 e 2 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche di cui alle categorie PR.AC, PR.DS, PR.IP e PR.MA e concorrono al rispetto delle politiche di cui alle categorie ID.AM, ID.GV, ID.SC, PR.AC e PR.DS.",
+      "sourceRow": 294,
+      "isLeaf": true,
+      "order": 55
+    },
+    {
+      "id": "req-07d982217992dd89",
+      "code": "DE.CM-07",
+      "sourceCode": "DE.CM-07",
+      "title": "Gli strumenti tecnici di cui ai punti 1, 2, 3 e 4 sono aggiornati, mantenuti e ben configurati, nel rispetto delle polit",
+      "description": "Gli strumenti tecnici di cui ai punti 1, 2, 3 e 4 sono aggiornati, mantenuti e ben configurati, nel rispetto delle politiche di cui alle categorie PR.AC, PR.DS, PR.IP e PR.MA e concorrono al rispetto delle politiche di cui alle categorie ID.AM, ID.GV, ID.SC, PR.AC e PR.DS.",
+      "sourceRow": 295,
+      "isLeaf": true,
+      "order": 56
+    },
+    {
+      "id": "req-32493004afa1552d",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Gli strumenti tecnici di cui ai punti 1 e 2 sono impiegati anche per i fini di cui alla categoria DE.AE",
+      "description": "Gli strumenti tecnici di cui ai punti 1 e 2 sono impiegati anche per i fini di cui alla categoria DE.AE",
+      "sourceRow": 296,
+      "isLeaf": true,
+      "order": 57
+    },
+    {
+      "id": "req-6fa331613d8f03df",
+      "code": "RS.AN-05",
+      "sourceCode": "RS.AN-05",
+      "title": "I canali di comunicazione del CSIRT italiano di cui all’articolo 4 del decreto del Presidente del Consiglio dei ministri",
+      "description": "I canali di comunicazione del CSIRT italiano di cui all’articolo 4 del decreto del Presidente del Consiglio dei ministri 8 agosto 2019, dell'Autorità di riferimento del proprio settore produttivo, nonché di eventuali CERT e Information Sharing & Analysis Centre (ISAAC) di riferimento sono monitorati.",
+      "sourceRow": 299,
+      "isLeaf": true,
+      "order": 58
+    },
+    {
+      "id": "req-831b9d4d95102a24",
+      "code": "DE.CM-04",
+      "sourceCode": "DE.CM-04",
+      "title": "I file in ingresso (tramite posta elettronica, download, dispositivi removibili, etc.) sono analizzati, anche tramite sa",
+      "description": "I file in ingresso (tramite posta elettronica, download, dispositivi removibili, etc.) sono analizzati, anche tramite sandbox, prima di essere inseriti nel bene ICT.",
+      "sourceRow": 309,
+      "isLeaf": true,
+      "order": 59
+    },
+    {
+      "id": "req-bbeac1208faa4151",
+      "code": "PR.PT-01",
+      "sourceCode": "PR.PT-01",
+      "title": "I log sono conservati in modo sicuro, possibilmente centralizzato, per almeno 24 mesi.",
+      "description": "I log sono conservati in modo sicuro, possibilmente centralizzato, per almeno 24 mesi.",
+      "sourceRow": 313,
+      "isLeaf": true,
+      "order": 60
+    },
+    {
+      "id": "req-d8bc375596ae9c36",
+      "code": "RS.CO-01",
+      "sourceCode": "RS.CO-01",
+      "title": "I ruoli e le responsabilità per Io svolgimento delle fasi e dei processi di cui al punto 1 sono ben definiti e resi noti",
+      "description": "I ruoli e le responsabilità per Io svolgimento delle fasi e dei processi di cui al punto 1 sono ben definiti e resi noti alle articolazioni competenti del soggetto.",
+      "sourceRow": 327,
+      "isLeaf": true,
+      "order": 61
+    },
+    {
+      "id": "req-01f9facd6a95db96",
+      "code": "DE.DP-01",
+      "sourceCode": "DE.DP-01",
+      "title": "I ruoli, i processi e le responsabilità per le attività propedeutiche al rilevamento di incidenti con impatto e la succe",
+      "description": "I ruoli, i processi e le responsabilità per le attività propedeutiche al rilevamento di incidenti con impatto e la successiva notifica al CSIRT italiano sono ben definiti e resi noti alle articolazioni competenti del soggetto.",
+      "sourceRow": 330,
+      "isLeaf": true,
+      "order": 62
+    },
+    {
+      "id": "req-46d543c06c2baf4d",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "I sistemi perimetrali, quali firewall, anche a livello applicativo, sono presenti, aggiornati, mantenuti e ben configura",
+      "description": "I sistemi perimetrali, quali firewall, anche a livello applicativo, sono presenti, aggiornati, mantenuti e ben configurati.",
+      "sourceRow": 332,
+      "isLeaf": true,
+      "order": 63
+    },
+    {
+      "id": "req-1625c8747793f0b8",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "I sistemi perimetrali, quali firewall, anche a livello applicativo, sono presenti, aggiornati, mantenuti e ben configura",
+      "description": "I sistemi perimetrali, quali firewall, anche a livello applicativo, sono presenti, aggiornati, mantenuti e ben configurati.",
+      "sourceRow": 333,
+      "isLeaf": true,
+      "order": 64
+    },
+    {
+      "id": "req-12df872fb7e12862",
+      "code": "RC.IM-02",
+      "sourceCode": "RC.IM-02",
+      "title": "Il piano di cui alla sottocategoria RC.RP-1 è mantenuto aggiornato tenendo anche conto delle lezioni apprese nel corso d",
+      "description": "Il piano di cui alla sottocategoria RC.RP-1 è mantenuto aggiornato tenendo anche conto delle lezioni apprese nel corso delle attività di ripristino occorse.",
+      "sourceRow": 356,
+      "isLeaf": true,
+      "order": 65
+    },
+    {
+      "id": "req-a26975b142f2da95",
+      "code": "RS.RP-01",
+      "sourceCode": "RS.RP-01",
+      "title": "Esiste un piano di risposta aggiornato che prevede, almeno, l'esecuzione tempestiva della valutazione degli eventi rilev",
+      "description": "Esiste un piano di risposta aggiornato che prevede, almeno, l'esecuzione tempestiva della valutazione degli eventi rilevati tramite l'analisi e la correlazione di cui alla categoria DE, nonché la disseminazione immediata degli esiti verso le articolazioni competenti del soggetto, anche ai fini della notifica al CSIRT italiano degli incidenti  con impatto sul bene ICT.",
+      "sourceRow": 359,
+      "isLeaf": true,
+      "order": 66
+    },
+    {
+      "id": "req-234f3b0bf7757df2",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Il traffico in ingresso e uscita, le attività dei sistemi perimetrali, quali router e firewall, gli eventi amministrativ",
+      "description": "Il traffico in ingresso e uscita, le attività dei sistemi perimetrali, quali router e firewall, gli eventi amministrativi di rilievo, nonché gli accessi eseguiti o falliti alle risorse di rete e alle postazioni terminali sono monitorati e correlati al fine di identificare eventi di cybersecurity.",
+      "sourceRow": 418,
+      "isLeaf": true,
+      "order": 67
+    },
+    {
+      "id": "req-e7feaa9653f36745",
+      "code": "PR.MA-01",
+      "sourceCode": "PR.MA-01",
+      "title": "In base all’analisi del rischio, ogni aggiornamento dei software ritenuti critici, fatte salve motivate esigenze di temp",
+      "description": "In base all’analisi del rischio, ogni aggiornamento dei software ritenuti critici, fatte salve motivate esigenze di tempestività relative alla sicurezza, dovrà essere verificato in ambiente di test prima dell’effettivo impiego in ambiente operativo e il relativo codice oggetto dovrà essere custodito per almeno 24 mesi.",
+      "sourceRow": 420,
+      "isLeaf": true,
+      "order": 68
+    },
+    {
+      "id": "req-9b40f22cb72eb4ba",
+      "code": "DE.CM-08",
+      "sourceCode": "DE.CM-08",
+      "title": "In base all'analisi del rischio, sulle piattaforme e sulle applicazioni software ritenute critiche sono eseguiti penetra",
+      "description": "In base all'analisi del rischio, sulle piattaforme e sulle applicazioni software ritenute critiche sono eseguiti penetration test e vulnerability assessment, prima della loro messa in esercizio.",
+      "sourceRow": 422,
+      "isLeaf": true,
+      "order": 69
+    },
+    {
+      "id": "req-0f38fc94c9d1ef2f",
+      "code": "ID.SC-02",
+      "sourceCode": "ID.SC-02",
+      "title": "In merito all'affidamento di forniture di beni, sistemi e servizi di information and communication technology (ICT), non",
+      "description": "In merito all'affidamento di forniture di beni, sistemi e servizi di information and communication technology (ICT), nonché di dipendenze esterne, di cui all'articolo 1, comma 6, del decreto-legge n. 105 del 2019, anche mediante ricorso agli strumenti delle centrali di committenza di cui all'articolo 1, comma 512, della legge 28 dicembre 2015, n. 208, sono adottate misure in materia di sicurezza della catena di approvvigionamento attraverso:        \na.    il coinvolgimento dell'organizzazione di cybersecurity, tra cui l'incaricato di cui alla sottocategoria ID.AM-6, punto 2, nel processo di fornitura, già a partire dalla fase di progettazione;          \nb.    fatti salvi documentati limiti tecnici, il rispetto del requisito di fungibilità, con la possibilità di ricorrere alla scadenza ad altro fornitore;    \nc.    fatti salvi documentati limiti tecnici, la diversificazione dei fornitori e la conseguente resilienza del bene ICT;      \nd.    la valutazione dell'affidabilità tecnica dei fornitori e dei partner terzi, con riferimento alle migliori pratiche in materia e tenendo conto almeno:        \n1) della qualità dei prodotti e delle pratiche di sicurezza cibernetica del fornitore e dei partner terzi, anche considerando il controllo degli stessi sulla propria catena di approvvigionamento e la priorità data agli aspetti di sicurezza;       \n2)  della capacità del fornitore e dei partner terzi di garantire l’approvvigionamento, l'assistenza e la manutenzione nel tempo.",
+      "sourceRow": 434,
+      "isLeaf": true,
+      "order": 70
+    },
+    {
+      "id": "req-74fd171a5ec5e065",
+      "code": "PR.PT-05",
+      "sourceCode": "PR.PT-05",
+      "title": "In relazione ai piani previsti dalla sottocategoria PR.IP-9:    \na.    sono adottate architetture ridondate di rete, di ",
+      "description": "In relazione ai piani previsti dalla sottocategoria PR.IP-9:    \na.    sono adottate architetture ridondate di rete, di connettività, nonché applicative;        \nb.    esiste un sito di disaster recovery.",
+      "sourceRow": 437,
+      "isLeaf": true,
+      "order": 71
+    },
+    {
+      "id": "req-de823d5ca7061cee",
+      "code": "PR.PT-05",
+      "sourceCode": "PR.PT-05",
+      "title": "In relazione ai piani previsti dalla sottocategoria PR.IP-9:    \na.    sono adottate architetture ridondate di rete, di ",
+      "description": "In relazione ai piani previsti dalla sottocategoria PR.IP-9:    \na.    sono adottate architetture ridondate di rete, di connettività, nonché applicative;        \nb.    esiste un sito di disaster recovery.",
+      "sourceRow": 438,
+      "isLeaf": true,
+      "order": 72
+    },
+    {
+      "id": "req-2e93f8a1a20a5780",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "La manutenzione delle risorse e dei sistemi (ivi incluse le attività relative alle funzioni di sicurezza) svolta da remo",
+      "description": "La manutenzione delle risorse e dei sistemi (ivi incluse le attività relative alle funzioni di sicurezza) svolta da remoto è eseguita nel rispetto delle misure di cui alla sottocategoria PR.AC-3 e dei seguenti punti.",
+      "sourceRow": 448,
+      "isLeaf": true,
+      "order": 73
+    },
+    {
+      "id": "req-84f5740eb8c6d54d",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "L'aggiornamento, manutenzione e configurazione degli strumenti tecnici di cui ai punti 1 e 2 sono effettuati nel rispett",
+      "description": "L'aggiornamento, manutenzione e configurazione degli strumenti tecnici di cui ai punti 1 e 2 sono effettuati nel rispetto delle politiche di cui alla categoria PR.AC, PR.DS, PR.IP e PR.MA.",
+      "sourceRow": 457,
+      "isLeaf": true,
+      "order": 74
+    },
+    {
+      "id": "req-6d11b8436650635b",
+      "code": "ID.RA-05",
+      "sourceCode": "ID.RA-05",
+      "title": "Questa misura implica l’analisi del rischio in funzione delle minacce, delle vulnerabilità, delle relative probabilità d",
+      "description": "Questa misura implica l’analisi del rischio in funzione delle minacce, delle vulnerabilità, delle relative probabilità di accadimento e dei conseguenti impatti derivanti dal loro sfruttamento alla luce delle minacce considerate.",
+      "sourceRow": 460,
+      "isLeaf": true,
+      "order": 75
+    },
+    {
+      "id": "req-88d6af800ebf1705",
+      "code": "DE.AE-03",
+      "sourceCode": "DE.AE-03",
+      "title": "Le attività di analisi e correlazione di cui al punto precedente sono monitorate e  registrate. La relativa documentazio",
+      "description": "Le attività di analisi e correlazione di cui al punto precedente sono monitorate e  registrate. La relativa documentazione, anche elettronica, è conservata per almeno 24 mesi.",
+      "sourceRow": 467,
+      "isLeaf": true,
+      "order": 76
+    },
+    {
+      "id": "req-cda652307e572d5c",
+      "code": "RC.CO-03",
+      "sourceCode": "RC.CO-03",
+      "title": "Le attività di ripristino a seguito di un incidente sono comunicate alle parti interne ed esterne interessate (es. le vi",
+      "description": "Le attività di ripristino a seguito di un incidente sono comunicate alle parti interne ed esterne interessate (es. le vittime, gli ISP, i proprietari dei sistemi attaccati, i vendor, i CERT/CSIRT), ivi incluse le articolazioni competenti del soggetto, anche ai fini dell'eventuale notifica al CSIRT italiano.",
+      "sourceRow": 475,
+      "isLeaf": true,
+      "order": 77
+    },
+    {
+      "id": "req-a6da5809cc85e110",
+      "code": "PR.AC-01",
+      "sourceCode": "PR.AC-01",
+      "title": "Le credenziali di accesso sono individuali per gli utenti e rispettano il principio di segregazione delle funzioni. Le c",
+      "description": "Le credenziali di accesso sono individuali per gli utenti e rispettano il principio di segregazione delle funzioni. Le credenziali sono aggiornate con una cadenza proporzionata ai privilegi dell'utenza.",
+      "sourceRow": 484,
+      "isLeaf": true,
+      "order": 78
+    },
+    {
+      "id": "req-aa8e41836c50ca64",
+      "code": "ID.SC-03",
+      "sourceCode": "ID.SC-03",
+      "title": "Le misure di sicurezza implementate dai terzi affidatari di servizi esterni sono coerenti, anche in relazione agli esiti",
+      "description": "Le misure di sicurezza implementate dai terzi affidatari di servizi esterni sono coerenti, anche in relazione agli esiti dell'analisi del rischio, con le misure di sicurezza applicate al bene ICT. A tal fine, contratti, accordi o convenzioni sono aggiornati di conseguenza.",
+      "sourceRow": 497,
+      "isLeaf": true,
+      "order": 79
+    },
+    {
+      "id": "req-bdae4e3d03a8fd39",
+      "code": "ID.SC-03",
+      "sourceCode": "ID.SC-03",
+      "title": "Le misure di sicurezza implementate dal soggetto in relazione a dipendenze interne sono coerenti, anche in relazione agl",
+      "description": "Le misure di sicurezza implementate dal soggetto in relazione a dipendenze interne sono coerenti, anche in relazione agli esiti dell’analisi del rischio, con le misure di sicurezza applicate al bene ICT. A tal fine, i contratti, gli accordi o le convenzioni sono aggiornati di conseguenza.",
+      "sourceRow": 499,
+      "isLeaf": true,
+      "order": 80
+    },
+    {
+      "id": "req-1cabda42d763ec0d",
+      "code": "DE.DP-01",
+      "sourceCode": "DE.DP-01",
+      "title": "Le nomine dell'incaricato e del referente di cui alla sottocategoria ID-AM-6 sono rese note all'interno del soggetto.",
+      "description": "Le nomine dell'incaricato e del referente di cui alla sottocategoria ID-AM-6 sono rese note all'interno del soggetto.",
+      "sourceRow": 502,
+      "isLeaf": true,
+      "order": 81
+    },
+    {
+      "id": "req-9c480a29ed23dd37",
+      "code": "DE.DP-01",
+      "sourceCode": "DE.DP-01",
+      "title": "Le nomine dell'incaricato e del referente di cui alla sottocategoria ID-AM-6 sono rese note all'interno del soggetto.",
+      "description": "Le nomine dell'incaricato e del referente di cui alla sottocategoria ID-AM-6 sono rese note all'interno del soggetto.",
+      "sourceRow": 503,
+      "isLeaf": true,
+      "order": 82
+    },
+    {
+      "id": "req-9dce1e1f14ba8ca8",
+      "code": "ID.RA-1",
+      "sourceCode": "ID.RA-1",
+      "title": "Le relazioni periodiche devono contenere almeno:\na. la descrizione generale delle tipologie di verifiche effettuate e gl",
+      "description": "Le relazioni periodiche devono contenere almeno:\na. la descrizione generale delle tipologie di verifiche effettuate e gli esiti delle stesse;\nb. la descrizione dettagliata delle vulnerabilità rilevate e il relativo livello di impatto sulla sicurezza;\nc. il livello di esposizione delle risorse del sistema cui è possibile accedere a seguito dello sfruttamento delle vulnerabilità.",
+      "sourceRow": 519,
+      "isLeaf": true,
+      "order": 83
+    },
+    {
+      "id": "req-333316df77f5fe87",
+      "code": "RS.MI-03",
+      "sourceCode": "RS.MI-03",
+      "title": "Le vulnerabilità sono mitigate secondo quanto previsto dal piano di gestione delle vulnerabilità (PR.IP-12), ovvero ne v",
+      "description": "Le vulnerabilità sono mitigate secondo quanto previsto dal piano di gestione delle vulnerabilità (PR.IP-12), ovvero ne viene documentato e accettato il rischio residuo derivante dalla mancata mitigazione.",
+      "sourceRow": 524,
+      "isLeaf": true,
+      "order": 84
+    },
+    {
+      "id": "req-484ecb6d0422c622",
+      "code": "ID.AM-06 05",
+      "sourceCode": "ID.AM-06 05",
+      "title": "L'incaricato di cui al punto 3 e il referente tecnico di cui al punto 4 operano in stretto raccordo.",
+      "description": "L'incaricato di cui al punto 3 e il referente tecnico di cui al punto 4 operano in stretto raccordo.",
+      "sourceRow": 532,
+      "isLeaf": true,
+      "order": 85
+    },
+    {
+      "id": "req-926cd24262ba8f79",
+      "code": "ID.AM-02",
+      "sourceCode": "ID.AM-02",
+      "title": "L'installazione delle piattaforme e delle applicazioni software è consentito esclusivamente per quelle approvate.",
+      "description": "L'installazione delle piattaforme e delle applicazioni software è consentito esclusivamente per quelle approvate.",
+      "sourceRow": 536,
+      "isLeaf": true,
+      "order": 86
+    },
+    {
+      "id": "req-a987c705a1f3142c",
+      "code": "ID.AM-02",
+      "sourceCode": "ID.AM-02",
+      "title": "Si raccomanda, ove possibile e in relazione alla criticità delle piattaforme e delle applicazioni software, anche in esi",
+      "description": "Si raccomanda, ove possibile e in relazione alla criticità delle piattaforme e delle applicazioni software, anche in esito all’analisi del rischio di cui al DPCM 1, che l’elenco di cui al punto 2 indichi degli identificatori univoci del codice oggetto installato e eseguito.",
+      "sourceRow": 565,
+      "isLeaf": true,
+      "order": 87
+    },
+    {
+      "id": "req-fc3883ca9af1b867",
+      "code": "ID.GV-04",
+      "sourceCode": "ID.GV-04",
+      "title": "Il documento aggiornato che descrive i processi di gestione del rischio include la parte relativa ai rischi legati alla ",
+      "description": "Il documento aggiornato che descrive i processi di gestione del rischio include la parte relativa ai rischi legati alla cybersecurity.",
+      "sourceRow": 571,
+      "isLeaf": true,
+      "order": 88
+    },
+    {
+      "id": "req-ba724e8c97a51bfa",
+      "code": "ID.RA-06",
+      "sourceCode": "ID.RA-06",
+      "title": "Esiste un documento aggiornato che descrive le scelte operate in merito al trattamento di ciascun rischio individuato e ",
+      "description": "Esiste un documento aggiornato che descrive le scelte operate in merito al trattamento di ciascun rischio individuato e le relative priorità",
+      "sourceRow": 572,
+      "isLeaf": true,
+      "order": 89
+    },
+    {
+      "id": "req-4f4524147dd9f8b8",
+      "code": "ID.RA-06",
+      "sourceCode": "ID.RA-06",
+      "title": "Per il rischio residuo successivo al trattamento di cui al punto precedente esiste un documento aggiornato che ne contie",
+      "description": "Per il rischio residuo successivo al trattamento di cui al punto precedente esiste un documento aggiornato che ne contiene la chiara descrizione. Il documento, con il quale si accetta il rischio residuo, è approvato da parte dei vertici del soggetto.",
+      "sourceRow": 573,
+      "isLeaf": true,
+      "order": 90
+    },
+    {
+      "id": "req-d8d9c29a7f7d737f",
+      "code": "ID.RM-02",
+      "sourceCode": "ID.RM-02",
+      "title": "Esiste un documento aggiornato di dettaglio che identifica e descrive il rischio tollerato dal soggetto.",
+      "description": "Esiste un documento aggiornato di dettaglio che identifica e descrive il rischio tollerato dal soggetto.",
+      "sourceRow": 577,
+      "isLeaf": true,
+      "order": 91
+    },
+    {
+      "id": "req-d9c03540266cbb98",
+      "code": "RC.RP-01",
+      "sourceCode": "RC.RP-01",
+      "title": "Il piano di ripristino prevede anche le procedure per il ripristino a seguito degli incidenti di cui all’articolo 1, com",
+      "description": "Il piano di ripristino prevede anche le procedure per il ripristino a seguito degli incidenti di cui all’articolo 1, comma 3, lettera a] del decreto-legge.",
+      "sourceRow": 598,
+      "isLeaf": true,
+      "order": 92
+    },
+    {
+      "id": "req-8b60867ccddf250d",
+      "code": "RS.CO-01",
+      "sourceCode": "RS.CO-01",
+      "title": "Le fasi e i processi di gestione e risposta ad un incidente, incluse le relative interazioni con il CSIRT italiano, sono",
+      "description": "Le fasi e i processi di gestione e risposta ad un incidente, incluse le relative interazioni con il CSIRT italiano, sono definite e rese note alle articolazioni competenti del soggetto.",
+      "sourceRow": 599,
+      "isLeaf": true,
+      "order": 93
+    },
+    {
+      "id": "req-5014b309f47b6339",
+      "code": "RS.MI-02",
+      "sourceCode": "RS.MI-02",
+      "title": "Viene implementato il piano di risposta di cui alla sottocategoria RS.RP-1 e gli esiti vengono riportati in un documento",
+      "description": "Viene implementato il piano di risposta di cui alla sottocategoria RS.RP-1 e gli esiti vengono riportati in un documento aggiornato anche ai fini dell'aggiornamento del citato piano di risposta.",
+      "sourceRow": 600,
+      "isLeaf": true,
+      "order": 94
+    },
+    {
+      "id": "req-1a406d5b8db40c84",
+      "code": "RS.RP-01",
+      "sourceCode": "RS.RP-01",
+      "title": "Il piano di risposta prevede anche le procedure per la mitigazione e risposta agli incidenti di cui all'articolo 1, comm",
+      "description": "Il piano di risposta prevede anche le procedure per la mitigazione e risposta agli incidenti di cui all'articolo 1, comma 3, lettera a) del decreto-legge.",
+      "sourceRow": 601,
+      "isLeaf": true,
+      "order": 95
+    },
+    {
+      "id": "req-77aede4842e0b1d3",
+      "code": "ID.AM-06 02",
+      "sourceCode": "ID.AM-06 02",
+      "title": "All'interno dell'organizzazione di cui al punto 1 è istituita e resa nota alle articolazioni competenti del soggetto l'a",
+      "description": "All'interno dell'organizzazione di cui al punto 1 è istituita e resa nota alle articolazioni competenti del soggetto l'articolazione per l'implementazione del perimetro.",
+      "sourceRow": 611,
+      "isLeaf": true,
+      "order": 96
+    },
+    {
+      "id": "req-9408ee9c741c1ed7",
+      "code": "ID.GV-01",
+      "sourceCode": "ID.GV-01",
+      "title": "Il modello di implementazione di cui al punto 1 è compilato e trasmesso secondo le modalità previste dal DPCM 2.",
+      "description": "Il modello di implementazione di cui al punto 1 è compilato e trasmesso secondo le modalità previste dal DPCM 2.",
+      "sourceRow": 643,
+      "isLeaf": true,
+      "order": 97
+    },
+    {
+      "id": "req-432040e1cc3000ab",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "I dati digitali trattati mediante l’impiego di beni ICT, ivi compresi quelli relativi alla descrizione degli stessi beni",
+      "description": "I dati digitali trattati mediante l’impiego di beni ICT, ivi compresi quelli relativi alla descrizione degli stessi beni, la cui compromissione sotto il profilo della disponibilità, integrità e riservatezza può avere impatto sullo svolgimento delle funzioni o dei servizi essenziali per i quali il soggetto è stato incluso nel perimetro, sono conservati, elaborati, ovvero estratti esclusivamente mediante l’impiego di infrastrutture fisiche e tecnologiche, anche se esternalizzate (ad esempio tramite cloud computing), localizzate sul territorio nazionale. Nelle citate infrastrutture sono ricomprese quelle deputate alle funzioni di business continuity.",
+      "sourceRow": 644,
+      "isLeaf": true,
+      "order": 98
+    },
+    {
+      "id": "req-e3f006c4afc2f69e",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "I dati digitali utilizzati dalle infrastrutture deputate alla sicurezza (quali, a titolo esemplificativo, i sistemi di c",
+      "description": "I dati digitali utilizzati dalle infrastrutture deputate alla sicurezza (quali, a titolo esemplificativo, i sistemi di controllo degli accessi), nonché le infrastrutture di disaster recovery, anche se esternalizzate (ad esempio tramite cloud computing), devono essere localizzati sul territorio nazionale, salvo motivate e documentate ragioni di natura normativa o tecnica. In presenza di tali motivazioni i predetti dati e infrastrutture non devono comunque essere localizzati al di fuori del territorio dell’Unione europea.",
+      "sourceRow": 645,
+      "isLeaf": true,
+      "order": 99
+    },
+    {
+      "id": "req-7fd3f8225a5c8b91",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Qualora opportunamente cifrati, i dati digitali di backup, anche se esternalizzati (ad esempio tramite cloud computing),",
+      "description": "Qualora opportunamente cifrati, i dati digitali di backup, anche se esternalizzati (ad esempio tramite cloud computing), possono essere conservati al di fuori del territorio nazionale, ma non al di fuori del territorio dell’Unione europea e le chiavi di cifratura devono essere comunque custodite all’interno del territorio nazionale. Le operazioni di cifratura e decifratura devono comunque essere eseguite mediante infrastrutture localizzate sul territorio nazionale.",
+      "sourceRow": 646,
+      "isLeaf": true,
+      "order": 100
+    },
+    {
+      "id": "req-76c96c8447a5c24c",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Per i dati digitali e le infrastrutture di cui ai punti 2 e 3, ove localizzati al di fuori del territorio nazionale, l’a",
+      "description": "Per i dati digitali e le infrastrutture di cui ai punti 2 e 3, ove localizzati al di fuori del territorio nazionale, l’applicazione delle misure ID.RA-5 e ID.RA-6 deve tenere opportunamente conto della localizzazione estera.",
+      "sourceRow": 647,
+      "isLeaf": true,
+      "order": 101
+    },
+    {
+      "id": "req-86fa0f55aeff2cb3",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Le disposizioni di cui al punto 1, 2 , 3 e 4 non si applicano alle sedi diplomatiche o consolari.",
+      "description": "Le disposizioni di cui al punto 1, 2 , 3 e 4 non si applicano alle sedi diplomatiche o consolari.",
+      "sourceRow": 648,
+      "isLeaf": true,
+      "order": 102
+    },
+    {
+      "id": "req-72821d9d688a218b",
+      "code": "PR.DS-01",
+      "sourceCode": "PR.DS-01",
+      "title": "Esiste un documento aggiornato che descrive in quali sedi e infrastrutture sono conservati, elaborati ovvero estratti i ",
+      "description": "Esiste un documento aggiornato che descrive in quali sedi e infrastrutture sono conservati, elaborati ovvero estratti i dati digitali relativi ai beni ICT di cui ai punti 1, 2 e 3, ovvero le fattispecie di cui al punto 4.",
+      "sourceRow": 649,
+      "isLeaf": true,
+      "order": 103
+    },
+    {
+      "id": "req-987f7540e1e0d35c",
+      "code": "PR.AT-01",
+      "sourceCode": "PR.AT-01",
+      "title": "Esiste un registro aggiornato, per ogni utente, di quali istruzioni ha ricevuto.",
+      "description": "Esiste un registro aggiornato, per ogni utente, di quali istruzioni ha ricevuto.",
+      "sourceRow": 682,
+      "isLeaf": true,
+      "order": 104
+    },
+    {
+      "id": "req-d8179db221eb5494",
+      "code": "ID.SC-02",
+      "sourceCode": "ID.SC-02",
+      "title": "Si raccomanda, ove possibile e in relazione alla criticità della componente software (ivi incluso il firmware) dei beni ",
+      "description": "Si raccomanda, ove possibile e in relazione alla criticità della componente software (ivi incluso il firmware) dei beni e dei sistemi di information and communication technology (ICT), anche in esito all'analisi del rischio di cui al DPCM1, di:        \na. valutare l’affidabilità tecnica di cui al punto 1, lettera d, anche tenendo conto:   \n1)    della disponibilità del fornitore a condividere il codice sorgente;     \n2)    di certificazioni o evidenze utili alla valutazione della qualità del processo di sviluppo del software del produttore;           \n3)    dell'adozione, da parte del produttore, di procedure e strumenti tecnici per garantire l’autenticità e l'integrità del software o firmware installato all'interno dei beni e dei sistemi di information and communication technology;          \n4)    dell'adozione, da parte del produttore, di procedure e strumenti tecnici per garantire una corrispondenza univoca tra il codice sorgente e il codice oggetto installato e eseguito, con riferimento a quanto raccomandato al punto 3 della sottocategoria ID.AM-2.     \nb. adottare processi e strumenti tecnici per:        \n1)    valutare la qualità e la sicurezza del codice sorgente, qualora reso disponibile dal produttore;    \n2)    acquisire il codice oggetto dai beni e sistemi di information and communication technology,        \n3)    confermare la corrispondenza univoca tra il codice sorgente e il codice oggetto installato ed eseguito, con riferimento a quanto raccomandato al punto 4 della sottocategoria ID.AM-2.",
+      "sourceRow": 696,
+      "isLeaf": true,
+      "order": 105
+    },
+    {
+      "id": "req-e135908b0e556226",
+      "code": "PR.PT-04",
+      "sourceCode": "PR.PT-04",
+      "title": "Sistemi di prevenzione delle intrusioni (intrusion prevention systems - IPS) sono presenti, aggiornati, mantenuti e ben ",
+      "description": "Sistemi di prevenzione delle intrusioni (intrusion prevention systems - IPS) sono presenti, aggiornati, mantenuti e ben configurati.",
+      "sourceRow": 697,
+      "isLeaf": true,
+      "order": 106
+    },
+    {
+      "id": "req-7634ad9a0f9a97df",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "Sono adottati meccanismi di gestione e controllo delle utenze privilegiate, in termini di limitazioni di natura temporal",
+      "description": "Sono adottati meccanismi di gestione e controllo delle utenze privilegiate, in termini di limitazioni di natura temporale e delle funzionalità amministrative disponibili.",
+      "sourceRow": 702,
+      "isLeaf": true,
+      "order": 107
+    },
+    {
+      "id": "req-5efd0a212f1506ed",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "Sono adottati stringenti meccanismi di protezione per l'autenticazione, l'identificazione e per il tracciamento degli ev",
+      "description": "Sono adottati stringenti meccanismi di protezione per l'autenticazione, l'identificazione e per il tracciamento degli eventi.",
+      "sourceRow": 704,
+      "isLeaf": true,
+      "order": 108
+    },
+    {
+      "id": "req-70a5c51c6e69121f",
+      "code": "PR.DS-07",
+      "sourceCode": "PR.DS-07",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:             \na.",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:             \na.    l'architettura di massima per cui gli ambienti sono separati e, negli eventuali punti di contatto, come la separazione è realizzata;             \nb.    le politiche di sicurezza adottate per garantire la separazione dell'ambiente di sviluppo e test da quello di produzione;              \nc.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 715,
+      "isLeaf": true,
+      "order": 109
+    },
+    {
+      "id": "req-ff41dafa7305fdf7",
+      "code": "PR.DS-03",
+      "sourceCode": "PR.DS-03",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:             \na.",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:             \na.    le politiche di sicurezza adottate per il trasferimento fisico, la rimozione e la distruzione di dispositivi atti alla memorizzazione di dati;           \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 716,
+      "isLeaf": true,
+      "order": 110
+    },
+    {
+      "id": "req-c91fad25ebded48e",
+      "code": "PR.DS-05",
+      "sourceCode": "PR.DS-05",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:               \n",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:               \na.    le politiche di sicurezza adottate per l'accesso ai dati;    \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 717,
+      "isLeaf": true,
+      "order": 111
+    },
+    {
+      "id": "req-afef08e38c9e4e7d",
+      "code": "PR.MA-01",
+      "sourceCode": "PR.MA-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:       \na.    le",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:       \na.    le politiche di sicurezza adottate per la registrazione della manutenzione e riparazione delle risorse e dei sistemi;          \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 718,
+      "isLeaf": true,
+      "order": 112
+    },
+    {
+      "id": "req-8af9d8f32127a1ed",
+      "code": "PR.AC-04",
+      "sourceCode": "PR.AC-04",
+      "title": "Esiste un documento aggiornato di dettaglio che, con riferimento ai censimenti di cui alla categoria ID.AM, contiene alm",
+      "description": "Esiste un documento aggiornato di dettaglio che, con riferimento ai censimenti di cui alla categoria ID.AM, contiene almeno:        \na. le risorse censite a cui è necessario accedere, con riferimento alla categoria ID.AM, per quali funzioni e con quali autorizzazioni;       \nb. i gruppi di utenti e i loro privilegi in relazione alle risorse a cui possono accedere e con quali autorizzazioni;          \nc.  l'assegnazione degli utenti censiti ai gruppi di utenti.",
+      "sourceRow": 721,
+      "isLeaf": true,
+      "order": 113
+    },
+    {
+      "id": "req-72f4e85502032e52",
+      "code": "DE.AE-03",
+      "sourceCode": "DE.AE-03",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    le politiche applicate per individuare i sens",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    le politiche applicate per individuare i sensori e le sorgenti di cui al punto 1, lettera a;          \nb.    le procedure e gli strumenti tecnici per ottenere le informazioni di cui al punto 1, lettere a, b e c;               \nc.    le politiche, i processi e gli strumenti tecnici per l'analisi e la correlazione di cui al punto 1, lettera d.\nd.    i processi e gli strumenti tecnici per il monitoraggio e la registrazione di cui al punto 2",
+      "sourceRow": 722,
+      "isLeaf": true,
+      "order": 114
+    },
+    {
+      "id": "req-46dd743b6fec0192",
+      "code": "PR.PT-05",
+      "sourceCode": "PR.PT-05",
+      "title": "Esiste un documento aggiornato che descrive, almeno:          \na.    le politiche di sicurezza adottate in relazione ai ",
+      "description": "Esiste un documento aggiornato che descrive, almeno:          \na.    le politiche di sicurezza adottate in relazione ai punti 1 e 2;    \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 723,
+      "isLeaf": true,
+      "order": 115
+    },
+    {
+      "id": "req-4cf17535991deedb",
+      "code": "PR.PT-01",
+      "sourceCode": "PR.PT-01",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    le politiche di sicurezza adottate per la ges",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:      \na.    le politiche di sicurezza adottate per la gestione dei log dei sistemi;\nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto Delle politiche di sicurezza con particolare riguardo all'integrità e alla disponibilità dei log.",
+      "sourceRow": 724,
+      "isLeaf": true,
+      "order": 116
+    },
+    {
+      "id": "req-1b2e686f5272c25d",
+      "code": "PR.IP-03",
+      "sourceCode": "PR.IP-03",
+      "title": "Esiste un documento aggiornato di dettaglio che indica almeno:   \na.    le politiche dì sicurezza adottate per l'aggiorn",
+      "description": "Esiste un documento aggiornato di dettaglio che indica almeno:   \na.    le politiche dì sicurezza adottate per l'aggiornamento delle configurazioni dei sistemi IT e di controllo industriale e per il controllo della modifica delle configurazioni in uso rispetto a quelle previste;         \nb.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 725,
+      "isLeaf": true,
+      "order": 117
+    },
+    {
+      "id": "req-5239d0df7c6aa392",
+      "code": "PR.AT-02",
+      "sourceCode": "PR.AT-02",
+      "title": "Esiste un documento aggiornato di dettaglio, che indica i contenuti dell'istruzione fornita agli utenti con privilegi e ",
+      "description": "Esiste un documento aggiornato di dettaglio, che indica i contenuti dell'istruzione fornita agli utenti con privilegi e le modalità di verifica dell'acquisizione dei contenuti.",
+      "sourceRow": 735,
+      "isLeaf": true,
+      "order": 118
+    },
+    {
+      "id": "req-d85357a93a22d993",
+      "code": "PR-DS-06",
+      "sourceCode": "PR-DS-06",
+      "title": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:           \na.  ",
+      "description": "Esiste un documento aggiornato di dettaglio che indica, anche in relazione alla categoria ID.AM, almeno:           \na.    l'elenco dei meccanismi di controllo dell'integrità dei dati per verificare l'autenticità di software, firmware e delle informazioni;            \nb.    le politiche di sicurezza adottate per assegnare un meccanismo a una risorsa e quali di questi meccanismi è applicato a quale risorsa;            \nc.    i processi, le metodologie e le tecnologie impiegate che concorrono al rispetto delle politiche di sicurezza.",
+      "sourceRow": 736,
+      "isLeaf": true,
+      "order": 119
+    },
+    {
+      "id": "req-816ef91ced99da7e",
+      "code": "PR.AT-02",
+      "sourceCode": "PR.AT-02",
+      "title": "Esiste un documento aggiornato recante, per ogni utente con privilegi, quali istruzioni ha ricevuto.",
+      "description": "Esiste un documento aggiornato recante, per ogni utente con privilegi, quali istruzioni ha ricevuto.",
+      "sourceRow": 738,
+      "isLeaf": true,
+      "order": 120
+    },
+    {
+      "id": "req-b032813a05a6d1ea",
+      "code": "RS.CO-01",
+      "sourceCode": "RS.CO-01",
+      "title": "Sono eseguite periodicamente esercitazioni.",
+      "description": "Sono eseguite periodicamente esercitazioni.",
+      "sourceRow": 742,
+      "isLeaf": true,
+      "order": 121
+    },
+    {
+      "id": "req-65246a024dfc84af",
+      "code": "DE.CM-08",
+      "sourceCode": "DE.CM-08",
+      "title": "Sono eseguiti periodicamente penetration test e vulnerability assessment in relazione alla criticità delle piattaforme e",
+      "description": "Sono eseguiti periodicamente penetration test e vulnerability assessment in relazione alla criticità delle piattaforme e delle applicazioni software.",
+      "sourceRow": 743,
+      "isLeaf": true,
+      "order": 122
+    },
+    {
+      "id": "req-c2f3fddc3d1fabaa",
+      "code": "DE.CM-04",
+      "sourceCode": "DE.CM-04",
+      "title": "Sistemi di protezione delle postazioni terminali (endpoint protection systems - EPS) e antimalware sono presenti.",
+      "description": "Sistemi di protezione delle postazioni terminali (endpoint protection systems - EPS) e antimalware sono presenti.",
+      "sourceRow": 745,
+      "isLeaf": true,
+      "order": 123
+    },
+    {
+      "id": "req-dc9b03516183b1f8",
+      "code": "ID.AM-06 04",
+      "sourceCode": "ID.AM-06 04",
+      "title": "Sono nominati, nell'ambito dell'articolazione di cui al punto 2, un referente tecnico, e almeno un suo sostituto, in pos",
+      "description": "Sono nominati, nell'ambito dell'articolazione di cui al punto 2, un referente tecnico, e almeno un suo sostituto, in possesso di competenze tecnico-specialistiche nella materia della sicurezza cibernetica, per lo svolgimento delle funzioni di interlocuzione con il CSIRT italiano ai fini della gestione degli incidenti.",
+      "sourceRow": 751,
+      "isLeaf": true,
+      "order": 124
+    },
+    {
+      "id": "req-1378cdd62ac808b3",
+      "code": "DE.CM-01",
+      "sourceCode": "DE.CM-01",
+      "title": "Sono presenti sistemi di rilevamento delle intrusioni (intrusion detection systems - IDS).",
+      "description": "Sono presenti sistemi di rilevamento delle intrusioni (intrusion detection systems - IDS).",
+      "sourceRow": 761,
+      "isLeaf": true,
+      "order": 125
+    },
+    {
+      "id": "req-a70c1f0aab91db54",
+      "code": "ID.SC-01",
+      "sourceCode": "ID.SC-01",
+      "title": "Tali processi sono validati e approvati da parte dei vertici del soggetto.",
+      "description": "Tali processi sono validati e approvati da parte dei vertici del soggetto.",
+      "sourceRow": 787,
+      "isLeaf": true,
+      "order": 126
+    },
+    {
+      "id": "req-f0a7142cfc0e05e7",
+      "code": "ID.AM-02",
+      "sourceCode": "ID.AM-02",
+      "title": "Tutte le piattaforme e le applicazioni software installate sono censite ed esiste un elenco di quelle approvate da attor",
+      "description": "Tutte le piattaforme e le applicazioni software installate sono censite ed esiste un elenco di quelle approvate da attori interni al soggetto. L'elenco contiene, ove possibile, i riferimenti agli identificativi della componentistica del bene ICT così come indicati nel modello dei beni ICT.",
+      "sourceRow": 791,
+      "isLeaf": true,
+      "order": 127
+    },
+    {
+      "id": "req-354e5dda8926b544",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "Tutti gli accessi eseguiti da remoto da personale di terze parti dovranno essere autorizzati dall'organizzazione di cybe",
+      "description": "Tutti gli accessi eseguiti da remoto da personale di terze parti dovranno essere autorizzati dall'organizzazione di cybersecurity e limitati ai soli casi essenziali.",
+      "sourceRow": 792,
+      "isLeaf": true,
+      "order": 128
+    },
+    {
+      "id": "req-c3a705e4d0f9e8f1",
+      "code": "ID.AM-03",
+      "sourceCode": "ID.AM-03",
+      "title": "Tutti i flussi informativi tra il bene ICT e l'esterno del bene ICT, nonché tra il bene ICT e l'esterno del soggetto inc",
+      "description": "Tutti i flussi informativi tra il bene ICT e l'esterno del bene ICT, nonché tra il bene ICT e l'esterno del soggetto incluso nel perimetro sono identificati ed esiste un elenco dei flussi approvati da attori interni al soggetto. L'elenco contiene, ove possibile, i riferimenti agli identificativi della componentistica del bene ICT così come indicati nel modello dei beni ICT.",
+      "sourceRow": 794,
+      "isLeaf": true,
+      "order": 129
+    },
+    {
+      "id": "req-4f92523d64e8fdbc",
+      "code": "PR.MA-02",
+      "sourceCode": "PR.MA-02",
+      "title": "Tutti i log relativi alle sessioni di comunicazione remota e alle attività eseguite sui sistemi remoti, dovranno essere ",
+      "description": "Tutti i log relativi alle sessioni di comunicazione remota e alle attività eseguite sui sistemi remoti, dovranno essere prodotti e custoditi su sistemi separati da quelli oggetto di intervento e non accessibili dalle utenze remote.",
+      "sourceRow": 797,
+      "isLeaf": true,
+      "order": 130
+    },
+    {
+      "id": "req-dcfe95434348b2c1",
+      "code": "ID.AM-01",
+      "sourceCode": "ID.AM-01",
+      "title": "Tutti sistemi e gli apparati fisici presenti sulle reti sono censiti e l'accesso alla rete è consentito esclusivamente a",
+      "description": "Tutti sistemi e gli apparati fisici presenti sulle reti sono censiti e l'accesso alla rete è consentito esclusivamente a quelli approvati.",
+      "sourceRow": 799,
+      "isLeaf": true,
+      "order": 131
+    },
+    {
+      "id": "req-0991f994db8fbcbb",
+      "code": "ID.AM-01",
+      "sourceCode": "ID.AM-01",
+      "title": "Tutti i sistemi e gli apparati fisici sono censiti ed esiste un elenco di quelli approvati da attori interni al soggetto",
+      "description": "Tutti i sistemi e gli apparati fisici sono censiti ed esiste un elenco di quelli approvati da attori interni al soggetto. L'elenco contiene, ove possibile, i riferimenti agli identificativi della componentistica del bene ICT così come indicati nel modello dei beni ICT.",
+      "sourceRow": 800,
+      "isLeaf": true,
+      "order": 132
+    }
+  ],
+  "assessmentQuestions": [],
+  "applicability": [],
+  "importSource": {
+    "importSource": "Matrice_MultiCompliance.xlsx",
+    "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+    "importBatchId": "batch-696f3930c809d4c5",
+    "importedAt": "2026-08-09T12:46:36+00:00"
+  }
+}

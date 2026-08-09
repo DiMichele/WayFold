@@ -61,9 +61,13 @@ EOF
   chmod 600 "$BUILD_ENV"
 fi
 
-# One-shot clean slate: touch data/.wipe_db before deploy to reset GRC + engine stores
+# Destructive reset: disabled in production unless explicitly armed (never via normal deploy)
 if [[ -f data/.wipe_db ]]; then
-  echo "==> Wiping GRC DB + engine stores (clean workspace)"
+  if [[ "${WAYFOLD_ALLOW_DESTRUCTIVE_RESET:-}" != "I_UNDERSTAND_THIS_DELETES_DATA" ]]; then
+    echo "ERROR: data/.wipe_db present but WAYFOLD_ALLOW_DESTRUCTIVE_RESET=I_UNDERSTAND_THIS_DELETES_DATA not set — aborting" >&2
+    exit 1
+  fi
+  echo "==> Wiping GRC DB + engine stores (EXPLICIT destructive reset)"
   # Stop stack first if present so sqlite files are released
   "${COMPOSE[@]}" down --remove-orphans 2>/dev/null || true
   for c in wayfold-compliance-backend wayfold-compliance-frontend wayfold-compliance-huey \
@@ -133,11 +137,14 @@ for i in $(seq 1 60); do
   fi
 done
 
-echo "==> Seed product-review demo dataset (safe, demo-only)"
-# Installs WF_REVIEW_DEMO_2026 into writable engine data volume. Idempotent.
-docker exec wayfold-compliance-engine \
-  python -m engine.seed_review_demo --data-dir /var/lib/wayfold-compliance \
-  || echo "WARN: review demo seed failed (engine may still be starting)"
+if [[ "${WAYFOLD_SEED_REVIEW_DEMO:-0}" == "1" ]]; then
+  echo "==> Seed product-review demo dataset (WAYFOLD_SEED_REVIEW_DEMO=1)"
+  docker exec wayfold-compliance-engine \
+    python -m engine.seed_review_demo --data-dir /var/lib/wayfold-compliance \
+    || echo "WARN: review demo seed failed (engine may still be starting)"
+else
+  echo "==> Skipping review demo seed (WAYFOLD_SEED_REVIEW_DEMO=0 default)"
+fi
 
 echo "==> Stack status"
 "${COMPOSE[@]}" ps

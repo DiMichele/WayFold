@@ -7,12 +7,13 @@ that share a canonical control.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from .checklist import build_unified_checklist
 from .dates import is_overdue, parse_date
 from .domain import (
+    FindingScope,
     ImplementationStatus,
     ProgramSnapshot,
     UnifiedChecklist,
@@ -58,6 +59,8 @@ class GapRow:
     mapped: bool
     taxonomy: str = GapTaxonomy.IMPLEMENTATION
     severity: str = "MEDIUM"
+    scope: str = "REQUIREMENT"
+    affected_requirement_ids: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -110,6 +113,7 @@ def build_gap_rows(
                         gap=cov.uncovered_delta.strip(),
                         mapped=True,
                         severity="HIGH",
+                        scope=FindingScope.REQUIREMENT.value,
                     )
                 )
 
@@ -127,29 +131,40 @@ def build_gap_rows(
                     )
                 )
 
-        # IMPLEMENTATION — once per control when status requires remediation
+        # IMPLEMENTATION — once per control; list all affected requirements
         if status in {
             ImplementationStatus.NOT_IMPLEMENTED,
             ImplementationStatus.IN_PROGRESS,
         }:
-            # Attach to primary coverage if any, else synthetic
-            cov = ctrl.framework_coverage[0] if ctrl.framework_coverage else None
-            if cov is not None:
+            affected = [c.requirement_id for c in ctrl.framework_coverage]
+            if affected:
+                primary = ctrl.framework_coverage[0]
                 rows.append(
                     _row(
-                        cov=cov,
+                        cov=primary,
                         ctrl=ctrl,
                         req_title=req_title,
                         taxonomy=GapTaxonomy.IMPLEMENTATION,
                         gap=f"Stato implementazione: {status.value}",
                         mapped=True,
                         severity=(ctrl.priority or "MEDIUM").upper(),
+                        scope=FindingScope.CONTROL.value,
+                        affected_requirement_ids=affected,
                     )
                 )
 
-        # EVIDENCE — when evidence is actually missing for a non-N/A control
+        # EVIDENCE — only when program declares an expectation for this control
+        meta = (checklist.meta or {}).get("evidence_expectations") or {}
+        ctrl_key = ctrl.canonical_control_ref or ctrl.implementation_id or ctrl.control_key
+        expectation = meta.get(ctrl_key) or meta.get(ctrl.canonical_control_ref or "")
+        evidence_required = False
+        min_ev = 0
+        if isinstance(expectation, dict):
+            evidence_required = bool(expectation.get("evidence_required"))
+            min_ev = int(expectation.get("minimum_evidence") or 0)
         if (
-            ctrl.evidence_count == 0
+            evidence_required
+            and ctrl.evidence_count < max(1, min_ev)
             and status != ImplementationStatus.NOT_APPLICABLE
             and ctrl.framework_coverage
         ):
@@ -163,6 +178,7 @@ def build_gap_rows(
                     gap="Evidenza richiesta mancante",
                     mapped=True,
                     severity="MEDIUM",
+                    scope=FindingScope.EVIDENCE.value,
                 )
             )
 
@@ -255,6 +271,8 @@ def _row(
     severity: str,
     owner: str | None = None,
     deadline: str | None = None,
+    scope: str = FindingScope.REQUIREMENT.value,
+    affected_requirement_ids: list[str] | None = None,
 ) -> GapRow:
     return GapRow(
         framework_id=cov.framework_id,
@@ -277,6 +295,8 @@ def _row(
         mapped=mapped,
         taxonomy=taxonomy,
         severity=severity,
+        scope=scope,
+        affected_requirement_ids=list(affected_requirement_ids or []),
     )
 
 

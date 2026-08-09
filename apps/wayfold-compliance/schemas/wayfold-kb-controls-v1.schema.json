@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://wayfold.xyz/schemas/wayfold-kb-controls-v1.schema.json",
+  "title": "WayFold Canonical Controls Package v1",
+  "type": "object",
+  "required": ["schemaVersion", "controls"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "code", "title"],
+        "properties": {
+          "id": { "type": "string" },
+          "code": { "type": "string" },
+          "title": { "type": "string" },
+          "domain": { "type": "string" },
+          "objective": { "type": "string" },
+          "description": { "type": "string" },
+          "implementationGuidance": { "type": "string" },
+          "suggestedEvidence": { "type": "string" },
+          "defaultPriority": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    }
+  }
+}

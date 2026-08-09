@@ -1,0 +1,22 @@
+{
+  "batchId": "batch-696f3930c809d4c5",
+  "sha256": "cd16e24499a1e5137f0daa7c0c8f24d114c4ab2a92a964952bcafff0b8b1694c",
+  "frameworkPackages": [
+    "iso-27001-legacy.json",
+    "reg-cloud-legacy.json",
+    "nis2-legacy.json",
+    "psnc-legacy.json",
+    "csa-star-legacy.json"
+  ],
+  "issueCount": 4,
+  "counts": {
+    "iso_annex_a": 96,
+    "reg_cloud_rows": 808,
+    "reg_cloud_codes": 91,
+    "nis2_rows": 117,
+    "nis2_codes": 50,
+    "psnc_rows": 133,
+    "psnc_codes": 58,
+    "csa_populated_rows": 0
+  }
+}

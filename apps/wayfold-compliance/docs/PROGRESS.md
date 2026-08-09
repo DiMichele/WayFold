@@ -9,7 +9,22 @@
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
 **Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
 
-## Architecture & Security Realignment (Slice 0)
+## Foundation + Legacy import architecture (2026-08-09)
+
+Status: **PARTIAL** — core fixes + JSON/XLSX pipeline landed; full E2E browser import/export hardening ongoing.
+
+- Profilo utente `/profile` + cambio password (directory utenti, non `.auth.env`)
+- `live-verify.sh` read-only; `enable-temporary-review-account.sh` esplicito
+- `WAYFOLD_SEED_REVIEW_DEMO=0` default; wipe DB richiede `WAYFOLD_ALLOW_DESTRUCTIVE_RESET=I_UNDERSTAND_THIS_DELETES_DATA`
+- Nessun `seed_kb` su GET Framework/Mappings
+- `POST /api/report/snapshots`; GET snapshot non mutante
+- Gap: `FindingScope` CONTROL/REQUIREMENT/EVIDENCE; evidenza solo con `evidence_expectations`
+- `ApplicabilityDecision` per programma/requisito
+- Converter: `python -m engine.importers.multicompliance`
+- Docs: `docs/import/*`, `docs/ADR-MAPPINGSET-VERSIONING.md`
+
+Ready for real client data: **NO**
+
 
 Status: **PARTIAL → security/domain P0 landed; core cutover deferred by slice**
 

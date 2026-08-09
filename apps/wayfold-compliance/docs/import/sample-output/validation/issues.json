@@ -1,0 +1,44 @@
+{
+  "issues": [
+    {
+      "id": "issue-377b14d178afd9c7",
+      "severity": "INFO",
+      "code": "INCOMPLETE_FRAMEWORK",
+      "sheet": "Matrice_Multicompliance Corp.",
+      "row": null,
+      "column": "",
+      "originalValue": "",
+      "suggestedAction": "Marcare sezione Norma come INCOMPLETE_SOURCE"
+    },
+    {
+      "id": "issue-53f371fa95e9fffd",
+      "severity": "INFO",
+      "code": "UNNAMED_COLUMN",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": null,
+      "column": "UNNAMED_LEGACY_FIELD_30",
+      "originalValue": "",
+      "suggestedAction": "Documentare significato; non inventare header"
+    },
+    {
+      "id": "issue-8623492146e999ce",
+      "severity": "INFO",
+      "code": "UNNAMED_COLUMN",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": null,
+      "column": "UNNAMED_LEGACY_FIELD_31",
+      "originalValue": "",
+      "suggestedAction": "Documentare significato; non inventare header"
+    },
+    {
+      "id": "issue-8b404a7df2b703aa",
+      "severity": "WARNING",
+      "code": "MISSING_SCOPE",
+      "sheet": "Matrice_Multicompliance Buss.",
+      "row": 810,
+      "column": "Ambito",
+      "originalValue": "",
+      "suggestedAction": ""
+    }
+  ]
+}

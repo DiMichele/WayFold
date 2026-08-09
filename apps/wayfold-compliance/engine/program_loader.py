@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 
 from .domain import (
+    ApplicabilityDecision,
+    ApplicabilityStatus,
     ControlImplementationSnapshot,
     CoverageRelation,
     EvidenceSnapshot,
@@ -103,6 +105,17 @@ def load_program_snapshot(path: Path) -> ProgramSnapshot:
         )
         for t in raw.get("tasks") or []
     ]
+    applicability = [
+        ApplicabilityDecision(
+            program_id=str(a.get("program_id") or raw.get("program_id") or ""),
+            requirement_id=str(a["requirement_id"]),
+            status=ApplicabilityStatus(str(a.get("status") or "APPLICABLE")),
+            rationale=str(a.get("rationale") or ""),
+            decided_by=str(a.get("decided_by") or ""),
+            decided_at=str(a.get("decided_at") or ""),
+        )
+        for a in raw.get("applicability_decisions") or []
+    ]
     return ProgramSnapshot(
         tenant_id=raw["tenant_id"],
         tenant_name=raw["tenant_name"],
@@ -120,4 +133,6 @@ def load_program_snapshot(path: Path) -> ProgramSnapshot:
         available_framework_versions=list(raw.get("available_framework_versions") or []),
         owner=str(raw.get("owner") or ""),
         description=str(raw.get("description") or ""),
+        applicability_decisions=applicability,
+        evidence_expectations=dict(raw.get("evidence_expectations") or {}),
     )

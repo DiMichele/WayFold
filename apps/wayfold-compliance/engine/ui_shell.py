@@ -456,9 +456,17 @@ def render_shell(
     {ctx_banner}
     <nav class="nav-wrap">{nav_html}</nav>
     <div class="sidebar-footer">
-      <a class="lang-switch" href="/logout" style="text-decoration:none" aria-label="{escape(t(lang, 'nav.logout'))}">
-        {icon("x")}<span>{escape(t(lang, 'nav.logout'))}</span>
+      <a class="lang-switch" href="/profile{q}" style="text-decoration:none" aria-label="Profilo">
+        {icon("users")}<span>Profilo</span>
       </a>
+      <form method="post" action="/logout{q}" style="margin:0">
+        <input type="hidden" name="csrf_token" value="" id="wf-logout-csrf">
+        <button type="submit" class="lang-switch" style="border:0;background:transparent;width:100%;cursor:pointer;text-align:left" aria-label="{escape(t(lang, 'nav.logout'))}">
+          {icon("x")}<span>{escape(t(lang, 'nav.logout'))}</span>
+        </button>
+      </form>
+      <script>document.getElementById('wf-logout-csrf').value=
+        document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('wf_csrf='))?.split('=')[1]||'';</script>
     </div>
   </aside>
   <div class="main">

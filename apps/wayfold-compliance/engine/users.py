@@ -168,7 +168,39 @@ def set_password(username: str, password: str) -> None:
     if user is None:
         raise KeyError(username)
     user.password_hash = _hash_password(password)
+    user.temporary_review = False
     upsert_user(user)
+    from engine.session_revoke import bump_user_sessions
+
+    bump_user_sessions(username)
+
+
+def change_password(
+    username: str,
+    current_password: str,
+    new_password: str,
+) -> None:
+    """Change password via user directory; migrates env review user to persisted record."""
+    if not new_password or len(new_password) < 8:
+        raise ValueError("password_too_short")
+    result = authenticate(username, current_password)
+    if not result.ok or result.user is None:
+        raise PermissionError("invalid_credentials")
+    user = result.user
+    if user.temporary_review and get_user(username) is None:
+        create_user(
+            username,
+            new_password,
+            role=user.role_enum,
+            tenant_ids=list(user.tenant_ids),
+            display_name=user.display_name or username,
+        )
+    else:
+        if get_user(username) is None:
+            raise KeyError(username)
+        if not verify_password(current_password, get_user(username).password_hash):
+            raise PermissionError("invalid_credentials")
+        set_password(username, new_password)
     from engine.session_revoke import bump_user_sessions
 
     bump_user_sessions(username)

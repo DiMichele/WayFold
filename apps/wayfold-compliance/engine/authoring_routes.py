@@ -95,7 +95,6 @@ def seed_kb(programs: list[Any]) -> None:
 
 
 def frameworks_list_context(programs: list[Any]) -> dict[str, Any]:
-    seed_kb(programs)
     versions = fw_versions.list_versions()
     usage: dict[str, int] = {}
     for p in programs:
@@ -141,7 +140,6 @@ def handle_authoring_get(handler, path: str, qs: dict, auth) -> bool:
         if handler._gate(qs, permission=PERM_KB_WRITE) is None:
             return True
         programs = [p for p, _ in load_portfolio_programs(_registry())]
-        seed_kb(programs)
         for v in fw_versions.list_versions():
             framework_registry.ensure_from_version(
                 framework_id=v.framework_id,
@@ -163,7 +161,6 @@ def handle_authoring_get(handler, path: str, qs: dict, auth) -> bool:
     if path == "/frameworks/requirements/new":
         if handler._gate(qs, permission=PERM_KB_WRITE) is None:
             return True
-        seed_kb([p for p, _ in load_portfolio_programs(_registry())])
         handler._send(
             200,
             authoring_pages.requirement_create_page(
@@ -220,7 +217,6 @@ def handle_authoring_get(handler, path: str, qs: dict, auth) -> bool:
         if handler._gate(qs, permission=PERM_KB_READ) is None:
             return True
         programs = [p for p, _ in load_portfolio_programs(_registry())]
-        seed_kb(programs)
         controls = control_catalog.list_controls(q=qs.get("q", [""])[0] or None)
         usage: dict[str, dict[str, int]] = {}
         for m in kb_mappings.list_mappings():
@@ -310,7 +306,6 @@ def handle_authoring_get(handler, path: str, qs: dict, auth) -> bool:
     if path == "/mappings/new":
         if handler._gate(qs, permission=PERM_MAPPING_WRITE) is None:
             return True
-        seed_kb([p for p, _ in load_portfolio_programs(_registry())])
         reqs = []
         for v in fw_versions.list_versions():
             for r in v.requirements:
@@ -367,7 +362,6 @@ def handle_authoring_get(handler, path: str, qs: dict, auth) -> bool:
                     continue
             seen.add(c.tenant_id)
             clients.append({"tenant_id": c.tenant_id, "tenant_name": c.tenant_name})
-        seed_kb([p for p, _ in load_portfolio_programs(_registry())])
         published = [v for v in fw_versions.list_versions() if v.status == "PUBLISHED"]
         handler._send(
             200,
@@ -692,7 +686,6 @@ def handle_authoring_post(handler, path: str, qs: dict, raw: str) -> bool:
                 )
             )
         except ValueError as exc:
-            seed_kb([])
             reqs = []
             for v in fw_versions.list_versions():
                 for r in v.requirements:
