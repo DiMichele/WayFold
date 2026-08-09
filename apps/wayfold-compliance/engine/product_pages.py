@@ -6,9 +6,11 @@ from html import escape
 from typing import Any
 from urllib.parse import parse_qsl, urlencode
 
+from engine.dates import format_display_datetime
 from engine.gap_assessment import GAP_TAXONOMY_IT
 from engine.i18n import DEFAULT_LANG, normalize_lang, t, with_lang
 from engine.ui_components import empty_state, mapping_badge, page_header, status_badge
+from engine.ui_labels import framework_status_label, review_label
 from engine.ui_shell import render_shell, table_wrap
 
 
@@ -16,14 +18,27 @@ def _lang(nav_qs: str) -> str:
     return normalize_lang(dict(parse_qsl(nav_qs)).get("lang", DEFAULT_LANG))
 
 
-def frameworks_page(versions: list[Any], usage: dict[str, int], nav_qs: str) -> str:
+def frameworks_page(
+    versions: list[Any],
+    usage: dict[str, int],
+    nav_qs: str,
+    *,
+    meta_by_id: dict[str, Any] | None = None,
+    coverage_by_fw: dict[str, str] | None = None,
+) -> str:
     lang = _lang(nav_qs)
     nav_qs = with_lang(nav_qs, lang)
+    meta_by_id = meta_by_id or {}
+    coverage_by_fw = coverage_by_fw or {}
+    actions = (
+        f"<a class='btn primary' href='/frameworks/new?{nav_qs}'>{escape(t(lang, 'fwkb.new'))}</a>"
+    )
     if not versions:
         body = page_header(
             eyebrow=t(lang, "nav.section.knowledge"),
             title=t(lang, "fwkb.title"),
             subtitle=t(lang, "fwkb.meta"),
+            actions_html=actions,
         ) + empty_state(
             title=t(lang, "fwkb.empty_title"),
             body=t(lang, "fwkb.empty_body"),
@@ -37,7 +52,6 @@ def frameworks_page(versions: list[Any], usage: dict[str, int], nav_qs: str) -> 
             breadcrumb=t(lang, "fwkb.title"),
         )
 
-    # Group by framework
     groups: dict[str, list[Any]] = {}
     for v in versions:
         groups.setdefault(v.framework_id, []).append(v)
@@ -45,33 +59,37 @@ def frameworks_page(versions: list[Any], usage: dict[str, int], nav_qs: str) -> 
     rows = []
     for fw_id, vers in sorted(groups.items(), key=lambda x: x[1][0].framework_name):
         current = next((x for x in vers if x.status == "PUBLISHED"), vers[0])
+        meta = meta_by_id.get(fw_id)
+        fw_type = getattr(meta, "type", None) or "Framework"
+        publisher = getattr(meta, "publisher", None) or current.publisher
         req_count = len(current.requirements)
         clients = usage.get(fw_id, 0)
         href = f"/frameworks/detail?framework_id={escape(fw_id)}&{nav_qs}"
         rows.append(
             "<tr>"
-            f"<td><a href='{href}'><strong>{escape(current.framework_name)}</strong></a>"
-            f"<div class='client-meta'>{escape(current.publisher)}</div></td>"
+            f"<td><a href='{href}'><strong>{escape(current.framework_name)}</strong></a></td>"
+            f"<td>{escape(fw_type)}</td>"
+            f"<td>{escape(publisher)}</td>"
             f"<td><code>{escape(current.version)}</code></td>"
-            f"<td>{escape(current.status)}</td>"
+            f"<td>{escape(framework_status_label(lang, current.status))}</td>"
             f"<td>{req_count}</td>"
+            f"<td>{escape(coverage_by_fw.get(fw_id, '—'))}</td>"
             f"<td>{clients}</td>"
             f"<td><a class='btn sm' href='{href}'>{escape(t(lang, 'action.open'))}</a></td>"
             "</tr>"
         )
     table = f"""<table class="data-table"><thead><tr>
-<th>{escape(t(lang, 'col.framework'))}</th>
-<th>{escape(t(lang, 'col.version'))}</th>
-<th>{escape(t(lang, 'col.status'))}</th>
-<th>{escape(t(lang, 'col.requirements'))}</th>
-<th>{escape(t(lang, 'fwkb.clients_using'))}</th>
-<th></th>
+<th>Nome</th><th>{escape(t(lang, 'fwkb.type'))}</th><th>{escape(t(lang, 'fwkb.publisher'))}</th>
+<th>{escape(t(lang, 'fwkb.current_version'))}</th><th>{escape(t(lang, 'col.status'))}</th>
+<th>{escape(t(lang, 'col.requirements'))}</th><th>{escape(t(lang, 'fwkb.coverage'))}</th>
+<th>{escape(t(lang, 'fwkb.clients_using'))}</th><th></th>
 </tr></thead><tbody>{''.join(rows)}</tbody></table>"""
     body = (
         page_header(
             eyebrow=t(lang, "nav.section.knowledge"),
             title=t(lang, "fwkb.title"),
             subtitle=t(lang, "fwkb.meta"),
+            actions_html=actions,
         )
         + f'<div class="panel">{table_wrap(table)}</div>'
     )
@@ -91,58 +109,126 @@ def framework_detail_page(
     selected_id: str | None,
     nav_qs: str,
     usage_clients: list[str] | None = None,
+    tab: str = "overview",
+    meta: Any | None = None,
+    mappings: list[Any] | None = None,
+    coverage: dict[str, Any] | None = None,
 ) -> str:
     lang = _lang(nav_qs)
     nav_qs = with_lang(nav_qs, lang)
     if not versions:
         return frameworks_page([], {}, nav_qs)
     selected = next((v for v in versions if v.id == selected_id), versions[0])
+    tab = tab or "overview"
+    base = f"/frameworks/detail?framework_id={escape(selected.framework_id)}&version_id={escape(selected.id)}&{nav_qs}"
+    tabs = [
+        ("overview", "Panoramica"),
+        ("versions", "Versioni"),
+        ("requirements", "Requisiti"),
+        ("mappings", "Mappature"),
+        ("sources", "Fonti"),
+        ("usage", "Utilizzo"),
+    ]
+    tabs_html = (
+        '<div class="tabs">'
+        + "".join(
+            f"<a class='{'active' if tab == key else ''}' href='{base}&tab={key}'>{escape(label)}</a>"
+            for key, label in tabs
+        )
+        + "</div>"
+    )
+    is_draft = selected.status == "DRAFT"
+    actions = (
+        f"<a class='btn' href='/frameworks/versions/new?framework_id={escape(selected.framework_id)}&{nav_qs}'>+ Nuova versione</a>"
+        f"<a class='btn' href='/api/frameworks/clone?version_id={escape(selected.id)}&new_version={escape(selected.version)}.1&{nav_qs}'>Clona come nuova bozza</a>"
+    )
+    if is_draft:
+        actions += (
+            f"<a class='btn' href='/frameworks/requirements/new?version_id={escape(selected.id)}&{nav_qs}'>{escape(t(lang, 'req.new'))}</a>"
+            f"<a class='btn' href='/frameworks/requirements/import?version_id={escape(selected.id)}&{nav_qs}'>{escape(t(lang, 'req.import_csv'))}</a>"
+            f"<a class='btn primary' href='/frameworks/publish?version_id={escape(selected.id)}&{nav_qs}'>{escape(t(lang, 'publish.title'))}</a>"
+        )
+
     ver_rows = "".join(
         "<tr>"
         f"<td><a href='/frameworks/detail?framework_id={escape(selected.framework_id)}"
-        f"&version_id={escape(v.id)}&{nav_qs}'><code>{escape(v.version)}</code></a></td>"
-        f"<td>{escape(v.status)}</td>"
+        f"&version_id={escape(v.id)}&tab=versions&{nav_qs}'><code>{escape(v.version)}</code></a></td>"
+        f"<td>{escape(framework_status_label(lang, v.status))}</td>"
         f"<td>{len(v.requirements)}</td>"
-        f"<td>{escape(v.published_at or v.created_at or '—')}</td>"
+        f"<td>{escape(format_display_datetime(v.published_at or v.created_at, lang=lang))}</td>"
         "</tr>"
         for v in versions
     )
-    # Hierarchy by indent from parent path
+    code_to_depth: dict[str, int] = {}
+    for r in selected.requirements:
+        parent = getattr(r, "parent_id", None)
+        depth = 0
+        if parent:
+            parent_code = next((x.code for x in selected.requirements if x.id == parent), "")
+            depth = parent_code.count(".") + (1 if parent_code else r.code.count("."))
+        else:
+            depth = r.code.count(".")
+        code_to_depth[r.code] = depth
     req_rows = []
     for r in sorted(selected.requirements, key=lambda x: (x.order, x.code)):
-        depth = r.code.count(".")
+        depth = code_to_depth.get(r.code, 0)
         pad = "&nbsp;" * (depth * 4)
         req_rows.append(
             "<tr>"
             f"<td>{pad}<code>{escape(r.code)}</code></td>"
             f"<td>{escape(r.title)}</td>"
+            f"<td>{escape(getattr(r, 'req_type', '') or '—')}</td>"
             f"<td>{escape(r.section or '—')}</td>"
-            f"<td>{escape(selected.publisher)}</td>"
-            f"<td>{escape(r.source_url or selected.source_url or '—')}</td>"
+            f"<td>{'Foglia' if getattr(r, 'is_leaf', True) else 'Nodo'}</td>"
             "</tr>"
         )
     clients = "".join(f"<li>{escape(c)}</li>" for c in (usage_clients or [])) or (
         f"<li>{escape(t(lang, 'client.none'))}</li>"
     )
-    body = f"""
-{page_header(
-    eyebrow=t(lang, 'fwkb.title'),
-    title=selected.framework_name,
-    subtitle=f"{selected.publisher} · {t(lang, 'col.version')} {selected.version} · {selected.status}",
-)}
-<div class="panel tabs-local">
-  <h2>{escape(t(lang, 'fwkb.versions'))}</h2>
-  {table_wrap(f"<table class='data-table'><thead><tr><th>{escape(t(lang,'col.version'))}</th><th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.requirements'))}</th><th>{escape(t(lang,'col.detected'))}</th></tr></thead><tbody>{ver_rows}</tbody></table>")}
-</div>
-<div class="panel" style="margin-top:14px">
-  <h2>{escape(t(lang, 'fwkb.requirements'))}</h2>
-  {table_wrap(f"<table class='data-table'><thead><tr><th>{escape(t(lang,'col.requirement'))}</th><th>{escape(t(lang,'col.title'))}</th><th>Section</th><th>Publisher</th><th>Source</th></tr></thead><tbody>{''.join(req_rows) or '<tr><td colspan=5>—</td></tr>'}</tbody></table>")}
-</div>
-<div class="panel" style="margin-top:14px">
-  <h2>{escape(t(lang, 'fwkb.usage'))}</h2>
-  <ul class="compact">{clients}</ul>
+    map_rows = "".join(
+        "<tr>"
+        f"<td><code>{escape(m.requirement_code)}</code></td>"
+        f"<td><code>{escape(m.canonical_control_ref)}</code></td>"
+        f"<td>{mapping_badge(lang, m.relation.value if hasattr(m.relation, 'value') else m.relation)}</td>"
+        f"<td>{escape(m.uncovered_delta or '—')}</td>"
+        f"<td>{escape(review_label(lang, m.review_status))}</td>"
+        "</tr>"
+        for m in (mappings or [])
+        if m.framework_version == selected.version
+    )
+    cov = coverage or {}
+    overview = f"""
+<div class="panel" style="padding:16px">
+  <div class="detail-grid">
+    <div class="field"><label>Publisher</label><div class="field-value">{escape(selected.publisher)}</div></div>
+    <div class="field"><label>Tipo</label><div class="field-value">{escape(getattr(meta, 'type', 'Framework') if meta else 'Framework')}</div></div>
+    <div class="field"><label>Versione</label><div class="field-value"><code>{escape(selected.version)}</code></div></div>
+    <div class="field"><label>Stato</label><div class="field-value">{escape(framework_status_label(lang, selected.status))}</div></div>
+    <div class="field"><label>Requirement</label><div class="field-value">{len(selected.requirements)}</div></div>
+    <div class="field"><label>Copertura</label><div class="field-value">{cov.get('mapped', 0)}/{cov.get('total_requirements', 0)} mappati · {cov.get('unmapped', 0)} non mappati</div></div>
+  </div>
+  <p class="meta" style="margin-top:12px">{escape(getattr(meta, 'description', '') or selected.notes or '')}</p>
+  <p class="client-meta">{escape(t(lang, 'req.term_help'))}</p>
 </div>
 """
+    panels = {
+        "overview": overview,
+        "versions": f"<div class='panel'><h2>{escape(t(lang, 'fwkb.versions'))}</h2>{table_wrap(f"<table class='data-table'><thead><tr><th>Versione</th><th>Stato</th><th>Requirement</th><th>Data</th></tr></thead><tbody>{ver_rows}</tbody></table>")}</div>",
+        "requirements": f"<div class='panel'><h2>{escape(t(lang, 'fwkb.requirements'))}</h2>{table_wrap(f"<table class='data-table'><thead><tr><th>Codice</th><th>Titolo</th><th>Tipo</th><th>Sezione</th><th></th></tr></thead><tbody>{''.join(req_rows) or '<tr><td colspan=5>Nessuna voce normativa. Aggiungi manualmente o importa CSV.</td></tr>'}</tbody></table>")}</div>",
+        "mappings": f"<div class='panel'><h2>Mappature</h2><p><a class='btn sm primary' href='/mappings/new?framework_id={escape(selected.framework_id)}&version_id={escape(selected.id)}&{nav_qs}'>{escape(t(lang,'map.new'))}</a></p>{table_wrap(f"<table class='data-table'><thead><tr><th>Requisito</th><th>Controllo</th><th>Relazione</th><th>Delta</th><th>Stato</th></tr></thead><tbody>{map_rows or '<tr><td colspan=5>—</td></tr>'}</tbody></table>")}</div>",
+        "sources": f"<div class='panel'><h2>Fonti</h2><p class='meta'>URL ufficiale: {escape(getattr(meta, 'official_url', '') or selected.source_url or '—')}</p><p><a class='btn sm' href='/changes?{nav_qs}'>Apri Intelligence normativa</a></p></div>",
+        "usage": f"<div class='panel'><h2>{escape(t(lang, 'fwkb.usage'))}</h2><ul class='compact'>{clients}</ul></div>",
+    }
+    body = (
+        page_header(
+            eyebrow=t(lang, "fwkb.title"),
+            title=selected.framework_name,
+            subtitle=f"{selected.publisher} · {selected.version} · {framework_status_label(lang, selected.status)}",
+            actions_html=actions,
+        )
+        + tabs_html
+        + panels.get(tab, overview)
+    )
     return render_shell(
         f"{selected.framework_name} — WayFold Compliance",
         nav_qs,
@@ -176,7 +262,8 @@ def mappings_page(
             f"<td {tip}>{mapping_badge(lang, rel)}</td>"
             f"<td>{escape(m.uncovered_delta or '—')}</td>"
             f"<td>{escape(m.rationale or '—')}</td>"
-            f"<td>{escape(str(rev))}</td>"
+            f"<td>{escape(review_label(lang, rev))}</td>"
+            f"<td><a class='btn sm' href='/mappings/new?requirement_id={escape(m.requirement_id)}&{nav_qs}'>Modifica</a></td>"
             "</tr>"
         )
     unmapped_rows = "".join(
@@ -184,7 +271,10 @@ def mappings_page(
         f"<td><code>{escape(u.code)}</code></td>"
         f"<td>{escape(u.framework_name)} <code>{escape(u.framework_version)}</code></td>"
         f"<td>{escape(u.title)}</td>"
-        f"<td><a class='btn sm' href='/control?{nav_qs}'>{escape(t(lang, 'map.associate'))}</a></td>"
+        f"<td style='white-space:nowrap'>"
+        f"<a class='btn sm' href='/mappings/new?requirement_id={escape(u.id)}&{nav_qs}'>{escape(t(lang, 'map.associate'))}</a> "
+        f"<a class='btn sm' href='/controls/new?from_requirement={escape(u.id)}&title={escape(u.title)}&{nav_qs}'>{escape(t(lang, 'map.create_control'))}</a>"
+        f"</td>"
         "</tr>"
         for u in unmapped
     )
@@ -195,9 +285,9 @@ def mappings_page(
   <label>Relazione
     <select name="relation">
       <option value="">—</option>
-      <option value="FULL" {"selected" if filters.get("relation")=="FULL" else ""}>Completa (FULL)</option>
-      <option value="PARTIAL" {"selected" if filters.get("relation")=="PARTIAL" else ""}>Parziale (PARTIAL)</option>
-      <option value="SUPPORTING" {"selected" if filters.get("relation")=="SUPPORTING" else ""}>Di supporto (SUPPORTING)</option>
+      <option value="FULL" {"selected" if filters.get("relation")=="FULL" else ""}>Completa</option>
+      <option value="PARTIAL" {"selected" if filters.get("relation")=="PARTIAL" else ""}>Parziale</option>
+      <option value="SUPPORTING" {"selected" if filters.get("relation")=="SUPPORTING" else ""}>Di supporto</option>
     </select>
   </label>
   <label>Stato
@@ -209,7 +299,7 @@ def mappings_page(
       <option value="REJECTED" {"selected" if filters.get("review")=="REJECTED" else ""}>Rifiutata</option>
     </select>
   </label>
-  <label><input type="checkbox" name="unmapped_only" value="1" {"checked" if filters.get("unmapped_only")=="1" else ""}> Non mappati</label>
+  <label><input type="checkbox" name="unmapped_only" value="1" {"checked" if filters.get("unmapped_only")=="1" else ""}> Solo non mappati</label>
   <button class="btn primary sm" type="submit">{escape(t(lang, 'gaps.filter'))}</button>
 </form>
 """
@@ -221,7 +311,8 @@ def mappings_page(
 <th>{escape(t(lang,'col.delta'))}</th>
 <th>{escape(t(lang,'col.rationale'))}</th>
 <th>{escape(t(lang,'col.status'))}</th>
-</tr></thead><tbody>{''.join(rows) or f"<tr><td colspan='7'>{escape(t(lang,'map.empty'))}</td></tr>"}</tbody></table>"""
+<th></th>
+</tr></thead><tbody>{''.join(rows) or f"<tr><td colspan='8'>{escape(t(lang,'map.empty'))}</td></tr>"}</tbody></table>"""
     um_table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.requirement'))}</th><th>{escape(t(lang,'col.framework'))}</th>
 <th>{escape(t(lang,'col.title'))}</th><th></th></tr></thead>
@@ -231,6 +322,7 @@ def mappings_page(
             eyebrow=t(lang, "nav.section.knowledge"),
             title=t(lang, "map.title"),
             subtitle=t(lang, "map.meta"),
+            actions_html=f"<a class='btn primary' href='/mappings/new?{nav_qs}'>{escape(t(lang, 'map.new'))}</a>",
         )
         + form
         + f'<div class="panel">{table_wrap(table)}</div>'
@@ -261,7 +353,7 @@ def audit_page(events: list[Any], nav_qs: str, *, filters: dict[str, str] | None
             ).strip()
         rows.append(
             "<tr>"
-            f"<td>{escape(ev.timestamp)}</td>"
+            f"<td>{escape(format_display_datetime(ev.timestamp, lang=lang))}</td>"
             f"<td>{escape(ev.actor_user_id)}</td>"
             f"<td><code>{escape(ev.action)}</code></td>"
             f"<td>{escape(ev.entity_type)} <code>{escape(ev.entity_id)}</code></td>"
@@ -302,30 +394,78 @@ def audit_page(events: list[Any], nav_qs: str, *, filters: dict[str, str] | None
     )
 
 
-def clients_page(rows: list[Any], assignments: dict[str, list[str]], nav_qs: str) -> str:
+def clients_page(
+    rows: list[Any],
+    assignments: dict[str, list[str]],
+    nav_qs: str,
+    *,
+    q: str = "",
+    status: str = "",
+    framework: str = "",
+) -> str:
     lang = _lang(nav_qs)
     nav_qs = with_lang(nav_qs, lang)
-    # Reverse map tenant -> consultants
     tenant_consultants: dict[str, list[str]] = {}
     for user, tenants in assignments.items():
         for tid in tenants:
             tenant_consultants.setdefault(tid, []).append(user)
 
+    filtered = list(rows)
+    if q:
+        needle = q.lower()
+        filtered = [
+            r
+            for r in filtered
+            if needle in r.tenant_name.lower() or needle in r.program_name.lower()
+        ]
+    if status:
+        filtered = [
+            r
+            for r in filtered
+            if (getattr(r, "program_status", "ACTIVE") or "ACTIVE").upper() == status.upper()
+        ]
+    if framework:
+        filtered = [r for r in filtered if any(framework.lower() in f.lower() for f in r.frameworks)]
+
     body_rows = []
-    for r in rows:
+    for r in filtered:
         consultants = ", ".join(tenant_consultants.get(r.tenant_id, [])) or "—"
-        qs = urlencode({**dict(parse_qsl(nav_qs)), "program_id": r.program_id})
+        qs = urlencode(
+            {
+                **dict(parse_qsl(nav_qs)),
+                "program_id": r.program_id,
+                "tenant_name": r.tenant_name,
+                "program_name": r.program_name,
+            }
+        )
         href = f"/client?{qs}"
+        st = getattr(r, "program_status", "ACTIVE") or "ACTIVE"
+        st_label = t(lang, "status.active") if st == "ACTIVE" else st
         body_rows.append(
             "<tr>"
             f"<td><a href='{href}'><strong>{escape(r.tenant_name)}</strong></a></td>"
             f"<td>{escape(r.program_name)}</td>"
             f"<td>{escape(', '.join(r.frameworks))}</td>"
             f"<td>{escape(consultants)}</td>"
-            f"<td>{escape(getattr(r, 'program_status', 'ACTIVE') or 'ACTIVE')}</td>"
+            f"<td>{escape(st_label)}</td>"
             f"<td><a class='btn sm primary' href='{href}'>{escape(t(lang,'action.open'))}</a></td>"
             "</tr>"
         )
+    filter_bar = f"""
+<form class="filter-bar" method="get" action="/clients">
+  <input type="hidden" name="lang" value="{escape(lang)}">
+  <label>Ricerca <input name="q" value="{escape(q)}" placeholder="Cliente o programma"></label>
+  <label>Stato
+    <select name="status">
+      <option value="">—</option>
+      <option value="ACTIVE" {"selected" if status=="ACTIVE" else ""}>Attivo</option>
+      <option value="DRAFT" {"selected" if status=="DRAFT" else ""}>Bozza</option>
+    </select>
+  </label>
+  <label>Framework <input name="framework" value="{escape(framework)}"></label>
+  <button class="btn primary sm" type="submit">Filtra</button>
+</form>
+"""
     table = f"""<table class="data-table"><thead><tr>
 <th>{escape(t(lang,'col.client'))}</th>
 <th>{escape(t(lang,'col.program'))}</th>
@@ -339,7 +479,12 @@ def clients_page(rows: list[Any], assignments: dict[str, list[str]], nav_qs: str
             eyebrow=t(lang, "nav.section.workspace"),
             title=t(lang, "clients.title"),
             subtitle=t(lang, "clients.meta"),
+            actions_html=(
+                f"<a class='btn primary' href='/clients/new?{nav_qs}'>{escape(t(lang, 'clients.new'))}</a>"
+                f"<a class='btn' href='/programs/new?{nav_qs}'>{escape(t(lang, 'program.new'))}</a>"
+            ),
         )
+        + filter_bar
         + f'<div class="panel">{table_wrap(table)}</div>'
     )
     return render_shell(

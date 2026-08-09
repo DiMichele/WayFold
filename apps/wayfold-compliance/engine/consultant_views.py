@@ -264,7 +264,9 @@ def evidence_view(
                     status=ev.status,
                     owner=ctrl.owner if ctrl else None,
                     evidence_count=1,
-                    missing=ev.status.upper() in {"PARTIAL", "REVIEW_REQUIRED"},
+                    # Existing file rows are never "missing"; additional evidence
+                    # needed is a control finding surfaced separately in UI.
+                    missing=False,
                     due_date=ev.review_by or ev.valid_until,
                     frameworks=sorted(set(frameworks)),
                     evidence_id=ev.id,

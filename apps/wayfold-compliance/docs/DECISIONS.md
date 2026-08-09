@@ -1,5 +1,24 @@
 # DECISIONS — WayFold Compliance
 
+## [2026-08-09] Product realignment — authoring workspace over viewer
+
+Scelto:
+- WayFold Compliance è un workspace di authoring Knowledge Base + programmi cliente, non solo un viewer.
+- Entità riusate: `FrameworkRecord` + `FrameworkVersionRecord` / `FrameworkRequirement`, `CanonicalControl` (catalog), `MappingRecord` (KB store), `ProgramSnapshot`.
+- Navigazione primaria ridotta ai workflow core; AI/connectors/auto-evidence/sources/suggestions restano raggiungibili ma fuori dalla sidebar.
+- Lingua prodotto: italiano only (selettore EN rimosso finché non esiste localizzazione EN completa).
+- Versioni PUBLISHED immutabili (service+API); edit solo via clone DRAFT → publish.
+
+Motivazione:
+- Un amministratore deve costruire il modello senza seed/JSON/codice.
+- Framework-specific requirement ≠ controllo unificato; niente duplicazione controlli per framework.
+
+Rivedere se:
+- serve persistenza DB dedicata oltre agli overlay JSON;
+- MFA enrollment obbligatoria chiude il gate REAL CLIENT DATA.
+
+---
+
 ## [2026-08-09] Brand prodotto — solo WayFold Compliance
 
 Scelto:

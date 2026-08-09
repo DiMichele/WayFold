@@ -206,7 +206,7 @@
       "canonical_control_id": "canon-ctrl-gov-001",
       "canonical_control_ref": "CTRL-GOV-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo DORA-01 → CTRL-GOV-001",
+      "rationale": "Il controllo CTRL-GOV-001 copre il requisito DORA-01 nel perimetro del programma.",
       "uncovered_delta": "Manca formalizzazione board reporting DORA",
       "notes": "",
       "review_status": "APPROVED"
@@ -220,7 +220,7 @@
       "canonical_control_id": "canon-ctrl-ir-001",
       "canonical_control_ref": "CTRL-IR-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo DORA-02 → CTRL-IR-001",
+      "rationale": "Il controllo CTRL-IR-001 copre il requisito DORA-02 nel perimetro del programma.",
       "uncovered_delta": "Tempistiche DORA non complete",
       "notes": "",
       "review_status": "APPROVED"
@@ -234,7 +234,7 @@
       "canonical_control_id": "canon-ctrl-bcp-001",
       "canonical_control_ref": "CTRL-BCP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo DORA-03 → CTRL-BCP-001",
+      "rationale": "Il controllo CTRL-BCP-001 copre il requisito DORA-03 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -248,7 +248,7 @@
       "canonical_control_id": "canon-ctrl-sup-001",
       "canonical_control_ref": "CTRL-SUP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo DORA-04 → CTRL-SUP-001",
+      "rationale": "Il controllo CTRL-SUP-001 copre il requisito DORA-04 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -262,7 +262,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-01 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito NIS2-01 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -276,7 +276,7 @@
       "canonical_control_id": "canon-ctrl-bcp-001",
       "canonical_control_ref": "CTRL-BCP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-04 → CTRL-BCP-001",
+      "rationale": "Il controllo CTRL-BCP-001 copre il requisito NIS2-04 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"

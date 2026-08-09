@@ -5,9 +5,10 @@ from __future__ import annotations
 from html import escape
 from urllib.parse import parse_qsl
 
+from engine.dates import format_display_datetime
 from engine.i18n import DEFAULT_LANG, normalize_lang, t, with_lang
 from engine.ui_components import page_header
-from engine.ui_labels import review_label
+from engine.ui_labels import relevance_label, review_label
 from engine.ui_shell import render_shell, table_wrap
 
 def _resolve_lang(nav_qs: str, lang: str | None) -> str:
@@ -67,20 +68,19 @@ def changes_page(changes, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
-        f"<td><a href='/change?{nav_qs}&change_id={escape(c.id)}'><code>{escape(c.id)}</code></a></td>"
-        f"<td>{escape(c.source_id)}</td>"
+        f"<td>{escape(getattr(c, 'source_title', None) or c.source_id)}</td>"
+        f"<td>{escape(getattr(c, 'framework_name', None) or '—')}</td>"
+        f"<td>{escape(format_display_datetime(c.detected_at, lang=lang))}</td>"
+        f"<td><span class='badge info'>{escape(relevance_label(lang, c.relevance))}</span></td>"
         f"<td><span class='badge warning'>{escape(review_label(lang, c.status.value))}</span></td>"
-        f"<td><span class='badge info'>{escape(c.relevance)}</span></td>"
-        f"<td>{escape(c.detected_at)}</td>"
         f"<td>{escape(c.summary)}</td>"
+        f"<td><a class='btn sm' href='/change?{nav_qs}&change_id={escape(c.id)}'>Apri</a></td>"
         "</tr>"
         for c in changes
     )
     table = f"""<table class="data-table"><thead><tr>
-<th>{escape(t(lang,'col.change'))}</th><th>{escape(t(lang,'col.source'))}</th>
-<th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.relevance'))}</th>
-<th>{escape(t(lang,'col.detected'))}</th><th>{escape(t(lang,'col.summary'))}</th>
-</tr></thead><tbody>{rows or f'<tr><td colspan="6">{escape(t(lang,"changes.empty"))}</td></tr>'}</tbody></table>"""
+<th>Fonte</th><th>Framework</th><th>Data</th><th>Tipo modifica</th><th>Stato</th><th>Sintesi</th><th></th>
+</tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"changes.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
 {page_header(eyebrow=t(lang,'changes.eyebrow'), title=t(lang,'changes.title'), subtitle=t(lang,'changes.meta'))}
 <div class="panel">{table_wrap(table)}</div>
@@ -112,11 +112,22 @@ def change_detail_page(change, impact, nav_qs: str, lang: str | None = None) -> 
 <th>{escape(t(lang,'col.framework'))}</th><th>{escape(t(lang,'col.requirements'))}</th>
 <th>{escape(t(lang,'col.controls'))}</th>
 </tr></thead><tbody>{impact_rows or f'<tr><td colspan="5">{escape(t(lang,"client.none"))}</td></tr>'}</tbody></table>"""
+    diff_html = ""
+    diff_text = getattr(change, "diff_text", None) or getattr(change, "unified_diff", None) or ""
+    if diff_text:
+        lines = []
+        for line in str(diff_text).splitlines():
+            cls = "diff-add" if line.startswith("+") else "diff-del" if line.startswith("-") else ""
+            lines.append(f"<div class='{cls}'>{escape(line)}</div>")
+        diff_html = f"<pre class='diff'>{''.join(lines)}</pre>"
     body = f"""
 <div class="page-head">
-<h1>{escape(t(lang,'col.change'))} <code>{escape(change.id)}</code></h1>
-<p class="meta">{escape(t(lang,'col.source'))} {escape(change.source_id)} · {escape(change.status.value)} · {escape(change.relevance)}</p>
+<h1>Modifica normativa</h1>
+<p class="meta">Fonte: {escape(getattr(change, 'source_title', None) or change.source_id)} ·
+{escape(review_label(lang, change.status.value))} · {escape(relevance_label(lang, change.relevance))} ·
+{escape(format_display_datetime(change.detected_at, lang=lang))}</p>
 <p class="meta">{escape(change.summary)}</p>
+{diff_html}
 </div>
 <p class="meta">
   <a href="/api/regulatory/review?{nav_qs}&change_id={escape(change.id)}&status=ACCEPTED">{escape(t(lang,'change.accept'))}</a> ·

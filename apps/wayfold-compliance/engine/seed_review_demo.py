@@ -131,7 +131,8 @@ def _map(
         "canonical_control_id": f"canon-{ctrl.lower()}",
         "canonical_control_ref": ctrl,
         "relation": relation,
-        "rationale": rationale or f"Mapping demo {code} → {ctrl}",
+        "rationale": rationale
+        or f"Il controllo {ctrl} copre il requisito {code} nel perimetro del programma.",
         "uncovered_delta": delta,
         "notes": "",
         "review_status": "APPROVED",
@@ -445,9 +446,10 @@ def build_michele() -> dict[str, Any]:
         "tasks": tasks,
         "available_framework_versions": [
             {
-                "framework_id": "fw-nis2-it-2026-2",
-                "framework_name": "NIS2 Italia",
+                "framework_id": nis2[0],
+                "framework_name": nis2[1],
                 "framework_version": "2026.2",
+                "version": "2026.2",
                 "status": "DRAFT",
                 "assigned_to_program": False,
                 "notes": "Nuova versione disponibile — programma pinned a 2026.1",
@@ -456,6 +458,7 @@ def build_michele() -> dict[str, Any]:
                 "framework_id": nis2[0],
                 "framework_name": nis2[1],
                 "framework_version": nis2[2],
+                "version": nis2[2],
                 "status": "PUBLISHED",
                 "assigned_to_program": True,
             },

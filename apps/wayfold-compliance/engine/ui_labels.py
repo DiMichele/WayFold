@@ -50,13 +50,26 @@ REVIEW_LABEL_KEYS: dict[str, str] = {
     "PENDING": "review.pending",
     "ACCEPTED": "review.accepted",
     "IGNORED": "review.ignored",
+    "DISMISSED": "reg.dismissed",
+    "NEW": "reg.new",
+    "REVIEW": "reg.review",
+    "ANALYZED": "reg.analyzed",
+}
+
+RELEVANCE_LABEL_KEYS: dict[str, str] = {
+    "NEW": "reg.new",
+    "SUBSTANTIVE": "reg.substantive",
+    "COSMETIC": "review.ignored",
+    "ANALYZED": "reg.analyzed",
 }
 
 FRAMEWORK_STATUS_KEYS: dict[str, str] = {
     "DRAFT": "fw.draft",
     "PUBLISHED": "fw.published",
+    "RETIRED": "fw.retired",
     "DEPRECATED": "fw.deprecated",
     "ARCHIVED": "fw.archived",
+    "ACTIVE": "status.active",
 }
 
 EVIDENCE_STATUS_KEYS: dict[str, str] = {
@@ -141,6 +154,11 @@ def priority_label(lang: str, value: Any) -> str:
 
 def review_label(lang: str, value: Any) -> str:
     key = REVIEW_LABEL_KEYS.get(_norm(value))
+    return t(lang, key) if key else (str(value) if value else "—")
+
+
+def relevance_label(lang: str, value: Any) -> str:
+    key = RELEVANCE_LABEL_KEYS.get(_norm(value))
     return t(lang, key) if key else (str(value) if value else "—")
 
 

@@ -144,28 +144,52 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 {metric_card(label=t(lang,'portfolio.metric.unmapped'), value=format_number(unmapped, lang=lang), icon_name='network')}
 </div>"""
 
-    # Action Center — real counts from portfolio rows (consultant operations)
-    action_lis = []
+    def _action_row(title: str, count: int, desc: str, href: str, icon_name: str = "gap") -> str:
+        return (
+            f"<div class='action-row' style='display:flex;align-items:center;gap:14px;padding:12px 0;border-bottom:1px solid var(--wf-border)'>"
+            f"<div style='font-size:22px;font-weight:800;min-width:42px'>{count}</div>"
+            f"<div style='flex:1'><div style='font-weight:700'>{escape(title)}</div>"
+            f"<div class='client-meta'>{escape(desc)}</div></div>"
+            f"<a class='btn sm' href='{href}'>Apri</a></div>"
+        )
+
+    action_rows = []
     if unmapped:
-        action_lis.append(
-            f"<li><a href='/gaps?mapped=0&{nav_qs}'><strong>{unmapped}</strong> requisiti non mappati</a></li>"
+        action_rows.append(
+            _action_row(
+                f"{unmapped} requisiti non mappati",
+                unmapped,
+                "Completare la copertura nella Knowledge Base o nel programma.",
+                f"/gaps?mapped=0&{nav_qs}",
+            )
         )
     if overdue:
-        action_lis.append(
-            f"<li><a href='/tasks?{nav_qs}'><strong>{overdue}</strong> attività scadute</a></li>"
+        action_rows.append(
+            _action_row(
+                f"{overdue} attività scadute",
+                overdue,
+                "Attività oltre deadline su programmi autorizzati.",
+                f"/tasks?{nav_qs}",
+                "clock",
+            )
         )
     if gaps:
-        action_lis.append(
-            f"<li><a href='/gaps?{nav_qs}'><strong>{gaps}</strong> gap critici / alta priorità</a></li>"
+        action_rows.append(
+            _action_row(
+                f"{gaps} gap critici / alta priorità",
+                gaps,
+                "Implementazioni incomplete o finding aperti.",
+                f"/gaps?{nav_qs}",
+            )
         )
-    action_lis.append(
-        f"<li><a href='/changes?{nav_qs}'>Modifiche normative da revisionare</a></li>"
-    )
-    action_lis.append(
-        f"<li><a href='/suggestions?{nav_qs}'>Nuove FrameworkVersion / suggerimenti</a></li>"
-    )
-    action_lis.append(
-        f"<li><a href='/evidence?{nav_qs}'>Evidenze in scadenza / da revisionare</a></li>"
+    action_rows.append(
+        _action_row(
+            "Modifiche normative",
+            0,
+            "Revisionare l'inbox di intelligence normativa.",
+            f"/changes?{nav_qs}",
+            "radar",
+        )
     )
 
     body = f"""
@@ -174,7 +198,7 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 <div class="panel" style="margin-bottom:14px">
   <div class="panel-head"><div class="panel-title">{escape(t(lang,'portfolio.action_center'))}</div>
   <div class="client-meta">{escape(t(lang,'portfolio.action_meta'))}</div></div>
-  <ul class="compact">{''.join(action_lis)}</ul>
+  <div class="panel-body">{''.join(action_rows) or '<p class="meta">Nessuna azione urgente.</p>'}</div>
 </div>
 <div class="panel">
   <div class="panel-head"><div class="panel-title">{escape(t(lang,'portfolio.table'))}</div></div>
@@ -278,17 +302,31 @@ def client_page(dash, nav_qs: str, lang: str | None = None) -> str:
         for v in (getattr(dash, "available_framework_versions", None) or [])
         if not v.get("assigned_to_program")
     ]
-    new_fw_html = (
-        "<div class='mapping-delta' style='margin-top:8px'><strong>"
-        + escape(t(lang, "fw.new_version"))
-        + "</strong> — <a href='/suggestions?"
-        + nav_qs
-        + "'>Confronta versioni</a><br>"
-        + "<br>".join(
-            f"{escape(v.get('framework_name',''))} <code>{escape(str(v.get('framework_version','')))}</code>"
-            f" · {escape(str(v.get('status','')))}"
-            for v in new_fw
+    from engine.ui_labels import framework_status_label
+
+    new_fw_bits = []
+    for v in new_fw:
+        fw_name = v.get("framework_name", "")
+        cur = next(
+            (
+                f.get("framework_version")
+                for f in dash.frameworks
+                if f.get("framework_name") == fw_name or f.get("framework_id") == v.get("framework_id")
+            ),
+            "—",
         )
+        new_v = str(v.get("framework_version") or v.get("version") or "")
+        new_fw_bits.append(
+            f"<div><strong>{escape(fw_name)}</strong> "
+            f"<code>{escape(str(cur))}</code> → <code>{escape(new_v)}</code> "
+            f"· {escape(framework_status_label(lang, v.get('status')))}</div>"
+        )
+    new_fw_html = (
+        "<div class='mapping-delta' style='margin-top:8px'><strong>Nuova versione disponibile</strong><br>"
+        + "".join(new_fw_bits)
+        + f"<div style='margin-top:8px'><a class='btn sm' href='/frameworks/detail?framework_id="
+        + escape(str(new_fw[0].get('framework_id') or ''))
+        + f"&{nav_qs}'>Confronta versioni</a></div>"
         + "<div class='client-meta'>Nessun aggiornamento automatico della baseline cliente.</div>"
         + "</div>"
         if new_fw
@@ -488,12 +526,19 @@ def control_page(detail, nav_qs: str, lang: str | None = None) -> str:
     title=detail.name or detail.control_ref,
     subtitle=t(lang,'control.subtitle'),
     actions_html=(
-        f"<a class='btn ghost' href='/gaps?{nav_qs}'>{escape(t(lang,'control.back_gaps'))}</a>"
+        f"<a class='btn ghost' href='/checklist?{nav_qs}'>{escape(t(lang,'control.back_list'))}</a>"
+        f"<a class='btn primary' href='/control/edit?control_ref={escape(detail.control_ref)}&{nav_qs}'>Modifica</a>"
         f"<a class='btn' href='/evidence?{nav_qs}'>{escape(t(lang,'control.evidence_view'))}</a>"
         f"<a class='btn' href='/tasks?{nav_qs}'>{escape(t(lang,'control.task_view'))}</a>"
     ),
 )}
-<div class="panel" style="margin-bottom:14px">
+<div class="tabs">
+  <a class="active" href="#impl">Implementazione</a>
+  <a href="#coverage">Copertura framework</a>
+  <a href="#evidence">Evidenze</a>
+  <a href="#tasks">Attività</a>
+</div>
+<div class="panel" style="margin-bottom:14px" id="impl">
   <div class="panel-head"><div class="panel-title">{escape(t(lang,'control.implementation'))}</div></div>
   <div class="panel-body">
     <div class="detail-grid">
@@ -507,6 +552,10 @@ def control_page(detail, nav_qs: str, lang: str | None = None) -> str:
       <div class="field"><label>{escape(t(lang,'col.notes'))}</label><div class="field-value">{escape(detail.gap_notes or '—')}</div></div>
     </div>
     {f"<p class='meta' style='margin-top:12px'>{escape(detail.description)}</p>" if getattr(detail, 'description', '') else ''}
+    {f"<div class='mapping-delta' style='margin-top:10px'><strong>Motivazione N/A</strong><br>{escape(getattr(detail,'not_applicable_rationale','') or '')}"
+     f"<div class='client-meta'>Approvato da: {escape(str(getattr(detail,'not_applicable_approved_by', None) or '—'))}"
+     f" · {escape(format_display_date(getattr(detail,'not_applicable_approved_at', None), lang=lang))}</div></div>"
+     if str(getattr(detail,'status','')).endswith('NOT_APPLICABLE') or str(getattr(detail,'status','')) == 'NOT_APPLICABLE' else ''}
     {f"<div class='mapping-delta' style='margin-top:12px'><strong>{escape(t(lang,'status.not_applicable'))}</strong><br>{escape(detail.not_applicable_rationale)}</div>" if getattr(detail, 'not_applicable_rationale', '') else ''}
     {('<div class="client-meta" style="margin-top:12px"><strong>' + escape(t(lang,'evidence.title')) + '</strong><ul>' + ''.join(f'<li>{escape(x)}</li>' for x in (detail.evidence_titles or [])) + '</ul></div>') if getattr(detail, 'evidence_titles', None) else ''}
     {('<div class="client-meta" style="margin-top:8px"><strong>' + escape(t(lang,'tasks.title')) + '</strong><ul>' + ''.join(f'<li>{escape(x)}</li>' for x in (detail.task_titles or [])) + '</ul></div>') if getattr(detail, 'task_titles', None) else ''}
@@ -637,8 +686,13 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
             else ""
         )
         + (
-            f"<div class='client-meta'>{escape(t(lang, 'evidence.shared'))}</div>"
-            if getattr(i, "shared", False)
+            f"<div class='client-meta'>{escape(t(lang, 'evidence.linked_n', n=2 if getattr(i, 'shared', False) else 1))}</div>"
+            if getattr(i, "evidence_id", None)
+            else ""
+        )
+        + (
+            f"<div class='client-meta' style='color:var(--wf-warning)'>Finding controllo: evidenza aggiuntiva richiesta</div>"
+            if getattr(i, "missing", False) and getattr(i, "evidence_id", None)
             else ""
         )
         + "</td>"
@@ -646,21 +700,29 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
         f"<td>{status_badge(lang, i.status)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
         f"<td>{escape(format_display_date(getattr(i, 'valid_until', None) or i.due_date, lang=lang))}</td>"
-        f"<td>{'<span class="badge danger">' + escape(t(lang,'evidence.missing')) + '</span>' if i.missing else '<span class="badge success">' + escape(t(lang,'evidence.ok')) + '</span>'}</td>"
         f"<td>{framework_chips(i.frameworks)}</td>"
-        f"<td><a class='btn sm' href='/api/evidence/{escape(getattr(i, 'evidence_id', '') or '')}/download?{nav_qs}'>Scarica</a></td>"
-        "</tr>"
+        + (
+            f"<td><a class='btn sm' href='/api/evidence/{escape(getattr(i, 'evidence_id', '') or '')}/download?{nav_qs}'>Scarica</a></td>"
+            if getattr(i, "evidence_id", None)
+            else "<td>—</td>"
+        )
+        + "</tr>"
         for i in items
     )
     table = f"""<table class="data-table"><thead><tr>
 <th>ID</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.control'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
-<th>{escape(t(lang,'col.deadline'))}</th><th>{escape(t(lang,'col.flag'))}</th>
+<th>Validità</th>
 <th>{escape(t(lang,'col.framework'))}</th><th></th>
 </tr></thead><tbody>{rows}</tbody></table>"""
     body = f"""
-{page_header(eyebrow=t(lang,'evidence.eyebrow'), title=t(lang,'evidence.title'), subtitle=t(lang,'evidence.meta'))}
+{page_header(
+    eyebrow=t(lang,'evidence.eyebrow'),
+    title=t(lang,'evidence.title'),
+    subtitle=t(lang,'evidence.meta'),
+    actions_html=f"<a class='btn primary' href='/evidence/new?{nav_qs}'>{escape(t(lang,'evidence.upload'))}</a>",
+)}
 <div class="panel">{table_wrap(table)}</div>
 """
     return _shell(
@@ -676,16 +738,25 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
 def tasks_page(items, nav_qs: str, lang: str | None = None) -> str:
     lang = _lang(nav_qs, lang)
     nav_qs = with_lang(nav_qs, lang)
+
+    def _task_extra(i) -> str:
+        st = str(getattr(i, "task_status", None) or i.status or "").upper()
+        if st in {"DONE", "COMPLETED"}:
+            return ""  # completed tasks must not show "Aperta"
+        if i.overdue:
+            return f"<div class='client-meta' style='color:var(--wf-danger)'>{escape(t(lang,'deadlines.overdue'))}</div>"
+        return ""
+
     rows = "".join(
         "<tr>"
         f"<td><code>{escape(getattr(i, 'task_id', None) or '')}</code></td>"
         f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
-        f"<td>{escape(i.name)}</td>"
+        f"<td>{escape(i.name)}{_task_extra(i)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
         f"<td class='{'overdue' if i.overdue else ''}'>{escape(format_display_date(i.due_date, lang=lang))}</td>"
         f"<td>{priority_badge(lang, i.priority)}</td>"
         f"<td>{status_badge(lang, getattr(i, 'task_status', None) or i.status)}</td>"
-        f"<td>{escape(t(lang,'deadlines.overdue') if i.overdue else t(lang,'tasks.open'))}</td>"
+        f"<td><a class='btn sm' href='/tasks/edit?task_id={escape(getattr(i,'task_id','') or '')}&{nav_qs}'>Modifica</a></td>"
         "</tr>"
         for i in items
     )
@@ -693,10 +764,15 @@ def tasks_page(items, nav_qs: str, lang: str | None = None) -> str:
 <th>ID</th><th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.owner'))}</th><th>{escape(t(lang,'col.deadline'))}</th>
 <th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.status'))}</th>
-<th>{escape(t(lang,'col.flag'))}</th>
+<th></th>
 </tr></thead><tbody>{rows or f'<tr><td colspan="8">{escape(t(lang,"tasks.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
-{page_header(eyebrow=t(lang,'tasks.eyebrow'), title=t(lang,'tasks.title'), subtitle=t(lang,'tasks.meta'))}
+{page_header(
+    eyebrow=t(lang,'tasks.eyebrow'),
+    title=t(lang,'tasks.title'),
+    subtitle=t(lang,'tasks.meta'),
+    actions_html=f"<a class='btn primary' href='/tasks/new?{nav_qs}'>+ Nuova attività</a>",
+)}
 <div class="panel">{table_wrap(table)}</div>
 """
     return _shell(

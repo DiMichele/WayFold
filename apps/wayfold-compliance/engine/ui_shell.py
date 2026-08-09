@@ -13,7 +13,7 @@ from urllib.parse import parse_qsl, urlencode
 from engine.i18n import (
     DEFAULT_LANG,
     DEFAULT_NAV_KEYS,
-    LANG_FLAGS,
+    NAV_PROGRAM_SECTION,
     NAV_SECTIONS,
     normalize_lang,
     nav_labels,
@@ -85,8 +85,38 @@ a:hover{color:var(--wf-primary)}
 .brand-mark .wf-icon{width:20px;height:20px;color:#fff}
 .brand-title{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.01em}
 .brand-sub{font-size:11px;color:#7e899e;margin-top:1px}
-.nav-wrap{flex:1;padding:14px 10px;overflow:auto}
+.nav-wrap{flex:1 1 auto;min-height:0;padding:14px 10px;overflow-y:auto;overflow-x:hidden}
 .nav-section{margin-bottom:18px}
+.program-context{
+  margin:0 10px 12px;padding:10px 12px;border-radius:10px;
+  background:rgba(103,92,242,.14);border:1px solid rgba(132,124,255,.22);color:#e8e6ff
+}
+.program-context .pc-client{font-size:12px;font-weight:750;color:#fff;line-height:1.3}
+.program-context .pc-program{font-size:11px;color:#b9c0d0;margin-top:2px}
+code,.control-code,td code{white-space:nowrap}
+.dropdown{position:relative}
+.dropdown-menu{
+  display:none;position:absolute;right:0;top:calc(100% + 6px);min-width:220px;z-index:50;
+  background:#fff;border:1px solid var(--wf-border);border-radius:12px;box-shadow:var(--wf-shadow-md);padding:6px
+}
+.dropdown.open .dropdown-menu{display:block}
+.dropdown-menu a{
+  display:block;padding:9px 12px;border-radius:8px;font-size:13px;font-weight:600;color:var(--wf-ink)
+}
+.dropdown-menu a:hover{background:var(--wf-primary-soft);color:var(--wf-primary)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid .full{grid-column:1/-1}
+.form-field label{display:block;font-size:12px;font-weight:650;color:var(--wf-muted);margin-bottom:5px}
+.form-field input,.form-field select,.form-field textarea{
+  width:100%;border:1px solid var(--wf-border);border-radius:9px;padding:9px 11px;background:#fff
+}
+.form-field textarea{min-height:90px;resize:vertical}
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin:0 0 14px;border-bottom:1px solid var(--wf-border)}
+.tabs a,.tabs button{
+  border:0;background:transparent;padding:10px 12px;font-weight:650;color:var(--wf-muted);border-bottom:2px solid transparent
+}
+.tabs a.active,.tabs button.active{color:var(--wf-primary);border-bottom-color:var(--wf-primary)}
+@media(max-width:900px){.form-grid{grid-template-columns:1fr}}
 .nav-label{
   padding:4px 10px 7px;color:#667287;font-size:10px;font-weight:700;
   letter-spacing:.12em;text-transform:uppercase
@@ -341,8 +371,17 @@ function wfToggleLang(next){
   u.searchParams.set('lang',next);
   window.location.href=u.toString();
 }
-/* Back-compat no-op: dark mode removed; content stays light, sidebar stays navy. */
 function wfToggleTheme(){}
+function wfToggleDropdown(id){
+  var el=document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('open');
+}
+document.addEventListener('click',function(e){
+  document.querySelectorAll('.dropdown.open').forEach(function(d){
+    if(!d.contains(e.target)) d.classList.remove('open');
+  });
+});
 """
 
 # Back-compat alias used by older imports/tests
@@ -360,11 +399,14 @@ def render_shell(
     lang: str | None = None,
     active_path: str | None = None,
     breadcrumb: str | None = None,
+    program_context: dict | None = None,
+    can_quick_create: bool = True,
 ) -> str:
     lang = normalize_lang(lang or _lang_from_nav_qs(nav_qs))
     nav_qs = with_lang(nav_qs, lang)
     q = f"?{nav_qs}" if nav_qs else ""
     active = active_path or _guess_active_path(title, nav_keys)
+    ctx = program_context or _program_context_from_qs(nav_qs)
 
     nav_html = _render_nav(
         lang=lang,
@@ -372,14 +414,21 @@ def render_shell(
         active=active,
         nav_keys=tuple(nav_keys) if nav_keys is not None else None,
         nav_items=list(nav_items) if nav_items is not None else None,
+        program_context=ctx,
     )
 
     page_title = title if "WayFold" in title else f"{title} — WayFold Compliance"
     crumb = breadcrumb or _breadcrumb_label(title, lang)
-    other_lang = "en" if lang == "it" else "it"
-    lang_flag = LANG_FLAGS.get(other_lang, other_lang.upper())
-    lang_label = escape(t(lang, "lang.label"))
     brand_sub = escape(t(lang, "brand.sub"))
+    quick_html = _quick_create_menu(lang, nav_qs) if can_quick_create else ""
+    ctx_banner = ""
+    if ctx and ctx.get("tenant_name"):
+        ctx_banner = (
+            f'<div class="program-context">'
+            f'<div class="pc-client">{escape(str(ctx.get("tenant_name")))}</div>'
+            f'<div class="pc-program">{escape(str(ctx.get("program_name") or ""))}</div>'
+            f"</div>"
+        )
 
     return f"""<!doctype html>
 <html lang="{escape(lang)}"><head>
@@ -404,12 +453,10 @@ def render_shell(
         <div class="brand-sub">{brand_sub}</div>
       </div>
     </a>
+    {ctx_banner}
     <nav class="nav-wrap">{nav_html}</nav>
     <div class="sidebar-footer">
-      <button type="button" class="lang-switch" onclick="wfToggleLang('{other_lang}')" aria-label="{lang_label}" title="{lang_label}">
-        {icon("lang")}<span>{escape(lang_flag)}</span>
-      </button>
-      <a class="lang-switch" href="/logout" style="margin-top:8px;text-decoration:none" aria-label="{escape(t(lang, 'nav.logout'))}">
+      <a class="lang-switch" href="/logout" style="text-decoration:none" aria-label="{escape(t(lang, 'nav.logout'))}">
         {icon("x")}<span>{escape(t(lang, 'nav.logout'))}</span>
       </a>
     </div>
@@ -421,7 +468,7 @@ def render_shell(
         {icon("chevron-right")}
         <strong>{escape(crumb)}</strong>
       </nav>
-      <div class="topbar-actions"></div>
+      <div class="topbar-actions">{quick_html}</div>
     </header>
     <main class="content">
 {body}
@@ -438,6 +485,7 @@ def _render_nav(
     active: str | None,
     nav_keys: tuple[tuple[str, str], ...] | None,
     nav_items: list[tuple[str, str]] | None,
+    program_context: dict | None = None,
 ) -> str:
     if nav_items is not None:
         return _flat_nav(nav_items, q, active)
@@ -447,21 +495,76 @@ def _render_nav(
 
     parts: list[str] = []
     for section_key, entries in NAV_SECTIONS:
-        links = []
-        for label_key, path, _icon_key in entries:
-            label = t(lang, label_key)
-            cls = "nav-item active" if _is_active(active, path) else "nav-item"
-            links.append(
-                f'<a class="{cls}" href="{escape(path)}{q}">'
-                f'{icon_for_path(path)}'
-                f'<span class="nav-text">{escape(label)}</span></a>'
-            )
-        parts.append(
-            f'<div class="nav-section">'
-            f'<div class="nav-label">{escape(t(lang, section_key))}</div>'
-            f'{"".join(links)}</div>'
-        )
+        # Insert program section after workspace when context is present
+        if section_key == "nav.section.knowledge" and program_context and program_context.get("program_id"):
+            parts.append(_nav_section_html(lang, q, active, *NAV_PROGRAM_SECTION))
+        parts.append(_nav_section_html(lang, q, active, section_key, entries))
     return "".join(parts)
+
+
+def _nav_section_html(
+    lang: str,
+    q: str,
+    active: str | None,
+    section_key: str,
+    entries: tuple[tuple[str, str, str], ...],
+) -> str:
+    links = []
+    for label_key, path, _icon_key in entries:
+        label = t(lang, label_key)
+        href_path = path.split("?", 1)[0]
+        cls = "nav-item active" if _is_active(active, href_path) else "nav-item"
+        # Preserve extra query on path (e.g. settings?tab=users) then append nav_qs
+        if "?" in path:
+            base, extra = path.split("?", 1)
+            href = f"{escape(base)}?{extra}&{q.lstrip('?')}" if q else f"{escape(base)}?{extra}"
+        else:
+            href = f"{escape(path)}{q}"
+        links.append(
+            f'<a class="{cls}" href="{href}">'
+            f"{icon_for_path(href_path)}"
+            f'<span class="nav-text">{escape(label)}</span></a>'
+        )
+    return (
+        f'<div class="nav-section">'
+        f'<div class="nav-label">{escape(t(lang, section_key))}</div>'
+        f'{"".join(links)}</div>'
+    )
+
+
+def _program_context_from_qs(nav_qs: str) -> dict | None:
+    data = dict(parse_qsl(nav_qs or "", keep_blank_values=False))
+    pid = data.get("program_id")
+    if not pid:
+        return None
+    return {
+        "program_id": pid,
+        "tenant_name": data.get("tenant_name") or data.get("client_name") or "",
+        "program_name": data.get("program_name") or "",
+    }
+
+
+def _quick_create_menu(lang: str, nav_qs: str) -> str:
+    q = f"?{nav_qs}" if nav_qs else ""
+    items = [
+        ("quick.client", "/clients/new"),
+        ("quick.program", "/programs/new"),
+        ("quick.framework", "/frameworks/new"),
+        ("quick.version", "/frameworks/versions/new"),
+        ("quick.requirement", "/frameworks/requirements/new"),
+        ("quick.control", "/controls/new"),
+        ("quick.mapping", "/mappings/new"),
+        ("quick.evidence", f"/evidence/new{q}"),
+        ("quick.task", f"/tasks/new{q}"),
+    ]
+    links = "".join(
+        f'<a href="{escape(path)}">{escape(t(lang, key))}</a>' for key, path in items
+    )
+    return f"""
+<div class="dropdown" id="wf-quick-create">
+  <button type="button" class="btn primary sm" onclick="wfToggleDropdown('wf-quick-create')">{escape(t(lang, 'quick.new'))}</button>
+  <div class="dropdown-menu" role="menu">{links}</div>
+</div>"""
 
 
 def _flat_nav(items: list[tuple[str, str]], q: str, active: str | None) -> str:

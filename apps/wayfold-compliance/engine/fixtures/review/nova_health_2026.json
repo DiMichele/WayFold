@@ -188,7 +188,7 @@
       "canonical_control_id": "canon-ctrl-gov-001",
       "canonical_control_ref": "CTRL-GOV-001",
       "relation": "FULL",
-      "rationale": "Mapping demo AIA-01 → CTRL-GOV-001",
+      "rationale": "Il controllo CTRL-GOV-001 copre il requisito AIA-01 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -202,7 +202,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo AIA-02 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito AIA-02 nel perimetro del programma.",
       "uncovered_delta": "Manca matrice oversight per modelli high-risk",
       "notes": "",
       "review_status": "APPROVED"
@@ -216,7 +216,7 @@
       "canonical_control_id": "canon-ctrl-log-001",
       "canonical_control_ref": "CTRL-LOG-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo AIA-03 → CTRL-LOG-001",
+      "rationale": "Il controllo CTRL-LOG-001 copre il requisito AIA-03 nel perimetro del programma.",
       "uncovered_delta": "Retention logging AI non allineata",
       "notes": "",
       "review_status": "APPROVED"
@@ -230,7 +230,7 @@
       "canonical_control_id": "canon-ctrl-gov-001",
       "canonical_control_ref": "CTRL-GOV-001",
       "relation": "FULL",
-      "rationale": "Mapping demo 42001-5.2 → CTRL-GOV-001",
+      "rationale": "Il controllo CTRL-GOV-001 copre il requisito 42001-5.2 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -244,7 +244,7 @@
       "canonical_control_id": "canon-ctrl-gov-001",
       "canonical_control_ref": "CTRL-GOV-001",
       "relation": "FULL",
-      "rationale": "Mapping demo 42001-8.2 → CTRL-GOV-001",
+      "rationale": "Il controllo CTRL-GOV-001 copre il requisito 42001-8.2 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -258,7 +258,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-01 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito NIS2-01 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -272,7 +272,7 @@
       "canonical_control_id": "canon-ctrl-sup-001",
       "canonical_control_ref": "CTRL-SUP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-03 → CTRL-SUP-001",
+      "rationale": "Il controllo CTRL-SUP-001 copre il requisito NIS2-03 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"

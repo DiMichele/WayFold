@@ -206,7 +206,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo QC4-01 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito QC4-01 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -220,7 +220,7 @@
       "canonical_control_id": "canon-ctrl-log-001",
       "canonical_control_ref": "CTRL-LOG-001",
       "relation": "FULL",
-      "rationale": "Mapping demo QC4-02 → CTRL-LOG-001",
+      "rationale": "Il controllo CTRL-LOG-001 copre il requisito QC4-02 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -234,7 +234,7 @@
       "canonical_control_id": "canon-ctrl-enc-001",
       "canonical_control_ref": "CTRL-ENC-001",
       "relation": "FULL",
-      "rationale": "Mapping demo QC4-03 → CTRL-ENC-001",
+      "rationale": "Il controllo CTRL-ENC-001 copre il requisito QC4-03 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -248,7 +248,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.15 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito ISO-A.5.15 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -262,7 +262,7 @@
       "canonical_control_id": "canon-ctrl-log-001",
       "canonical_control_ref": "CTRL-LOG-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.8.15 → CTRL-LOG-001",
+      "rationale": "Il controllo CTRL-LOG-001 copre il requisito ISO-A.8.15 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -276,7 +276,7 @@
       "canonical_control_id": "canon-ctrl-ir-001",
       "canonical_control_ref": "CTRL-IR-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.24 → CTRL-IR-001",
+      "rationale": "Il controllo CTRL-IR-001 copre il requisito ISO-A.5.24 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"

@@ -396,7 +396,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.15 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito ISO-A.5.15 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -410,7 +410,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.18 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito ISO-A.5.18 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -424,7 +424,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-01 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito NIS2-01 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -438,7 +438,7 @@
       "canonical_control_id": "canon-ctrl-iam-001",
       "canonical_control_ref": "CTRL-IAM-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo PSNC-01 → CTRL-IAM-001",
+      "rationale": "Il controllo CTRL-IAM-001 copre il requisito PSNC-01 nel perimetro del programma.",
       "uncovered_delta": "È richiesta evidenza formale della revisione trimestrale degli accessi privilegiati per gli asset classificati critici.",
       "notes": "",
       "review_status": "APPROVED"
@@ -452,7 +452,7 @@
       "canonical_control_id": "canon-ctrl-ir-001",
       "canonical_control_ref": "CTRL-IR-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.24 → CTRL-IR-001",
+      "rationale": "Il controllo CTRL-IR-001 copre il requisito ISO-A.5.24 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -466,7 +466,7 @@
       "canonical_control_id": "canon-ctrl-ir-001",
       "canonical_control_ref": "CTRL-IR-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo NIS2-02 → CTRL-IR-001",
+      "rationale": "Il controllo CTRL-IR-001 copre il requisito NIS2-02 nel perimetro del programma.",
       "uncovered_delta": "La procedura implementata non documenta ancora tutte le tempistiche di escalation/notifica richieste.",
       "notes": "",
       "review_status": "APPROVED"
@@ -480,7 +480,7 @@
       "canonical_control_id": "canon-ctrl-ir-001",
       "canonical_control_ref": "CTRL-IR-001",
       "relation": "FULL",
-      "rationale": "Mapping demo PSNC-03 → CTRL-IR-001",
+      "rationale": "Il controllo CTRL-IR-001 copre il requisito PSNC-03 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -494,7 +494,7 @@
       "canonical_control_id": "canon-ctrl-sup-001",
       "canonical_control_ref": "CTRL-SUP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.5.19 → CTRL-SUP-001",
+      "rationale": "Il controllo CTRL-SUP-001 copre il requisito ISO-A.5.19 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -508,7 +508,7 @@
       "canonical_control_id": "canon-ctrl-sup-001",
       "canonical_control_ref": "CTRL-SUP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-03 → CTRL-SUP-001",
+      "rationale": "Il controllo CTRL-SUP-001 copre il requisito NIS2-03 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -536,7 +536,7 @@
       "canonical_control_id": "canon-ctrl-bcp-001",
       "canonical_control_ref": "CTRL-BCP-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-04 → CTRL-BCP-001",
+      "rationale": "Il controllo CTRL-BCP-001 copre il requisito NIS2-04 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -550,7 +550,7 @@
       "canonical_control_id": "canon-ctrl-bcp-001",
       "canonical_control_ref": "CTRL-BCP-001",
       "relation": "PARTIAL",
-      "rationale": "Mapping demo PSNC-04 → CTRL-BCP-001",
+      "rationale": "Il controllo CTRL-BCP-001 copre il requisito PSNC-04 nel perimetro del programma.",
       "uncovered_delta": "Il test esistente non include ancora uno scenario specifico sul servizio critico.",
       "notes": "",
       "review_status": "APPROVED"
@@ -564,7 +564,7 @@
       "canonical_control_id": "canon-ctrl-log-001",
       "canonical_control_ref": "CTRL-LOG-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.8.15 → CTRL-LOG-001",
+      "rationale": "Il controllo CTRL-LOG-001 copre il requisito ISO-A.8.15 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -578,7 +578,7 @@
       "canonical_control_id": "canon-ctrl-log-001",
       "canonical_control_ref": "CTRL-LOG-001",
       "relation": "FULL",
-      "rationale": "Mapping demo PSNC-02 → CTRL-LOG-001",
+      "rationale": "Il controllo CTRL-LOG-001 copre il requisito PSNC-02 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -592,7 +592,7 @@
       "canonical_control_id": "canon-ctrl-gov-001",
       "canonical_control_ref": "CTRL-GOV-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-05 → CTRL-GOV-001",
+      "rationale": "Il controllo CTRL-GOV-001 copre il requisito NIS2-05 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -606,7 +606,7 @@
       "canonical_control_id": "canon-ctrl-vuln-001",
       "canonical_control_ref": "CTRL-VULN-001",
       "relation": "FULL",
-      "rationale": "Mapping demo ISO-A.8.8 → CTRL-VULN-001",
+      "rationale": "Il controllo CTRL-VULN-001 copre il requisito ISO-A.8.8 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -620,7 +620,7 @@
       "canonical_control_id": "canon-ctrl-vuln-001",
       "canonical_control_ref": "CTRL-VULN-001",
       "relation": "FULL",
-      "rationale": "Mapping demo NIS2-06 → CTRL-VULN-001",
+      "rationale": "Il controllo CTRL-VULN-001 copre il requisito NIS2-06 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -634,7 +634,7 @@
       "canonical_control_id": "canon-ctrl-enc-001",
       "canonical_control_ref": "CTRL-ENC-001",
       "relation": "FULL",
-      "rationale": "Mapping demo PSNC-05 → CTRL-ENC-001",
+      "rationale": "Il controllo CTRL-ENC-001 copre il requisito PSNC-05 nel perimetro del programma.",
       "uncovered_delta": "",
       "notes": "",
       "review_status": "APPROVED"
@@ -880,9 +880,10 @@
   ],
   "available_framework_versions": [
     {
-      "framework_id": "fw-nis2-it-2026-2",
+      "framework_id": "fw-nis2-it-2026-1",
       "framework_name": "NIS2 Italia",
       "framework_version": "2026.2",
+      "version": "2026.2",
       "status": "DRAFT",
       "assigned_to_program": false,
       "notes": "Nuova versione disponibile — programma pinned a 2026.1"
@@ -891,6 +892,7 @@
       "framework_id": "fw-nis2-it-2026-1",
       "framework_name": "NIS2 Italia",
       "framework_version": "2026.1",
+      "version": "2026.1",
       "status": "PUBLISHED",
       "assigned_to_program": true
     }

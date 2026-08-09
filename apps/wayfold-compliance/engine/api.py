@@ -73,10 +73,15 @@ from engine.rbac import (
     role_is_superuser,
 )
 from engine import audit as audit_mod
+from engine import authoring_routes
 from engine import evidence_storage
+from engine import framework_registry
 from engine import framework_versions as fw_versions
+from engine import kb_mappings
 from engine import product_pages
+from engine import program_authoring
 from engine import report_snapshots
+from engine import control_catalog
 from engine.users import (
     authenticate,
     effective_tenant_ids,
@@ -212,7 +217,13 @@ def _auth_from_request(handler: "Handler", qs: dict) -> tuple[set[str], bool, st
     return ctx.actor_tenant_ids, ctx.is_superuser, ctx.username
 
 
-def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
+def _nav_qs(
+    qs: dict,
+    *,
+    program_id: str | None = None,
+    tenant_name: str | None = None,
+    program_name: str | None = None,
+) -> str:
     actor = qs.get("actor_tenants", [""])[0]
     superuser = qs.get("superuser", ["0"])[0]
     pid = program_id or qs.get("program_id", [""])[0]
@@ -224,6 +235,12 @@ def _nav_qs(qs: dict, *, program_id: str | None = None) -> str:
         data["actor_tenants"] = actor
     if pid:
         data["program_id"] = pid
+        tname = tenant_name or qs.get("tenant_name", [""])[0]
+        pname = program_name or qs.get("program_name", [""])[0]
+        if tname:
+            data["tenant_name"] = tname
+        if pname:
+            data["program_name"] = pname
     return urlencode(data)
 
 
@@ -662,6 +679,28 @@ class Handler(BaseHTTPRequestHandler):
                 },
             )
 
+        # Knowledge Base / client-program authoring surfaces
+        if path.startswith(
+            (
+                "/frameworks/new",
+                "/frameworks/versions",
+                "/frameworks/requirements",
+                "/frameworks/publish",
+                "/controls",
+                "/mappings/new",
+                "/clients/new",
+                "/programs/new",
+                "/control/edit",
+                "/api/frameworks/requirements/template.csv",
+                "/api/controls",
+            )
+        ):
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            if authoring_routes.handle_authoring_get(self, path, qs, auth):
+                return
+
         # Portfolio (multi-tenant filtered)
         if path in {"/", "/portfolio"}:
             auth = self._gate(qs)
@@ -693,6 +732,40 @@ class Handler(BaseHTTPRequestHandler):
             body = json.dumps(to_jsonable(rows), ensure_ascii=False).encode("utf-8")
             return self._send(200, body, "application/json")
 
+        if path == "/users":
+            flat = {k: v[0] for k, v in qs.items() if v}
+            flat["tab"] = "users"
+            return self._redirect(f"/settings?{urlencode(flat)}")
+
+        if path in {"/evidence/new", "/tasks/new"}:
+            auth = self._gate(qs)
+            if auth is None:
+                return
+            nav = _nav_qs(qs)
+            title = "Nuova evidenza" if path.endswith("evidence/new") else "Nuova attività"
+            target = "/evidence" if "evidence" in path else "/tasks"
+            body = (
+                f"<div class='page-head'><h1>{title}</h1>"
+                f"<p class='subtitle'>Completa i campi e salva. Il collegamento al programma corrente viene preservato.</p></div>"
+                f"<form method='post' action='{path}?{nav}' class='panel' style='padding:18px'>"
+                f"<div class='form-grid'>"
+                f"<div class='form-field full'><label>Titolo / Nome</label><input name='title' required></div>"
+                f"<div class='form-field'><label>Owner</label><input name='owner'></div>"
+                f"<div class='form-field'><label>Scadenza / Validità</label><input type='date' name='due_date'></div>"
+                f"<div class='form-field full'><label>Note</label><textarea name='notes'></textarea></div>"
+                f"</div>"
+                f"<div class='page-actions' style='margin-top:14px'>"
+                f"<button class='btn primary' type='submit'>Salva</button>"
+                f"<a class='btn ghost' href='{target}?{nav}'>Annulla</a></div></form>"
+            )
+            return self._send(
+                200,
+                render_shell(title, nav, body, lang=lang_from_qs(qs), active_path=target, breadcrumb=title).encode(
+                    "utf-8"
+                ),
+                "text/html; charset=utf-8",
+            )
+
         # Clients directory (admin) — distinct from Portfolio operations
         if path in {"/clients", "/api/clients"}:
             auth = self._gate(qs)
@@ -708,9 +781,14 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/clients":
                 return self._send(
                     200,
-                    product_pages.clients_page(rows, load_assignments(), nav).encode(
-                        "utf-8"
-                    ),
+                    product_pages.clients_page(
+                        rows,
+                        load_assignments(),
+                        nav,
+                        q=qs.get("q", [""])[0],
+                        status=qs.get("status", [""])[0],
+                        framework=qs.get("framework", [""])[0],
+                    ).encode("utf-8"),
                     "text/html; charset=utf-8",
                 )
             return self._send(
@@ -735,26 +813,21 @@ class Handler(BaseHTTPRequestHandler):
                     target_tenant_id=p.tenant_id,
                 ).allowed
             ]
-            fw_versions.seed_from_programs(programs)
-            versions = fw_versions.list_versions()
-            usage: dict[str, int] = {}
-            for p in programs:
-                for r in p.requirements:
-                    usage[r.framework_id] = usage.get(r.framework_id, 0)
-            # recount unique clients per framework
-            usage = {}
-            for p in programs:
-                fws = {r.framework_id for r in p.requirements}
-                for fw in fws:
-                    usage[fw] = usage.get(fw, 0) + 1
+            ctx = authoring_routes.frameworks_list_context(programs)
+            versions = ctx["versions"]
+            usage = ctx["usage"]
             nav = _nav_qs(qs)
             if path in {"/frameworks", "/api/frameworks"} and "framework_id" not in qs:
                 if path == "/frameworks":
                     return self._send(
                         200,
-                        product_pages.frameworks_page(versions, usage, nav).encode(
-                            "utf-8"
-                        ),
+                        product_pages.frameworks_page(
+                            versions,
+                            usage,
+                            nav,
+                            meta_by_id=ctx["meta_by_id"],
+                            coverage_by_fw=ctx["coverage_by_fw"],
+                        ).encode("utf-8"),
                         "text/html; charset=utf-8",
                     )
                 return self._send(
@@ -782,10 +855,26 @@ class Handler(BaseHTTPRequestHandler):
                     ).encode("utf-8"),
                     "application/json",
                 )
+            selected_ver = next((v for v in vers if v.id == selected), vers[0] if vers else None)
+            maps = []
+            coverage = {}
+            if selected_ver:
+                maps = kb_mappings.list_mappings(
+                    framework_id=selected_ver.framework_id,
+                    framework_version=selected_ver.version,
+                )
+                coverage = kb_mappings.coverage_summary(selected_ver.requirements, maps)
             return self._send(
                 200,
                 product_pages.framework_detail_page(
-                    vers, selected_id=selected, nav_qs=nav, usage_clients=clients
+                    vers,
+                    selected_id=selected,
+                    nav_qs=nav,
+                    usage_clients=clients,
+                    tab=qs.get("tab", ["overview"])[0],
+                    meta=framework_registry.get_framework(fw_id),
+                    mappings=maps,
+                    coverage=coverage,
                 ).encode("utf-8"),
                 "text/html; charset=utf-8",
             )
@@ -853,48 +942,65 @@ class Handler(BaseHTTPRequestHandler):
                 return self._deny(404, "version_not_found")
             return self._deny(400, "use_clone_workflow")
 
-        # Mapping management
+        # Mapping management (KB editor; optional program overlay)
         if path in {"/mappings", "/api/mappings"}:
             auth = self._gate(qs)
             if auth is None:
                 return
             actor_tenants, is_super = auth
-            program = _resolve_program(qs)
-            if program is None:
-                nav = _nav_qs(qs)
-                rows = build_portfolio(
+            programs = [
+                p
+                for p, _ in load_portfolio_programs(_active_registry())
+                if is_super
+                or assert_tenant_access(
                     actor_tenant_ids=actor_tenants,
                     is_superuser=is_super,
-                    registry_path=_active_registry(),
-                )
-                if path.startswith("/api/"):
-                    return self._deny(404, "program_not_found")
-                if len(rows) == 1:
-                    flat = {k: v[0] for k, v in qs.items() if v}
-                    flat["program_id"] = rows[0].program_id
-                    return self._redirect(f"/mappings?{urlencode(flat)}")
-                if rows:
-                    return self._send(
-                        200,
-                        _select_client_html(nav, rows, active_path="/mappings"),
-                        "text/html; charset=utf-8",
-                    )
-                return self._send(
-                    200,
-                    _empty_workspace_html(nav, active_path="/mappings"),
-                    "text/html; charset=utf-8",
-                )
-            decision = assert_tenant_access(
-                actor_tenant_ids=actor_tenants,
-                is_superuser=is_super,
-                target_tenant_id=program.tenant_id,
-            )
-            if not decision.allowed:
-                return self._deny(403, decision.reason)
-            checklist = build_unified_checklist(program)
-            mappings = list(program.mappings)
+                    target_tenant_id=p.tenant_id,
+                ).allowed
+            ]
+            authoring_routes.seed_kb(programs)
+            program = _resolve_program(qs)
             relation = qs.get("relation", [""])[0].upper()
             review = qs.get("review", [""])[0].upper()
+            if program is not None:
+                decision = assert_tenant_access(
+                    actor_tenant_ids=actor_tenants,
+                    is_superuser=is_super,
+                    target_tenant_id=program.tenant_id,
+                )
+                if not decision.allowed:
+                    return self._deny(403, decision.reason)
+                checklist = build_unified_checklist(program)
+                mappings = list(program.mappings)
+                unmapped = checklist.unmapped
+                nav = _nav_qs(
+                    qs,
+                    program_id=program.program_id,
+                    tenant_name=program.tenant_name,
+                    program_name=program.program_name,
+                )
+            else:
+                mappings = kb_mappings.list_mappings()
+                # Unmapped across all draft+published versions
+                mapped_ids = {m.requirement_id for m in mappings}
+                unmapped = []
+                for v in fw_versions.list_versions():
+                    for r in v.requirements:
+                        if getattr(r, "is_leaf", True) and r.id not in mapped_ids:
+                            unmapped.append(
+                                type(
+                                    "U",
+                                    (),
+                                    {
+                                        "id": r.id,
+                                        "code": r.code,
+                                        "title": r.title,
+                                        "framework_name": v.framework_name,
+                                        "framework_version": v.version,
+                                    },
+                                )()
+                            )
+                nav = _nav_qs(qs)
             if relation:
                 mappings = [
                     m
@@ -913,10 +1019,8 @@ class Handler(BaseHTTPRequestHandler):
                     )
                     == review
                 ]
-            unmapped = checklist.unmapped
             if qs.get("unmapped_only", [""])[0] == "1":
                 mappings = []
-            nav = _nav_qs(qs, program_id=program.program_id)
             if path == "/mappings":
                 return self._send(
                     200,
@@ -925,7 +1029,7 @@ class Handler(BaseHTTPRequestHandler):
                         unmapped,
                         nav,
                         filters={
-                            "program_id": program.program_id,
+                            "program_id": program.program_id if program else "",
                             "relation": relation,
                             "review": review,
                             "unmapped_only": qs.get("unmapped_only", [""])[0],
@@ -1842,19 +1946,107 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self):  # noqa: N802
         parsed = urlparse(self.path)
         path = parsed.path.rstrip("/") or "/"
+        qs = parse_qs(parsed.query)
+
+        # Authoring form posts
+        if path.startswith(
+            (
+                "/frameworks/",
+                "/controls/",
+                "/mappings/",
+                "/clients/",
+                "/programs/",
+                "/evidence/",
+                "/tasks/",
+            )
+        ):
+            length = int(self.headers.get("Content-Length") or "0")
+            raw = self.rfile.read(max(0, min(length, 2_000_000))).decode("utf-8", "replace")
+            if path in {"/evidence/new", "/tasks/new"}:
+                auth = self._gate(qs)
+                if auth is None:
+                    return
+                form = parse_qs(raw, keep_blank_values=True)
+                title = (form.get("title") or [""])[0].strip()
+                program = _resolve_program(qs)
+                if program is None or not title:
+                    return self._deny(400, "program_and_title_required")
+                snap_path = program_authoring.find_program_path(
+                    program.program_id, _active_registry()
+                )
+                if snap_path is None:
+                    return self._deny(404, "program_snapshot_not_writable")
+                raw_json = json.loads(snap_path.read_text(encoding="utf-8"))
+                ctx = getattr(self, "_auth_ctx", None)
+                actor = (ctx.username if ctx else "unknown") or "unknown"
+                if path == "/evidence/new":
+                    eid = f"ev-{__import__('secrets').token_hex(4)}"
+                    raw_json.setdefault("evidences", []).append(
+                        {
+                            "id": eid,
+                            "title": title,
+                            "filename": title,
+                            "control_refs": [],
+                            "status": "REVIEW_REQUIRED",
+                            "valid_until": (form.get("due_date") or [None])[0] or None,
+                            "notes": (form.get("notes") or [""])[0],
+                        }
+                    )
+                    audit_mod.record_event(
+                        actor_user_id=actor,
+                        action=audit_mod.EVIDENCE_CREATED,
+                        entity_type="Evidence",
+                        entity_id=eid,
+                        tenant_id=program.tenant_id,
+                    )
+                    target = f"/evidence?{_nav_qs(qs, program_id=program.program_id)}"
+                else:
+                    tid = f"task-{__import__('secrets').token_hex(4)}"
+                    raw_json.setdefault("tasks", []).append(
+                        {
+                            "id": tid,
+                            "title": title,
+                            "control_ref": None,
+                            "owner": (form.get("owner") or [None])[0] or None,
+                            "status": "TODO",
+                            "due_date": (form.get("due_date") or [None])[0] or None,
+                            "priority": "MEDIUM",
+                            "notes": (form.get("notes") or [""])[0],
+                        }
+                    )
+                    audit_mod.record_event(
+                        actor_user_id=actor,
+                        action=audit_mod.TASK_CREATED,
+                        entity_type="Task",
+                        entity_id=tid,
+                        tenant_id=program.tenant_id,
+                    )
+                    target = f"/tasks?{_nav_qs(qs, program_id=program.program_id)}"
+                snap_path.write_text(
+                    json.dumps(raw_json, indent=2, ensure_ascii=False) + "\n",
+                    encoding="utf-8",
+                )
+                return self._redirect(target)
+            if authoring_routes.handle_authoring_post(self, path, qs, raw):
+                return
 
         # Control optimistic lock + N/A rationale
         if path == "/api/control/update":
-            qs = parse_qs(parsed.query)
             auth = self._gate(qs)
             if auth is None:
                 return
             length = int(self.headers.get("Content-Length") or "0")
             raw = self.rfile.read(max(0, min(length, 256_000))).decode("utf-8", "replace")
-            try:
-                payload = json.loads(raw) if raw.strip() else {}
-            except json.JSONDecodeError:
-                return self._deny(400, "invalid_json")
+            ctype = (self.headers.get("Content-Type") or "").lower()
+            payload: dict = {}
+            if "application/json" in ctype or (raw.strip().startswith("{")):
+                try:
+                    payload = json.loads(raw) if raw.strip() else {}
+                except json.JSONDecodeError:
+                    return self._deny(400, "invalid_json")
+            else:
+                form = parse_qs(raw, keep_blank_values=True)
+                payload = {k: (v[0] if v else "") for k, v in form.items()}
             from engine.control_locking import ConflictError, ControlPatch, apply_patch
             from engine.domain import ImplementationStatus
 
@@ -1886,6 +2078,15 @@ class Handler(BaseHTTPRequestHandler):
                 )
             except ConflictError as exc:
                 return self._deny(409, exc.user_message_it)
+            # Persist implementation fields onto program snapshot when available
+            snap_path = program_authoring.find_program_path(
+                program.program_id, _active_registry()
+            )
+            if snap_path is not None:
+                try:
+                    program_authoring.persist_control_changes(snap_path, control_id, payload)
+                except KeyError:
+                    pass
             ctx = getattr(self, "_auth_ctx", None)
             if new_status:
                 audit_mod.record_event(
@@ -1896,6 +2097,11 @@ class Handler(BaseHTTPRequestHandler):
                     tenant_id=program.tenant_id,
                     old_value={"version": expected},
                     new_value={"status": new_status, "version": new_v},
+                )
+            # HTML form → redirect back to control detail
+            if "application/json" not in ctype and not raw.strip().startswith("{"):
+                return self._redirect(
+                    f"/control?control_ref={control_id}&{_nav_qs(qs, program_id=program.program_id, tenant_name=program.tenant_name, program_name=program.program_name)}"
                 )
             return self._send(
                 200,

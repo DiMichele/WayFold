@@ -9,6 +9,22 @@
 **Phase 5 CLOSED (verification PASS)** — vedi `PHASE5-VERIFICATION.md`.  
 **Phase 6 CLOSED (verification PASS)** — vedi `PHASE6-VERIFICATION.md`.  
 
+## Product Realignment — Knowledge Base Authoring
+
+Status: **IN PROGRESS → COMPLETE (UI authoring workflow)**
+
+- Navigazione semplificata: Area di lavoro / Programma corrente / Knowledge Base / Amministrazione
+- Feature non-core nascoste dalla nav primaria (owners, deadlines, AI, connectors, auto-evidence, sources, FW suggestions)
+- Quick Create (`+ Nuovo`) permission-aware in topbar
+- KB authoring end-to-end dalla UI: Framework → Versione DRAFT → Voci normative (+ CSV) → Controlli → Mapping → Publish
+- Catalogo controlli unificati (`/controls`)
+- Client/Program create + selezione FrameworkVersion PUBLISHED + checklist unificata deduplicata
+- Published immutability enforced in service/API + test
+- Fix: NIS2 2026.2 same framework_id; demo mapping rationale; task/evidence flag contradictions; IT enums/dates; no EN switch
+- Test: `test_kb_authoring` + hardening + Michele regression
+
+Ready for real client data: **NO** (temporary review credential + MFA enroll incompleto)
+
 ## Product Completion & Production Hardening
 
 Authentication: PASS — workspace anonimo chiuso; login/logout; cookie HttpOnly/SameSite/Secure; idle 45m / absolute 8h  
