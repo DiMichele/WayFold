@@ -16,6 +16,15 @@ STATUS_LABEL_KEYS: dict[str, str] = {
     "NOT_IMPLEMENTED": "status.not_implemented",
     "NOT_APPLICABLE": "status.not_applicable",
     "UNMAPPED": "status.unmapped",
+    "TODO": "task.todo",
+    "REVIEW": "task.review",
+    "DONE": "task.done",
+    "VALID": "evidence.valid",
+    "REVIEW_REQUIRED": "evidence.needs_review",
+    "NEEDS_REVIEW": "evidence.needs_review",
+    "PARTIAL": "evidence.partial",
+    "EXPIRING": "evidence.expiring",
+    "EXPIRED": "evidence.expired",
 }
 
 MAPPING_LABEL_KEYS: dict[str, str] = {
@@ -53,7 +62,9 @@ FRAMEWORK_STATUS_KEYS: dict[str, str] = {
 EVIDENCE_STATUS_KEYS: dict[str, str] = {
     "VALID": "evidence.valid",
     "NEEDS_REVIEW": "evidence.needs_review",
+    "REVIEW_REQUIRED": "evidence.needs_review",
     "PARTIAL": "evidence.partial",
+    "EXPIRING": "evidence.expiring",
     "EXPIRED": "evidence.expired",
     "MISSING": "evidence.missing",
     "OK": "evidence.ok",
@@ -66,6 +77,15 @@ STATUS_VARIANTS: dict[str, str] = {
     "NOT_IMPLEMENTED": "danger",
     "NOT_APPLICABLE": "neutral",
     "UNMAPPED": "violet",
+    "TODO": "neutral",
+    "REVIEW": "warning",
+    "DONE": "success",
+    "VALID": "success",
+    "REVIEW_REQUIRED": "warning",
+    "NEEDS_REVIEW": "warning",
+    "PARTIAL": "warning",
+    "EXPIRING": "warning",
+    "EXPIRED": "danger",
 }
 
 MAPPING_VARIANTS: dict[str, str] = {

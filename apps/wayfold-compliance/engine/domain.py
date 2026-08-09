@@ -80,6 +80,38 @@ class ControlImplementationSnapshot:
     evidence_count: int = 0
     open_task_count: int = 0
     folder_id: str | None = None
+    description: str = ""
+    not_applicable_rationale: str = ""
+    not_applicable_approved_by: str | None = None
+    not_applicable_approved_at: str | None = None
+
+
+@dataclass(frozen=True)
+class EvidenceSnapshot:
+    """Named evidence artifact attached to one or more controls (demo/catalog)."""
+
+    id: str
+    title: str
+    filename: str
+    control_refs: list[str] = field(default_factory=list)
+    status: str = "VALID"  # VALID | REVIEW_REQUIRED | PARTIAL | EXPIRING
+    valid_until: str | None = None
+    review_by: str | None = None
+    notes: str = ""
+
+
+@dataclass(frozen=True)
+class RemediationTaskSnapshot:
+    """Remediation / task row for consultant UX (demo overlay)."""
+
+    id: str
+    title: str
+    control_ref: str | None
+    owner: str | None = None
+    status: str = "TODO"  # TODO | IN_PROGRESS | REVIEW | DONE
+    due_date: str | None = None
+    priority: str | None = None
+    notes: str = ""
 
 
 @dataclass(frozen=True)
@@ -95,6 +127,12 @@ class ProgramSnapshot:
     mappings: list[MappingRecord]
     # requirement_id -> implementation ids already linked in core assessments
     requirement_implementation_links: dict[str, list[str]] = field(default_factory=dict)
+    scope: str = ""
+    program_status: str = "ACTIVE"
+    dataset_marker: str = ""
+    evidences: list[EvidenceSnapshot] = field(default_factory=list)
+    tasks: list[RemediationTaskSnapshot] = field(default_factory=list)
+    available_framework_versions: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass

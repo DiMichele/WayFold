@@ -53,6 +53,9 @@ class ClientDashboard:
     readiness: list[dict]
     workload_by_owner: dict[str, int]
     top_impact: list[dict] = field(default_factory=list)
+    scope: str = ""
+    program_status: str = "ACTIVE"
+    available_framework_versions: list[dict] = field(default_factory=list)
 
 
 def load_portfolio_programs(
@@ -142,6 +145,18 @@ def build_client_dashboard(
 
     deadlines.sort(key=lambda d: d["due_date"] or "9999")
 
+    # Prefer explicit remediation tasks when present in the program overlay.
+    if program.tasks:
+        open_tasks = sum(
+            1 for t in program.tasks if (t.status or "").upper() != "DONE"
+        )
+        overdue_tasks = sum(
+            1
+            for t in program.tasks
+            if (t.status or "").upper() != "DONE"
+            and is_overdue(t.due_date, as_of=as_of)
+        )
+
     return ClientDashboard(
         tenant_id=program.tenant_id,
         tenant_name=program.tenant_name,
@@ -178,6 +193,9 @@ def build_client_dashboard(
             }
             for i in impact[:5]
         ],
+        scope=program.scope or "",
+        program_status=program.program_status or "ACTIVE",
+        available_framework_versions=list(program.available_framework_versions or []),
     )
 
 

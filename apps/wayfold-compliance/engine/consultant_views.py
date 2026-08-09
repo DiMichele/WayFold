@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date
 
 from .checklist import build_unified_checklist
@@ -44,6 +44,11 @@ class EvidenceItem:
     missing: bool
     due_date: str | None
     frameworks: list[str]
+    evidence_id: str | None = None
+    filename: str | None = None
+    valid_until: str | None = None
+    shared: bool = False
+    notes: str = ""
 
 
 @dataclass
@@ -56,6 +61,8 @@ class TaskItem:
     open_task_count: int
     status: str
     overdue: bool
+    task_id: str | None = None
+    task_status: str | None = None
 
 
 @dataclass
@@ -87,6 +94,10 @@ class ControlDetail:
     framework_coverage: list[ControlCoverageDetail]
     program_id: str
     tenant_id: str
+    description: str = ""
+    not_applicable_rationale: str = ""
+    evidence_titles: list[str] = field(default_factory=list)
+    task_titles: list[str] = field(default_factory=list)
 
 
 def control_detail(
@@ -100,10 +111,26 @@ def control_detail(
     if not key:
         return None
     req_title = {r.id: r.title for r in program.requirements}
+    impl_by_ref = {
+        (i.canonical_control_ref or i.ref_id or "").strip().lower(): i
+        for i in program.implementations
+    }
     for ctrl in checklist.controls:
         ref = (ctrl.canonical_control_ref or "").strip()
         if ref.lower() != key and (ctrl.control_key or "").lower() != key:
             continue
+        impl = impl_by_ref.get(ref.lower())
+        evidence_titles = [
+            e.title
+            for e in program.evidences
+            if ref and ref in (e.control_refs or [])
+        ]
+        task_titles = [
+            t.title
+            for t in program.tasks
+            if t.control_ref and t.control_ref.lower() == ref.lower()
+            and (t.status or "").upper() != "DONE"
+        ]
         return ControlDetail(
             control_ref=ref or ctrl.control_key,
             name=ctrl.name,
@@ -130,6 +157,13 @@ def control_detail(
             ],
             program_id=program.program_id,
             tenant_id=program.tenant_id,
+            description=(impl.description if impl else "") or "",
+            not_applicable_rationale=(
+                impl.not_applicable_rationale if impl else ""
+            )
+            or "",
+            evidence_titles=evidence_titles,
+            task_titles=task_titles,
         )
     return None
 
@@ -210,20 +244,53 @@ def evidence_view(
 ) -> list[EvidenceItem]:
     checklist = checklist or build_unified_checklist(program)
     items: list[EvidenceItem] = []
-    for ctrl in checklist.controls:
-        items.append(
-            EvidenceItem(
-                control_ref=ctrl.canonical_control_ref,
-                name=ctrl.name,
-                status=ctrl.status.value,
-                owner=ctrl.owner,
-                evidence_count=ctrl.evidence_count,
-                missing=ctrl.evidence_count <= 0
-                and ctrl.status != ImplementationStatus.NOT_APPLICABLE,
-                due_date=ctrl.due_date,
-                frameworks=sorted({c.framework_name for c in ctrl.framework_coverage}),
+    if program.evidences:
+        ctrl_meta = {
+            (c.canonical_control_ref or ""): c for c in checklist.controls
+        }
+        for ev in program.evidences:
+            refs = ev.control_refs or []
+            primary = refs[0] if refs else None
+            ctrl = ctrl_meta.get(primary or "")
+            frameworks: list[str] = []
+            for ref in refs:
+                c = ctrl_meta.get(ref)
+                if c:
+                    frameworks.extend(x.framework_name for x in c.framework_coverage)
+            items.append(
+                EvidenceItem(
+                    control_ref=", ".join(refs) if refs else None,
+                    name=ev.title,
+                    status=ev.status,
+                    owner=ctrl.owner if ctrl else None,
+                    evidence_count=1,
+                    missing=ev.status.upper() in {"PARTIAL", "REVIEW_REQUIRED"},
+                    due_date=ev.review_by or ev.valid_until,
+                    frameworks=sorted(set(frameworks)),
+                    evidence_id=ev.id,
+                    filename=ev.filename,
+                    valid_until=ev.valid_until,
+                    shared=len(refs) > 1,
+                    notes=ev.notes,
+                )
             )
-        )
+    else:
+        for ctrl in checklist.controls:
+            items.append(
+                EvidenceItem(
+                    control_ref=ctrl.canonical_control_ref,
+                    name=ctrl.name,
+                    status=ctrl.status.value,
+                    owner=ctrl.owner,
+                    evidence_count=ctrl.evidence_count,
+                    missing=ctrl.evidence_count <= 0
+                    and ctrl.status != ImplementationStatus.NOT_APPLICABLE,
+                    due_date=ctrl.due_date,
+                    frameworks=sorted(
+                        {c.framework_name for c in ctrl.framework_coverage}
+                    ),
+                )
+            )
     items.sort(key=lambda i: (not i.missing, i.control_ref or i.name))
     return items
 
@@ -237,20 +304,38 @@ def task_view(
     as_of = as_of or today()
     checklist = checklist or build_unified_checklist(program)
     items: list[TaskItem] = []
-    for ctrl in checklist.controls:
-        if ctrl.open_task_count <= 0:
-            continue
-        items.append(
-            TaskItem(
-                control_ref=ctrl.canonical_control_ref,
-                name=ctrl.name,
-                owner=ctrl.owner,
-                due_date=ctrl.due_date,
-                priority=ctrl.priority,
-                open_task_count=ctrl.open_task_count,
-                status=ctrl.status.value,
-                overdue=is_overdue(ctrl.due_date, as_of=as_of),
+    if program.tasks:
+        for task in program.tasks:
+            items.append(
+                TaskItem(
+                    control_ref=task.control_ref,
+                    name=task.title,
+                    owner=task.owner,
+                    due_date=task.due_date,
+                    priority=task.priority,
+                    open_task_count=0 if (task.status or "").upper() == "DONE" else 1,
+                    status=task.status,
+                    overdue=is_overdue(task.due_date, as_of=as_of)
+                    and (task.status or "").upper() != "DONE",
+                    task_id=task.id,
+                    task_status=task.status,
+                )
             )
-        )
+    else:
+        for ctrl in checklist.controls:
+            if ctrl.open_task_count <= 0:
+                continue
+            items.append(
+                TaskItem(
+                    control_ref=ctrl.canonical_control_ref,
+                    name=ctrl.name,
+                    owner=ctrl.owner,
+                    due_date=ctrl.due_date,
+                    priority=ctrl.priority,
+                    open_task_count=ctrl.open_task_count,
+                    status=ctrl.status.value,
+                    overdue=is_overdue(ctrl.due_date, as_of=as_of),
+                )
+            )
     items.sort(key=lambda i: (not i.overdue, i.due_date or "9999"))
     return items

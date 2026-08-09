@@ -239,14 +239,39 @@ def client_page(dash, nav_qs: str, lang: str | None = None) -> str:
 {metric_card(label=t(lang,'client.overdue_tasks'), value=format_number(dash.overdue_tasks, lang=lang), icon_name='clock', tone='danger' if dash.overdue_tasks else '')}
 </div>"""
 
+    scope_html = (
+        f"<div class='client-meta'>{escape(getattr(dash, 'scope', '') or '')}</div>"
+        if getattr(dash, "scope", "")
+        else ""
+    )
+    new_fw = [
+        v
+        for v in (getattr(dash, "available_framework_versions", None) or [])
+        if not v.get("assigned_to_program")
+    ]
+    new_fw_html = (
+        "<div class='mapping-delta' style='margin-top:8px'><strong>"
+        + escape(t(lang, "fw.new_version"))
+        + "</strong><br>"
+        + "<br>".join(
+            f"{escape(v.get('framework_name',''))} <code>{escape(str(v.get('framework_version','')))}</code>"
+            f" · {escape(str(v.get('status','')))}"
+            for v in new_fw
+        )
+        + "</div>"
+        if new_fw
+        else ""
+    )
     body = f"""
 {page_header(eyebrow=t(lang,'client.eyebrow'), title=dash.tenant_name, subtitle=t(lang,'client.subtitle'))}
 <div class="client-summary">
   <div class="client-logo" style="width:42px;height:42px">{escape(client_initials(dash.tenant_name))}</div>
   <div>
     <div class="client-summary-title" style="font-size:15px;font-weight:750">{escape(dash.tenant_name)}</div>
+    {scope_html}
     <div class="client-meta">{escape(dash.program_name)} · {dash.raw_requirements} {escape(t(lang,'client.raw'))}
  · {dash.unified_controls} {escape(t(lang,'client.unified'))} · {dash.unmapped_count} {escape(t(lang,'client.unmapped'))}</div>
+    {new_fw_html}
   </div>
 </div>
 {metrics}
@@ -434,6 +459,10 @@ def control_page(detail, nav_qs: str, lang: str | None = None) -> str:
       <div class="field"><label>{escape(t(lang,'col.tasks'))}</label><div class="field-value">{detail.open_task_count}</div></div>
       <div class="field"><label>{escape(t(lang,'col.notes'))}</label><div class="field-value">{escape(detail.gap_notes or '—')}</div></div>
     </div>
+    {f"<p class='meta' style='margin-top:12px'>{escape(detail.description)}</p>" if getattr(detail, 'description', '') else ''}
+    {f"<div class='mapping-delta' style='margin-top:12px'><strong>{escape(t(lang,'status.not_applicable'))}</strong><br>{escape(detail.not_applicable_rationale)}</div>" if getattr(detail, 'not_applicable_rationale', '') else ''}
+    {('<div class="client-meta" style="margin-top:12px"><strong>' + escape(t(lang,'evidence.title')) + '</strong><ul>' + ''.join(f'<li>{escape(x)}</li>' for x in (detail.evidence_titles or [])) + '</ul></div>') if getattr(detail, 'evidence_titles', None) else ''}
+    {('<div class="client-meta" style="margin-top:8px"><strong>' + escape(t(lang,'tasks.title')) + '</strong><ul>' + ''.join(f'<li>{escape(x)}</li>' for x in (detail.task_titles or [])) + '</ul></div>') if getattr(detail, 'task_titles', None) else ''}
   </div>
 </div>
 <div class="panel">
@@ -553,20 +582,33 @@ def evidence_page(items, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
+        f"<td><code>{escape(getattr(i, 'evidence_id', None) or '')}</code></td>"
+        f"<td>{escape(i.name)}"
+        + (
+            f"<div class='client-meta'>{escape(getattr(i, 'filename', None) or '')}</div>"
+            if getattr(i, "filename", None)
+            else ""
+        )
+        + (
+            f"<div class='client-meta'>{escape(t(lang, 'evidence.shared'))}</div>"
+            if getattr(i, "shared", False)
+            else ""
+        )
+        + "</td>"
         f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
-        f"<td>{escape(i.name)}</td>"
         f"<td>{status_badge(lang, i.status)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
-        f"<td>{i.evidence_count}</td>"
+        f"<td>{escape(format_display_date(getattr(i, 'valid_until', None) or i.due_date, lang=lang))}</td>"
         f"<td>{'<span class="badge danger">' + escape(t(lang,'evidence.missing')) + '</span>' if i.missing else '<span class="badge success">' + escape(t(lang,'evidence.ok')) + '</span>'}</td>"
         f"<td>{framework_chips(i.frameworks)}</td>"
         "</tr>"
         for i in items
     )
     table = f"""<table class="data-table"><thead><tr>
-<th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
+<th>ID</th><th>{escape(t(lang,'col.name'))}</th>
+<th>{escape(t(lang,'col.control'))}</th>
 <th>{escape(t(lang,'col.status'))}</th><th>{escape(t(lang,'col.owner'))}</th>
-<th>{escape(t(lang,'col.evidence'))}</th><th>{escape(t(lang,'col.flag'))}</th>
+<th>{escape(t(lang,'col.deadline'))}</th><th>{escape(t(lang,'col.flag'))}</th>
 <th>{escape(t(lang,'col.framework'))}</th>
 </tr></thead><tbody>{rows}</tbody></table>"""
     body = f"""
@@ -588,22 +630,23 @@ def tasks_page(items, nav_qs: str, lang: str | None = None) -> str:
     nav_qs = with_lang(nav_qs, lang)
     rows = "".join(
         "<tr>"
+        f"<td><code>{escape(getattr(i, 'task_id', None) or '')}</code></td>"
         f"<td><span class='control-code'>{escape(i.control_ref or '')}</span></td>"
         f"<td>{escape(i.name)}</td>"
         f"<td>{escape(i.owner or '—')}</td>"
         f"<td class='{'overdue' if i.overdue else ''}'>{escape(format_display_date(i.due_date, lang=lang))}</td>"
         f"<td>{priority_badge(lang, i.priority)}</td>"
-        f"<td>{i.open_task_count}</td>"
+        f"<td>{status_badge(lang, getattr(i, 'task_status', None) or i.status)}</td>"
         f"<td>{escape(t(lang,'deadlines.overdue') if i.overdue else t(lang,'tasks.open'))}</td>"
         "</tr>"
         for i in items
     )
     table = f"""<table class="data-table"><thead><tr>
-<th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
+<th>ID</th><th>{escape(t(lang,'col.control'))}</th><th>{escape(t(lang,'col.name'))}</th>
 <th>{escape(t(lang,'col.owner'))}</th><th>{escape(t(lang,'col.deadline'))}</th>
-<th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.open'))}</th>
+<th>{escape(t(lang,'col.priority'))}</th><th>{escape(t(lang,'col.status'))}</th>
 <th>{escape(t(lang,'col.flag'))}</th>
-</tr></thead><tbody>{rows or f'<tr><td colspan="7">{escape(t(lang,"tasks.empty"))}</td></tr>'}</tbody></table>"""
+</tr></thead><tbody>{rows or f'<tr><td colspan="8">{escape(t(lang,"tasks.empty"))}</td></tr>'}</tbody></table>"""
     body = f"""
 {page_header(eyebrow=t(lang,'tasks.eyebrow'), title=t(lang,'tasks.title'), subtitle=t(lang,'tasks.meta'))}
 <div class="panel">{table_wrap(table)}</div>

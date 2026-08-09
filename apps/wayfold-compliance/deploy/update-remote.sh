@@ -98,6 +98,12 @@ for i in $(seq 1 60); do
   fi
 done
 
+echo "==> Seed product-review demo dataset (safe, demo-only)"
+# Installs WF_REVIEW_DEMO_2026 into writable engine data volume. Idempotent.
+docker exec wayfold-compliance-engine \
+  python -m engine.seed_review_demo --data-dir /var/lib/wayfold-compliance \
+  || echo "WARN: review demo seed failed (engine may still be starting)"
+
 echo "==> Stack status"
 "${COMPOSE[@]}" ps
 echo "Deploy app layer OK. Ensure nginx+cert for compliance.wayfold.xyz are installed."
