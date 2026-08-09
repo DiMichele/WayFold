@@ -23,7 +23,8 @@ Prima di fare qualunque cosa:
 - Tenant isolation e authorization server-side.
 - Evidence e task devono riusare il motore già scelto.
 - AI suggerisce, umano approva.
-- **Nessun dato di accesso prodotto WayFold Compliance per ora:** non introdurre/richiedere login, password utente, SSO o onboarding credential WayFold. Non bloccare fasi chiedendo credenziali all’operatore. Usa solo auth tecnica già presente del core CISO in locale (demo/dev) e le auth già configurate per Cursor/Git.
+- **Nessun dato di accesso prodotto WayFold Compliance per ora:** non introdurre/richiedere login, password utente, SSO o onboarding credential WayFold. Non bloccare fasi chiedendo credenziali all’operatore. Usa auth tecnica locale di demo/dev e le auth già configurate per Cursor/Git.
+- **Brand = WayFold Compliance:** nessun riferimento user-facing a vendor/motori GRC di terze parti (nomi prodotto altrui). Il core OSS resta dettaglio di implementazione interno.
 - **UI = ecosistema WayFold (come Bills):** ogni nuova pagina HTML WayFold deve riusare `engine/ui_shell.py` (palette charcoal/sage/terracotta/sand, Jost/Inter/DM Mono). Non inventare stili admin generici.
 - Nessun avanzamento automatico alla fase successiva oltre lo scope del prompt di transizione corrente.
 - Non creare tag `phase-N-complete`: lo crea l'orchestratore dopo un PASS indipendente.

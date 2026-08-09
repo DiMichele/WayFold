@@ -39,7 +39,7 @@ def suggestions_page(items: list[AISuggestion], nav_qs: str) -> str:
         )
     body = f"""
 <h1>AI Suggestions</h1>
-<p class="warn">AI suggests only — human review required. Approving a suggestion does not mark the client compliant or mutate CISO baselines.</p>
+<p class="warn">AI suggests only — human review required. Approving a suggestion does not mark the client compliant or mutate published baselines.</p>
 <table><thead><tr>
 <th>ID</th><th>Kind</th><th>Tenant</th><th>Status</th><th>Conf.</th><th>Summary</th><th>Review</th>
 </tr></thead><tbody>{''.join(rows) or '<tr><td colspan=7>No suggestions</td></tr>'}</tbody></table>

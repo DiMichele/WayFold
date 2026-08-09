@@ -1,10 +1,12 @@
 # Architecture — WayFold Compliance (Phase 6)
 
-## Selected core
+**Brand prodotto:** WayFold Compliance (unica identità pubblica).
 
-**CISO Assistant Community** — Django/DRF backend + SvelteKit frontend + PostgreSQL (compose ufficiale; locale demo anche SQLite).
+## Substrate GRC (implementazione, non brand)
 
-Dominio previsto: `compliance.wayfold.xyz` (non deployato da questa pipeline).
+Motore GRC OSS riusato sotto Strategy B — Django/DRF + store + IAM. Non compare in UI/prodotti rivolti all’utente.
+
+Produzione: `https://compliance.wayfold.xyz`
 
 ## Strategy B
 
@@ -13,20 +15,13 @@ compliance.wayfold.xyz
         │
         ▼
 ┌───────────────────────┐
-│ Compliance UI         │  CISO frontend (+ WayFold consultant UX :8092)
+│ WayFold Compliance UI │  engine (portfolio, gaps, report, …)
 └───────────┬───────────┘
             │
             ▼
 ┌───────────────────────┐
-│ GRC CORE              │  CISO Assistant
-│ Folders/Perimeters    │
-│ Frameworks/Libraries  │
-│ RequirementNodes      │
-│ ReferenceControls     │
-│ AppliedControls       │
-│ Assessments           │
-│ Evidence / Tasks      │
-│ IAM / RBAC            │
+│ GRC CORE (substrate)  │  folders / frameworks / controls
+│ Assessments           │  evidence / tasks / IAM
 └───────────┬───────────┘
             │ REST/OpenAPI (prod) / ORM bridge (local demo)
             ▼

@@ -96,8 +96,7 @@ if ($LASTEXITCODE -ne 0) { throw "Local backend health failed on VPS" }
 Write-Host ""
 if ($tlsOk) {
     Write-Host "Deploy completato: https://compliance.wayfold.xyz"
-    Write-Host "WayFold engine:    https://compliance.wayfold.xyz/wayfold/"
 } else {
     Write-Host "Deploy app OK (Docker). Public HTTPS pending root TLS setup."
-    Write-Host "Local API: http://127.0.0.1:18000/api/health/ on VPS"
+    Write-Host "Local engine: http://127.0.0.1:18092/healthz on VPS"
 }

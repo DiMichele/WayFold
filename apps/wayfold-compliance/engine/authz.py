@@ -15,10 +15,10 @@ def assert_tenant_access(
     is_superuser: bool,
     target_tenant_id: str,
 ) -> AccessDecision:
-    """Server-side tenant gate for WayFold engine endpoints/services.
+    """Server-side tenant gate for WayFold Compliance endpoints/services.
 
-    Does not replace CISO RBAC; overlays a hard tenant boundary before
-    returning unified checklist / readiness / impact for a program.
+    Overlays a hard tenant boundary before returning unified checklist /
+    readiness / impact for a program.
     """
     if is_superuser:
         return AccessDecision(True, "superuser")

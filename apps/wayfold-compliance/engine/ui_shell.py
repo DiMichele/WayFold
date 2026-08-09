@@ -129,21 +129,24 @@ def render_shell(
     brand_subtitle: str = "Compliance",
 ) -> str:
     items = list(nav_items) if nav_items is not None else list(DEFAULT_NAV)
+    q = f"?{nav_qs}" if nav_qs else ""
     links = "".join(
-        f'<a href="{escape(path)}?{nav_qs}">{escape(label)}</a>' for label, path in items
+        f'<a href="{escape(path)}{q}">{escape(label)}</a>' for label, path in items
     )
+    page_title = title if "WayFold" in title else f"{title} — WayFold Compliance"
     return f"""<!doctype html>
 <html lang="it"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{escape(title)}</title>
+<meta name="application-name" content="WayFold Compliance">
+<title>{escape(page_title)}</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Jost:wght@500;600;700&display=swap" rel="stylesheet">
 <style>{WAYFOLD_CSS}</style>
 </head><body>
 <header class="brand-bar">
-  <a class="brand" href="/portfolio?{nav_qs}">WayFold <span>{escape(brand_subtitle)}</span></a>
+  <a class="brand" href="/{q}">WayFold <span>{escape(brand_subtitle)}</span></a>
 </header>
 <nav class="nav">{links}</nav>
 <main>

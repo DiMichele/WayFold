@@ -113,7 +113,7 @@ def suggestions_page(suggestions, nav_qs: str) -> str:
     )
     body = f"""
 <h1>Framework update suggestions</h1>
-<p class="meta">CLONE_DRAFT / review mappings — mai publish automatico nel core CISO</p>
+<p class="meta">CLONE_DRAFT / review mappings — mai publish automatico sulle baseline pubblicate</p>
 <table><thead><tr>
 <th>ID</th><th>Change</th><th>Action</th><th>Status</th><th>Frameworks</th><th>Versions</th><th>Rationale</th>
 </tr></thead><tbody>{rows or '<tr><td colspan="7">Nessun suggestion</td></tr>'}</tbody></table>

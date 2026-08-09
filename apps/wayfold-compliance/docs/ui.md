@@ -2,9 +2,9 @@
 
 ## Principio
 
-Le superfici **WayFold** (engine su `:8092`) seguono la visual language di **WayFold Bills** / wayfold.xyz.
+La superficie pubblica è **WayFold Compliance** (engine su produzione: `/`).
 
-Il frontend CISO upstream non viene rifatto: si estende con viste brandizzate.
+Stessa visual language di **WayFold Bills** / wayfold.xyz. Nessun nome di vendor o motore GRC di terze parti in titoli, login, shell o copy rivolto all’utente.
 
 ## Token
 
@@ -29,3 +29,4 @@ html = render_shell(title, nav_qs, body)
 ```
 
 Nuove pagine: **sempre** `render_shell`, mai CSS inline isolato.
+Brand bar: `WayFold Compliance`.

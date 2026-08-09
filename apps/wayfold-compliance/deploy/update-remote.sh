@@ -10,7 +10,7 @@ cd "$APP_DIR"
 mkdir -p data/db
 # Clean mistaken bind targets from earlier path-resolution bugs
 rm -rf deploy/data 2>/dev/null || true
-# CISO images expect uid 1001 for db volume (no passwordless sudo on VPS:
+# GRC core images expect uid 1001 for db volume (no passwordless sudo on VPS:
 # use a one-shot root container to chown the bind mount).
 if ! docker run --rm -v "$APP_DIR/data/db:/code/db" alpine:3.20 \
   sh -c 'chown -R 1001:1001 /code/db && chmod -R u+rwX,g+rwX /code/db'; then

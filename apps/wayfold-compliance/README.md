@@ -1,31 +1,28 @@
 # WayFold Compliance
 
-Applicativo privato GRC multi-framework per consulenza cybersecurity.
+**WayFold Compliance** — GRC multi-framework per consulenza cybersecurity.
 
-- Dominio previsto: `compliance.wayfold.xyz`
-- Repository: [DiMichele/WayFold-Compliance](https://github.com/DiMichele/WayFold-Compliance)
-- Stato: **Phase 1–2 PASS** · **Phase 3 IMPLEMENTATION FINISHED — AWAITING INDEPENDENT VERIFICATION**
-- Raccomandazione: [`docs/PHASE0-RECOMMENDATION.md`](docs/PHASE0-RECOMMENDATION.md)
+- Produzione: https://compliance.wayfold.xyz
+- Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md)
+- UI: [`docs/ui.md`](docs/ui.md)
 - Unified Compliance: [`docs/unified-compliance.md`](docs/unified-compliance.md)
 - Consultant UX: [`docs/consultant-ux.md`](docs/consultant-ux.md)
-- Progress: [`docs/PROGRESS.md`](docs/PROGRESS.md)
 
-## Decisione Phase 0
-
-- **Core:** CISO Assistant Community
-- **Strategy B:** GRC Core + Wayfold Regulatory Engine (servizi esterni via API)
+Il brand del prodotto è **solo WayFold Compliance**. Il motore GRC sottostante è un dettaglio di implementazione (Strategy B): non compare in UI, titoli o messaggi rivolti all’utente.
 
 ## Layout
 
 ```text
 .
-  docs/         stato, decisioni, evaluation, architecture, recommendation
-  engine/       Unified Compliance (P2) + Consultant UX (P3)
+  docs/         stato, decisioni, architecture
+  engine/       prodotto WayFold Compliance (UI + servizi)
+  deploy/       produzione su compliance.wayfold.xyz
   automation/   orchestratore fasi (overnight)
   prompts/      prompt Cursor per fasi 1–6
-  vendor/       clone OSS (gitignored) — solo macchina locale
 ```
 
-## Avvio core locale (post Phase 0)
+## Deploy
 
-Vedi comandi in `docs/PROGRESS.md`.
+```powershell
+powershell -ExecutionPolicy Bypass -File apps/wayfold-compliance/deploy/deploy-compliance.ps1 -SetupTls
+```

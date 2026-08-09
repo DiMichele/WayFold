@@ -1,14 +1,16 @@
-"""Consultant-facing HTTP surface for Unified Compliance + Phase 3 UX.
+"""WayFold Compliance — consultant-facing HTTP surface.
 
 Run:
   python -m engine.api
 Default: http://127.0.0.1:8092
 Auth: ?superuser=1 OR ?actor_tenants=<tenant-id>[,...]
+      With WAYFOLD_OPEN_ACCESS=1, HTML/API browse as consultant demo (no product login).
 """
 
 from __future__ import annotations
 
 import json
+import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -90,11 +92,23 @@ def _auto_ev_service() -> AutomatedEvidenceService:
     return _AUTO_EV_SERVICE
 
 
+def _open_access_enabled() -> bool:
+    return os.environ.get("WAYFOLD_OPEN_ACCESS", "").strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
 def _auth_from_qs(qs: dict) -> tuple[set[str], bool]:
     actor_tenants = {
         t.strip() for t in qs.get("actor_tenants", [""])[0].split(",") if t.strip()
     }
     is_super = qs.get("superuser", ["0"])[0].lower() in {"1", "true", "yes"}
+    # Product has no WayFold login yet — production demo opens as consultant.
+    if _open_access_enabled() and not actor_tenants and not is_super:
+        return set(), True
     return actor_tenants, is_super
 
 
@@ -240,10 +254,10 @@ class Handler(BaseHTTPRequestHandler):
         qs = parse_qs(parsed.query)
         path = parsed.path.rstrip("/") or "/"
 
-        if path == "/api/health":
+        if path in {"/api/health", "/healthz"}:
             return self._send(
                 200,
-                b'{"status":"ok","service":"wayfold-consultant-ux"}',
+                b'{"status":"ok","service":"wayfold-compliance"}',
                 "application/json",
             )
 
@@ -916,7 +930,7 @@ def main(argv: list[str] | None = None):
     parser.add_argument("--port", type=int, default=8092)
     args = parser.parse_args(argv)
     httpd = ThreadingHTTPServer((args.host, args.port), Handler)
-    print(f"WayFold Consultant UX listening on http://{args.host}:{args.port}")
+    print(f"WayFold Compliance listening on http://{args.host}:{args.port}")
     httpd.serve_forever()
 
 

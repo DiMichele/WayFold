@@ -1,6 +1,7 @@
-# WayFold Compliance — production stack (CISO core + WayFold engine)
+# WayFold Compliance — production stack (GRC core substrate + product engine)
 # Binds only to localhost; nginx terminates TLS for compliance.wayfold.xyz
 # WAYFOLD_COMPLIANCE_ROOT must be the app root (set by update-remote.sh).
+# Product brand is WayFold Compliance — vendor image names are implementation-only.
 services:
   backend:
     container_name: wayfold-compliance-backend
@@ -115,6 +116,8 @@ services:
     command: ["python", "-m", "engine.api", "--host", "0.0.0.0", "--port", "8092"]
     environment:
       - PYTHONUNBUFFERED=1
+      # No product login yet — public site browses as consultant demo
+      - WAYFOLD_OPEN_ACCESS=1
     volumes:
       - ${WAYFOLD_COMPLIANCE_ROOT:-.}:/app:ro
     ports:

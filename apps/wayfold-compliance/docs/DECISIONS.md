@@ -1,6 +1,22 @@
 # DECISIONS — WayFold Compliance
 
-## [2026-08-09] Core GRC selection — CISO Assistant + Strategy B
+## [2026-08-09] Brand prodotto — solo WayFold Compliance
+
+Scelto:
+- Il nome pubblico del prodotto è **WayFold Compliance**.
+- Nessuna UI, titolo browser, nginx comment rivolto all’utente, README di prodotto o copy deve presentare il motore GRC OSS (o altri vendor) come brand.
+- La home pubblica (`compliance.wayfold.xyz/`) serve l’engine WayFold; l’eventuale admin UI del substrate non è esposta sul dominio prodotto.
+- `WAYFOLD_OPEN_ACCESS=1` in produzione finché non esiste login prodotto WayFold.
+
+Motivazione:
+- Il core OSS era solo punto di partenza tecnico (Strategy B), non identità di prodotto.
+- Allineamento all’ecosistema WayFold (Bills / wayfold.xyz).
+
+---
+
+## [2026-08-09] Core GRC selection — substrate OSS + Strategy B
+
+> Nota brand: questa decisione è storica/tecnica. In UI e messaggi utente usare solo «WayFold Compliance» / «GRC core» / «substrate».
 
 Scelto:
 - **Core:** CISO Assistant Community (`intuitem/ciso-assistant-community`)
@@ -179,7 +195,7 @@ Scelto:
   - path `/home/wayfold/apps/wayfold-compliance`
   - dominio `https://compliance.wayfold.xyz`
   - script `deploy/deploy-compliance.ps1` (+ nginx/TLS via `setup-nginx-tls.sh`)
-- Stack: immagini ufficiali CISO (ghcr) + engine WayFold su `:18092` dietro `/wayfold/`
+- Stack: substrate GRC (immagini ghcr) + engine WayFold Compliance su `:18092` come UI pubblica `/`
 - Nessun deploy del prodotto viaggi (`deploy/deploy.ps1`) da questa pipeline.
 
 Motivazione:
