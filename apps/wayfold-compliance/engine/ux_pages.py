@@ -102,15 +102,12 @@ def portfolio_page(rows, nav_qs: str, lang: str | None = None) -> str:
 
     if not rows:
         steps = "".join(
-            f"<li><strong>{i}.</strong> {escape(t(lang, key))}</li>"
-            for i, key in enumerate(
-                (
-                    "onboarding.step1",
-                    "onboarding.step2",
-                    "onboarding.step3",
-                    "onboarding.step4",
-                ),
-                start=1,
+            f"<li>{escape(t(lang, key))}</li>"
+            for key in (
+                "onboarding.step1",
+                "onboarding.step2",
+                "onboarding.step3",
+                "onboarding.step4",
             )
         )
         body = f"""
