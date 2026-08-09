@@ -1,0 +1,11 @@
+﻿{
+  "source_repo": "DiMichele/WayFold",
+  "source_path": "apps/wayfold-compliance",
+  "source_sha": "df2dc2e66749f76ff1865ccf99681e0434151098",
+  "mirror_repo": "DiMichele/WayFold-Compliance",
+  "mirror_sha": "afaa8e6648cce26b387b03f778df8bf8b2af1c6e",
+  "sync_timestamp": "2026-08-09T10:04:52Z",
+  "tree_hash": "d5212508f4e1fc20cc891b27c9f766cfe317eae8",
+  "live_build_sha": "df2dc2e66749f76ff1865ccf99681e0434151098",
+  "live_url": "https://compliance.wayfold.xyz/"
+}
