@@ -164,7 +164,17 @@ def build_cleanup_plan(root: Path | None = None) -> dict[str, Any]:
         "ai-act-demo",
         "iso-42001-demo",
         "csa-star-demo",
+        # Product-review seed framework_ids used in live/prod before cleanup
+        "fw-iso27001-2022",
+        "fw-nis2-it-2026-1",
+        "fw-psnc-2025-3",
+        "fw-qc4-2025",
+        "fw-dora-2025",
+        "fw-aiact-2026",
+        "fw-iso42001-2023",
+        "fw-ccm-v4",
     }
+    tiny_demo_req_cap = 12  # seed frameworks had tiny corpora vs real import
     fw_store = root / "framework_versions.json"
     if fw_store.is_file():
         try:
@@ -175,12 +185,36 @@ def build_cleanup_plan(root: Path | None = None) -> dict[str, Any]:
             fw_id = str(ver.get("framework_id") or "")
             name = str(ver.get("framework_name") or "")
             notes = str(ver.get("notes") or "")
-            if (
+            n_req = len(ver.get("requirements") or [])
+            is_legacy_import = fw_id.endswith("-legacy") or "legacy-import" in str(
+                ver.get("version") or ""
+            )
+            seed_like = (
                 fw_id in demo_fw_ids
                 or _is_demo_name(name)
                 or DATASET_MARKER in notes
                 or "review demo" in notes.lower()
-            ):
+                or (
+                    not is_legacy_import
+                    and n_req > 0
+                    and n_req <= tiny_demo_req_cap
+                    and any(
+                        x in name
+                        for x in (
+                            "ISO/IEC 27001",
+                            "NIS2",
+                            "PSNC",
+                            "DORA",
+                            "AI Act",
+                            "42001",
+                            "QC4",
+                            "CSA STAR",
+                            "CCM",
+                        )
+                    )
+                )
+            )
+            if seed_like:
                 items.append(
                     _plan_item(
                         entity_type="framework_version",
@@ -190,6 +224,28 @@ def build_cleanup_plan(root: Path | None = None) -> dict[str, Any]:
                         reason="demo_seed_framework",
                         action="DELETE",
                         path=str(fw_store),
+                    )
+                )
+
+    # Also purge demo framework registry metadata for seed ids
+    reg_fw = root / "framework_registry.json"
+    if reg_fw.is_file():
+        try:
+            reg_data = json.loads(reg_fw.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            reg_data = {"frameworks": []}
+        for fw in reg_data.get("frameworks") or []:
+            fid = str(fw.get("id") or "")
+            if fid in demo_fw_ids or _is_demo_name(str(fw.get("name") or "")):
+                items.append(
+                    _plan_item(
+                        entity_type="framework_registry",
+                        entity_id=fid,
+                        name=str(fw.get("name") or fid),
+                        demo_marker=DATASET_MARKER,
+                        reason="demo_seed_framework_registry",
+                        action="DELETE",
+                        path=str(reg_fw),
                     )
                 )
 
@@ -296,6 +352,50 @@ def apply_cleanup_plan(plan: dict[str, Any], *, root: Path | None = None) -> dic
         data["versions"] = [v for v in (data.get("versions") or []) if str(v.get("id")) not in demo_ids]
         fw_store.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
         deleted.append(f"framework_versions_filtered:{fw_store}")
+
+    # Rewrite framework registry
+    demo_fw_reg = {
+        i["id"] for i in plan.get("delete") or [] if i.get("entity_type") == "framework_registry"
+    }
+    reg_fw = root / "framework_registry.json"
+    if reg_fw.is_file() and demo_fw_reg:
+        data = json.loads(reg_fw.read_text(encoding="utf-8"))
+        data["frameworks"] = [
+            f for f in (data.get("frameworks") or []) if str(f.get("id")) not in demo_fw_reg
+        ]
+        reg_fw.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        deleted.append(f"framework_registry_filtered:{reg_fw}")
+
+    # Strip demo mappings tied to seed frameworks
+    map_path = root / "kb_mappings.json"
+    if map_path.is_file():
+        try:
+            maps = json.loads(map_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            maps = {}
+        before = len(maps.get("mappings") or [])
+        kept = []
+        for m in maps.get("mappings") or []:
+            blob = json.dumps(m, ensure_ascii=False)
+            if DATASET_MARKER in blob or "[Demo]" in blob:
+                continue
+            fw = str(m.get("framework_id") or "")
+            if fw.startswith("fw-") and fw in {
+                "fw-iso27001-2022",
+                "fw-nis2-it-2026-1",
+                "fw-psnc-2025-3",
+                "fw-qc4-2025",
+                "fw-dora-2025",
+                "fw-aiact-2026",
+                "fw-iso42001-2023",
+                "fw-ccm-v4",
+            }:
+                continue
+            kept.append(m)
+        maps["mappings"] = kept
+        if len(kept) != before:
+            map_path.write_text(json.dumps(maps, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+            deleted.append(f"kb_mappings_filtered:{before - len(kept)}")
 
     # Audit append
     audit_dir = root / "audit"
