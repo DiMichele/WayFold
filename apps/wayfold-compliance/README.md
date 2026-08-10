@@ -3,9 +3,10 @@
 GRC multi-framework per consulenza cybersecurity.
 
 - **Produzione:** https://compliance.wayfold.xyz
+- **Repo:** https://github.com/DiMichele/WayFold-Compliance
 - **Brand prodotto:** solo *WayFold Compliance* (il motore GRC sottostante è un dettaglio di implementazione e non compare in UI)
 
-Questo README spiega come **clonare il repo e far partire l’engine in locale** in pochi minuti. Per deploy, sicurezza e decisioni di prodotto vedi i documenti in `docs/`.
+Questo README spiega come **clonare il repo e far partire l'engine in locale** in pochi minuti. Per deploy, sicurezza e decisioni di prodotto vedi i documenti in `docs/`.
 
 ---
 
@@ -16,19 +17,17 @@ Questo README spiega come **clonare il repo e far partire l’engine in locale**
 | Git | qualsiasi recente |
 | Python | **3.11+** (testato con 3.12) |
 
-Opzionale: Docker, solo se vuoi anche lo stack GRC core di produzione (non serve per l’UI consulente locale).
+Opzionale: Docker, solo se vuoi anche lo stack GRC core di produzione (non serve per l'UI consulente locale).
 
 ---
 
 ## Avvio rapido (locale)
 
-I comandi vanno eseguiti dalla cartella `apps/wayfold-compliance` del monorepo WayFold.
-
 ### 1. Clona e entra nella cartella
 
 ```bash
-git clone https://github.com/DiMichele/WayFold.git
-cd WayFold/apps/wayfold-compliance
+git clone https://github.com/DiMichele/WayFold-Compliance.git
+cd WayFold-Compliance
 ```
 
 ### 2. Ambiente virtuale e dipendenze
@@ -91,7 +90,7 @@ source .env
 set +a
 ```
 
-### 4. Avvia l’engine
+### 4. Avvia l'engine
 
 ```bash
 python -m engine.api
@@ -121,7 +120,7 @@ Per fermare il server: `Ctrl+C`.
 
 ## Cosa ottieni in locale
 
-L’engine (`python -m engine.api`) è la **superficie prodotto** WayFold Compliance: portfolio, gap, evidence, task, report, framework KB, ecc.
+L'engine (`python -m engine.api`) è la **superficie prodotto** WayFold Compliance: portfolio, gap, evidence, task, report, framework KB, ecc.
 
 Con i default di `.env.example`:
 
@@ -129,7 +128,7 @@ Con i default di `.env.example`:
 - store runtime in `engine/data/` (gitignored, creato al primo avvio)
 - porta **8092** su `127.0.0.1`
 
-Lo stack Docker di produzione (backend GRC + frontend + nginx TLS) **non è necessario** per sviluppare o provare l’UI consulente in locale.
+Lo stack Docker di produzione (backend GRC + frontend + nginx TLS) **non è necessario** per sviluppare o provare l'UI consulente in locale.
 
 ---
 
@@ -152,7 +151,7 @@ Auth locale (dev): `?superuser=1` **oppure** `?actor_tenants=<tenant-id>` quando
 
 ## Test automatici
 
-Dalla stessa cartella `apps/wayfold-compliance`, con venv attivo:
+Dalla root del repo, con venv attivo:
 
 ```bash
 python -m engine.tests.test_unified_compliance
@@ -196,15 +195,15 @@ WAYFOLD_SESSION_SECRET=una-stringa-lunga-casuale-solo-locale
 ## Layout del progetto
 
 ```text
-apps/wayfold-compliance/
-  README.md          ← questo file
-  .env.example       ← template env per locale
-  engine/            ← prodotto (UI HTTP + servizi + test + fixture)
-  docs/              ← architettura, progress, security, UX
-  deploy/            ← produzione su compliance.wayfold.xyz
-  automation/        ← orchestratore fasi (overnight)
-  prompts/           ← prompt Cursor per le fasi
-  schemas/           ← JSON Schema KB / mappings
+.
+  README.md          <- questo file
+  .env.example       <- template env per locale
+  engine/            <- prodotto (UI HTTP + servizi + test + fixture)
+  docs/              <- architettura, progress, security, UX
+  deploy/            <- produzione su compliance.wayfold.xyz
+  automation/        <- orchestratore fasi (overnight)
+  prompts/           <- prompt Cursor per le fasi
+  scripts/           <- utility di supporto
 ```
 
 Documentazione di approfondimento:
@@ -224,8 +223,8 @@ Documentazione di approfondimento:
 
 | Sintomo | Cosa controllare |
 |---------|------------------|
-| `ModuleNotFoundError: engine` | Sei nella cartella sbagliata: `cd …/apps/wayfold-compliance` |
-| Porta 8092 occupata | Chiudi l’altra istanza, oppure `python -m engine.api --port 8093` |
+| `ModuleNotFoundError: engine` | Sei nella cartella sbagliata: resta nella root del clone (`WayFold-Compliance`) |
+| Porta 8092 occupata | Chiudi l'altra istanza, oppure `python -m engine.api --port 8093` |
 | Redirect a `/login` | Hai `WAYFOLD_OPEN_ACCESS=0`: usa login oppure rimetti `=1` per il mode open |
 | Portfolio vuoto | Verifica `WAYFOLD_SEED_DEMO=1` (default locale) e che i fixture in `engine/fixtures/` ci siano |
 | MFA / enrollment | In locale tieni `WAYFOLD_MFA_ENFORCE=0` |
@@ -238,7 +237,7 @@ Documentazione di approfondimento:
 Solo se stai aggiornando il server (non serve per lavorare in locale):
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File apps/wayfold-compliance/deploy/deploy-compliance.ps1
+powershell -ExecutionPolicy Bypass -File deploy/deploy-compliance.ps1
 ```
 
 Dettagli: [`docs/deployment.md`](docs/deployment.md).
