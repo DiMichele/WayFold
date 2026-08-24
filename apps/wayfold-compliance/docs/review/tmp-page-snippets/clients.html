@@ -1,0 +1,32 @@
+
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Area di lavoro</div>
+    <h1>Clienti</h1>
+    <p class="subtitle">Directory clienti, programmi, framework e assegnazioni consulente.</p>
+  </div>
+  <div class="page-actions"><a class='btn primary' href='/clients/new?lang=it'>+ Nuovo cliente</a><a class='btn' href='/programs/new?lang=it'>+ Nuovo programma</a></div>
+</div>
+<form class="filter-bar" method="get" action="/clients">
+  <input type="hidden" name="lang" value="it">
+  <label>Ricerca <input name="q" value="" placeholder="Cliente o programma"></label>
+  <label>Stato
+    <select name="status">
+      <option value="">—</option>
+      <option value="ACTIVE" >Attivo</option>
+      <option value="DRAFT" >Bozza</option>
+    </select>
+  </label>
+  <label>Framework <input name="framework" value=""></label>
+  <button class="btn primary sm" type="submit">Filtra</button>
+</form>
+<div class="panel"><div class="table-wrap"><table class="data-table"><thead><tr>
+<th>Cliente</th>
+<th>Programma</th>
+<th>Framework</th>
+<th>Consulente assegnato</th>
+<th>Stato</th>
+<th></th>
+</tr></thead><tbody><tr><td colspan='6'>Nessun cliente in directory.</td></tr></tbody></table></div></div>
+    

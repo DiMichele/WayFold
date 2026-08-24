@@ -1,0 +1,23 @@
+
+
+<div class="page-head">
+  <div>
+    <div class="eyebrow">Knowledge Base</div>
+    <h1>Importazione</h1>
+    <p class="subtitle">Carica un pacchetto JSON v1 o la matrice legacy Excel.</p>
+  </div>
+  
+</div><div class='stepper compact'><span class='step active'><span class='step-num'>1</span> Caricamento</span> · <span class='step '><span class='step-num'>2</span> Analisi</span> · <span class='step '><span class='step-num'>3</span> Metadata</span> · <span class='step '><span class='step-num'>4</span> Verifica</span> · <span class='step '><span class='step-num'>5</span> Importazione</span></div>
+<div class="panel import-card" style="max-width:560px;margin:24px auto;padding:28px;text-align:center">
+  <form method="post" action="/kb/import/upload?lang=it" enctype="multipart/form-data">
+    <p class="meta">Trascina un file oppure selezionalo. Formati: JSON WayFold KB v1, Excel legacy (.xlsx).</p>
+    <div class="form-field full" style="margin:18px 0">
+      <input type="file" name="package" required accept=".json,.xlsx,application/json"
+        style="margin:0 auto">
+    </div>
+    <input type="hidden" name="csrf_token" value="">
+    <button class="btn primary" type="submit">Seleziona / Analizza</button>
+  </form>
+</div>
+
+    
