@@ -34,11 +34,16 @@ export function switchView(name) {
       applyView(name);
       return;
     }
-    h.navigate({
+    const snap = {
       view: name,
-      galTripId: state.galTripId,
+      galTripId: name === 'gallery' ? null : state.galTripId,
       overlay: null,
-    });
+    };
+    if (name === 'gallery' && state.view === 'gallery' && state.galTripId) {
+      h.replace(snap);
+      return;
+    }
+    h.navigate(snap);
   });
 }
 

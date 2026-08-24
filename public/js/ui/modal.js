@@ -112,11 +112,6 @@ export function openTripForm({ trip = null, onSaved, kind = 'trip' }) {
   body.dataset.kind = albumKind;
 
   body.innerHTML = `
-    ${isEdit ? '' : `
-    <div class="kind-switch" role="tablist">
-      <button type="button" class="kind-switch-btn${albumKind === 'trip' ? ' on' : ''}" data-kind="trip">${t('kind.trip')}</button>
-      <button type="button" class="kind-switch-btn${albumKind === 'event' ? ' on' : ''}" data-kind="event">${t('kind.event')}</button>
-    </div>`}
     <div class="field">
       <label for="f-dest">${albumKind === 'event' ? t('modal.eventName') : t('modal.dest')}</label>
 

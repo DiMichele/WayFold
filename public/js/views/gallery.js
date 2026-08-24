@@ -17,7 +17,7 @@ import { setTip } from '../ui/tooltip.js';
 import { refreshJourneyScroll } from '../ui/journeyScroll.js';
 import { mountImage, mountCover } from '../ui/photoDisplay.js';
 import { t, formatPhotos } from '../i18n.js';
-import { goToGallery, historyBack } from '../historyNav.js';
+import { goToGallery } from '../historyNav.js';
 
 const el = id => document.getElementById(id);
 
@@ -451,7 +451,8 @@ async function buildPhotos(c, trip) {
   const back = document.createElement('button');
   back.className = 'gal-back';
   back.innerHTML = '<svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>';
-  back.onclick = () => historyBack();
+  back.setAttribute('aria-label', t('gal.back'));
+  back.onclick = () => goToGallery(null);
   headMain.appendChild(back);
 
   const tw = document.createElement('div');

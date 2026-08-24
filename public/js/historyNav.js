@@ -261,7 +261,12 @@ export function notifyOverlayClosed(fromHistory = false) {
 }
 
 export function goToGallery(tripId = null) {
-  navigate({ view: 'gallery', galTripId: tripId, overlay: null });
+  const snap = { view: 'gallery', galTripId: tripId, overlay: null };
+  if (tripId == null && state.view === 'gallery' && state.galTripId) {
+    replace(snap);
+    return;
+  }
+  navigate(snap);
 }
 
 export function initAppHistory() {
