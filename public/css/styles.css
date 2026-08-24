@@ -1714,6 +1714,17 @@ body.modal-open{overflow:hidden;overscroll-behavior:none}
   width:100%;height:44px;border-radius:12px;margin-bottom:14px;
   background:var(--btn-ink);color:var(--btn-ink-txt);font-size:13.5px;font-weight:600;
 }
+.share-gen-btn{
+  width:100%;height:46px;border-radius:14px;margin:0 0 16px;
+  background:var(--btn-ink);color:var(--btn-ink-txt);font-size:14px;font-weight:600;
+}
+.road-section-add{
+  display:inline-flex;align-items:center;gap:6px;flex-shrink:0;
+  height:34px;padding:0 12px;border-radius:999px;
+  border:1px solid var(--line);background:var(--srf);
+  font-size:12.5px;font-weight:600;color:var(--ink);
+}
+.road-section-add svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
 .share-code-box{
   margin-bottom:16px;padding:14px;border-radius:14px;
   background:var(--bg2);border:1px solid var(--line);text-align:center;
@@ -2215,29 +2226,113 @@ body[data-role="user"] .owner-only{display:none!important}
   .journey-scroll-affordance svg{animation:none}
 }
 
-/* ─── Sblocco E2E (password locale) ─── */
-.crypto-unlock-overlay{
-  position:fixed;inset:0;z-index:9999;
+/* ─── Sblocco E2E (nuovo dispositivo) ─── */
+.crypto-gate{
+  position:fixed;inset:0;z-index:990;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+  background:rgba(15,12,8,.72);backdrop-filter:blur(12px);
+  opacity:0;visibility:hidden;transition:opacity .28s,visibility .28s;
+}
+[data-theme="dark"] .crypto-gate{background:rgba(0,0,0,.78)}
+.crypto-gate.open{opacity:1;visibility:visible}
+.crypto-gate-card{
+  width:100%;max-width:400px;text-align:center;
+  background:var(--srf);border:1px solid var(--line);border-radius:var(--r-l);
+  padding:32px 28px;box-shadow:var(--sh-l);
+}
+.crypto-gate-icon{
+  width:52px;height:52px;margin:0 auto 16px;border-radius:50%;
+  background:var(--acc-soft);color:var(--acc);
   display:flex;align-items:center;justify-content:center;
-  background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
-  padding:24px;
 }
-.crypto-unlock-card{
-  width:min(100%,380px);
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:16px;padding:28px 24px;
-  box-shadow:0 24px 48px rgba(0,0,0,.2);
+.crypto-gate-icon svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.crypto-gate-title{font-family:var(--display);font-size:21px;font-weight:500;letter-spacing:-.2px;margin-bottom:8px}
+.crypto-gate-hint{font-size:13.5px;line-height:1.55;color:var(--ink2);margin:0 0 18px}
+.crypto-gate-form{display:flex;flex-direction:column;gap:10px;text-align:left}
+.crypto-gate-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.crypto-gate-form input{
+  height:46px;padding:0 14px;border-radius:12px;
+  border:1px solid var(--line);background:var(--bg);color:var(--ink);
 }
-.crypto-unlock-title{font-size:1.15rem;font-weight:600;margin:0 0 8px}
-.crypto-unlock-hint{font-size:.9rem;color:var(--muted);margin:0 0 18px;line-height:1.45}
-.crypto-unlock-card form{display:flex;flex-direction:column;gap:12px}
-.crypto-unlock-card input{
-  width:100%;padding:12px 14px;border-radius:10px;
-  border:1px solid var(--border);background:var(--bg);color:var(--text);
+.crypto-gate-err{color:var(--danger);font-size:12.5px;margin:0}
+.crypto-gate-btn{
+  height:46px;border-radius:14px;margin-top:4px;
+  background:var(--btn-ink);color:var(--btn-ink-txt);font-size:13.5px;font-weight:600;
 }
-.crypto-unlock-err{color:var(--danger);font-size:.85rem;margin:0}
-.crypto-unlock-btn{
-  padding:12px;border:none;border-radius:10px;
-  background:var(--accent);color:#fff;font-weight:600;cursor:pointer;
+.crypto-gate-logout{
+  margin-top:14px;background:none;border:0;color:var(--mut);font-size:13px;text-decoration:underline;
 }
-.crypto-unlock-btn:hover{filter:brightness(1.05)}
+img.enc-locked{opacity:0}
+.gcell:has(img.enc-locked),.journey-thumb:has(img.enc-locked),.gal-pick-cv:has(img.enc-locked){
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--acc) 12%, var(--srf2)), var(--srf2));
+}
+
+.kind-switch{display:flex;gap:6px;margin:0 0 16px;padding:4px;background:var(--bg2);border-radius:14px;border:1px solid var(--line)}
+.kind-switch-btn{
+  flex:1;height:38px;border-radius:10px;font-size:13px;font-weight:600;color:var(--mut);
+}
+.kind-switch-btn.on{background:var(--srf);color:var(--ink);box-shadow:var(--sh-s)}
+.modal-body.is-event .field:has(#f-country),
+.modal-body.is-event .field-row:has(#f-days),
+.modal-body.is-event .field:has(#f-tags){display:none}
+
+.trip-event-badge{
+  display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;
+  background:var(--acc-soft);color:var(--acc);font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+}
+.gal-pick-group{
+  font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);
+  padding:14px 4px 8px;
+}
+
+.share-hero{margin:0 0 16px}
+.share-hero-kicker{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc);margin-bottom:6px}
+.share-hero-title{font-family:var(--display);font-size:22px;font-weight:500;letter-spacing:-.3px;margin-bottom:8px}
+.share-hero-lead{font-size:13.5px;line-height:1.55;color:var(--ink2);margin:0}
+.share-perm-grid{display:grid;gap:8px;margin-bottom:14px}
+.share-perm-card{
+  display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:14px;
+  border:1.5px solid var(--line);cursor:pointer;text-align:left;background:var(--srf);
+}
+.share-perm-card:has(input:checked){border-color:var(--acc);background:color-mix(in srgb,var(--acc-soft) 50%, var(--srf))}
+.share-perm-card input{accent-color:var(--acc);margin-top:3px}
+.share-perm-ico{
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--bg2);color:var(--ink2);
+}
+.share-perm-ico svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.share-perm-copy{display:flex;flex-direction:column;gap:2px}
+.share-perm-copy strong{font-size:13.5px}
+.share-perm-copy small{font-size:12px;color:var(--mut);line-height:1.4}
+.share-ticket{
+  margin:0 0 16px;padding:18px 16px;border-radius:18px;text-align:center;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--acc) 10%, var(--srf)), var(--srf));
+  border:1px dashed color-mix(in srgb, var(--acc) 40%, var(--line));
+}
+.share-ticket-label{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.share-ticket-code{display:block;font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:.18em;margin-bottom:14px}
+.share-ticket-actions{display:flex;gap:8px;justify-content:center}
+.share-ticket-btn{
+  height:38px;padding:0 16px;border-radius:999px;font-size:12.5px;font-weight:600;
+  background:var(--srf);border:1px solid var(--line);
+}
+.share-ticket-btn--acc{background:var(--btn-ink);color:var(--btn-ink-txt);border-color:transparent}
+.gal-share-sheet-lead{margin:0 0 14px;font-size:13.5px;line-height:1.55;color:var(--ink2)}
+.gal-share-sheet-grid{display:grid;gap:10px}
+.gal-share-card{
+  display:flex;gap:12px;align-items:center;padding:14px;border-radius:16px;text-align:left;
+  background:var(--srf);border:1px solid var(--line);
+}
+.gal-share-card:hover{border-color:var(--acc);transform:translateY(-1px);box-shadow:var(--sh-s)}
+.gal-share-card-ico{
+  width:42px;height:42px;border-radius:12px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--acc-soft);color:var(--acc);
+}
+.gal-share-card-ico svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.gal-share-card-copy{display:flex;flex-direction:column;gap:2px}
+.gal-share-card-copy strong{font-size:14px}
+.gal-share-card-copy small{font-size:12px;color:var(--mut);line-height:1.4}
+.empty-actions{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}

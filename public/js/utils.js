@@ -50,6 +50,10 @@ export function tripDest(trip) {
   return localized || raw;
 }
 
+export function isEvent(trip) {
+  return trip?.kind === 'event';
+}
+
 /** Paese nella lingua UI corrente (fallback su valore salvato). */
 export function tripCountry(trip) {
   return getLocalizedTrip(trip)?.country || trip?.country || '';

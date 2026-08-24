@@ -3,7 +3,7 @@
  */
 
 import { state, getTrip, visibleTrips } from '../state.js';
-import { joinParts, monthYear, photoDisplayDate, esc, tripDest, PHOTO_EMPTY_SVG, mountPhotoEmptyThumb } from '../utils.js';
+import { joinParts, monthYear, photoDisplayDate, esc, tripDest, PHOTO_EMPTY_SVG, mountPhotoEmptyThumb, isEvent } from '../utils.js';
 import * as api from '../api.js';
 import { unlockTripKeyFromShare } from '../crypto/tripKeyVault.js';
 import { openLightbox } from '../ui/lightbox.js';
@@ -97,9 +97,26 @@ function openAlbumShareSheet(trip, onShareAlbum) {
   const body = document.createElement('div');
   body.className = 'modal-body gal-share-sheet';
   body.innerHTML = `
-    <div class="gal-share-sheet-actions">
-      <button type="button" class="modal-btn s gal-share-sheet-btn" id="galShareInvite">${esc(t('gal.shareTabInvite'))}</button>
-      <button type="button" class="modal-btn s gal-share-sheet-btn" id="galSharePhotos">${esc(t('gal.shareAlbum'))}</button>
+    <p class="gal-share-sheet-lead">${esc(t('gal.shareSheetLead'))}</p>
+    <div class="gal-share-sheet-grid">
+      <button type="button" class="gal-share-card" id="galShareInvite">
+        <span class="gal-share-card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        </span>
+        <span class="gal-share-card-copy">
+          <strong>${esc(t('gal.shareTabInvite'))}</strong>
+          <small>${esc(t('gal.shareInviteCardHint'))}</small>
+        </span>
+      </button>
+      <button type="button" class="gal-share-card" id="galSharePhotos">
+        <span class="gal-share-card-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        </span>
+        <span class="gal-share-card-copy">
+          <strong>${esc(t('gal.shareAlbum'))}</strong>
+          <small>${esc(t('gal.sharePhotosCardHint'))}</small>
+        </span>
+      </button>
     </div>`;
   body.querySelector('#galShareInvite').addEventListener('click', () => {
     closeModal(false, { skipHistory: true });
@@ -347,7 +364,10 @@ function buildPicker(c) {
     return;
   }
 
-  trips.forEach(rowTrip => {
+  const tripsOnly = trips.filter(t => !isEvent(t));
+  const eventsOnly = trips.filter(t => isEvent(t));
+
+  const appendPickRow = (rowTrip) => {
     const row = document.createElement('div');
     row.className = 'gal-pick-row';
 
@@ -363,16 +383,28 @@ function buildPicker(c) {
     }
     row.appendChild(cvWrap);
 
+    const meta = isEvent(rowTrip)
+      ? joinParts(t('kind.event'), monthYear(rowTrip), formatPhotos(rowTrip.photoCount || 0))
+      : joinParts(rowTrip.country, monthYear(rowTrip), formatPhotos(rowTrip.photoCount || 0));
     row.insertAdjacentHTML('beforeend', `
       <div>
         <div class="gal-pick-dest">${esc(tripDest(rowTrip))}${rowTrip.shared ? sharedBadgeHtml() : ''}</div>
-        <div class="gal-pick-meta">${esc(joinParts(rowTrip.country, monthYear(rowTrip), formatPhotos(rowTrip.photoCount || 0)))}</div>
+        <div class="gal-pick-meta">${esc(meta)}</div>
       </div>
-      <span class="gal-pick-flag">${rowTrip.flag || ''}</span>`);
+      <span class="gal-pick-flag">${isEvent(rowTrip) ? '' : (rowTrip.flag || '')}</span>`);
 
     row.onclick = () => goToGallery(rowTrip.id);
     list.appendChild(row);
-  });
+  };
+
+  if (tripsOnly.length && eventsOnly.length) {
+    list.insertAdjacentHTML('beforeend', `<div class="gal-pick-group">${esc(t('gal.pickTrips'))}</div>`);
+  }
+  tripsOnly.forEach(appendPickRow);
+  if (eventsOnly.length) {
+    if (tripsOnly.length) list.insertAdjacentHTML('beforeend', `<div class="gal-pick-group">${esc(t('gal.pickEvents'))}</div>`);
+    eventsOnly.forEach(appendPickRow);
+  }
 
   refreshJourneyScroll(list);
 }
@@ -645,7 +677,14 @@ async function buildPhotos(c, trip) {
     img.alt = p.caption || trip.dest;
     img.loading = idx < 4 ? 'eager' : 'lazy';
     img.decoding = 'async';
-    mountImage(img, { tripId: trip.id, photoId: p.id, url: p.url, encrypted: p.encrypted, mime: p.originalMime });
+    mountImage(img, {
+      tripId: trip.id,
+      photoId: p.id,
+      url: p.url,
+      encrypted: p.encrypted,
+      mime: p.originalMime,
+      isOwner: Boolean(trip.isOwner),
+    });
     cell.appendChild(img);
 
     if (p.id === trip.coverPhotoId) {

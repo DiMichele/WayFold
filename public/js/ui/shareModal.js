@@ -17,24 +17,42 @@ function canInvite(trip) {
 }
 
 function invitePanelHtml() {
+  const title = esc(tripDestLabel());
   return `
-    <p class="share-modal-hint">${esc(t('gal.shareCodeHint'))}</p>
-    <div class="share-perm-row">
-      <label class="share-perm">
+    <div class="share-hero">
+      <div class="share-hero-kicker">${esc(t('gal.shareInviteKicker'))}</div>
+      <div class="share-hero-title">${title}</div>
+      <p class="share-hero-lead">${esc(t('gal.shareCodeHint'))}</p>
+    </div>
+    <div class="share-perm-grid">
+      <label class="share-perm-card">
         <input type="radio" name="sharePerm" value="view" checked>
-        <span>${esc(t('gal.sharePermView'))}</span>
+        <span class="share-perm-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </span>
+        <span class="share-perm-copy">
+          <strong>${esc(t('gal.sharePermView'))}</strong>
+          <small>${esc(t('gal.sharePermViewDesc'))}</small>
+        </span>
       </label>
-      <label class="share-perm">
+      <label class="share-perm-card">
         <input type="radio" name="sharePerm" value="upload">
-        <span>${esc(t('gal.sharePermUpload'))}</span>
+        <span class="share-perm-ico" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </span>
+        <span class="share-perm-copy">
+          <strong>${esc(t('gal.sharePermUpload'))}</strong>
+          <small>${esc(t('gal.sharePermUploadDesc'))}</small>
+        </span>
       </label>
     </div>
     <button type="button" class="share-gen-btn" id="shareGenBtn">${esc(t('gal.shareGenerate'))}</button>
-    <div class="share-code-box" id="shareCodeBox" hidden>
-      <div class="share-code-label">${esc(t('gal.shareCodeLabel'))}</div>
-      <div class="share-code-row">
-        <code class="share-code-val" id="shareCodeVal"></code>
-        <button type="button" class="share-copy-btn" id="shareCopyBtn">${esc(t('gal.shareCopy'))}</button>
+    <div class="share-ticket" id="shareCodeBox" hidden>
+      <div class="share-ticket-label">${esc(t('gal.shareCodeLabel'))}</div>
+      <code class="share-ticket-code" id="shareCodeVal"></code>
+      <div class="share-ticket-actions">
+        <button type="button" class="share-ticket-btn" id="shareCopyBtn">${esc(t('gal.shareCopy'))}</button>
+        <button type="button" class="share-ticket-btn share-ticket-btn--acc" id="shareSendBtn">${esc(t('gal.shareSend'))}</button>
       </div>
     </div>
     <div class="share-section" id="shareCodesSection">
@@ -47,9 +65,14 @@ function invitePanelHtml() {
     </div>`;
 }
 
+function tripDestLabel() {
+  return _trip?.dest || _trip?.name || t('gal.shareTitle');
+}
+
 function bindInvitePanel(body) {
   body.querySelector('#shareGenBtn')?.addEventListener('click', generateCode);
   body.querySelector('#shareCopyBtn')?.addEventListener('click', copyCode);
+  body.querySelector('#shareSendBtn')?.addEventListener('click', sendCode);
   loadLists(body);
 }
 
@@ -98,6 +121,21 @@ function copyCode() {
   navigator.clipboard?.writeText(code).then(() => showToast(t('gal.shareCopied'))).catch(() => {
     showToast(code, 'error');
   });
+}
+
+async function sendCode() {
+  const code = document.getElementById('shareCodeVal')?.textContent;
+  if (!code) return;
+  const text = t('gal.shareSendText', { dest: tripDestLabel(), code });
+  try {
+    if (navigator.share) {
+      await navigator.share({ title: tripDestLabel(), text });
+      return;
+    }
+  } catch (e) {
+    if (e?.name === 'AbortError') return;
+  }
+  copyCode();
 }
 
 async function loadLists(root) {

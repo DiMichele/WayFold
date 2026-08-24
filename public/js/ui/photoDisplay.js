@@ -90,9 +90,13 @@ function resolveObjectUrl({ tripId, photoId, url, mime, isOwner = false }) {
  * Assegna a un <img> l'immagine giusta: per le foto cifrate decifra e usa un
  * blob URL, per quelle legacy imposta direttamente src.
  */
-export function mountImage(img, { tripId, photoId, url, encrypted, mime }) {
+export function mountImage(img, { tripId, photoId, url, encrypted, mime, isOwner = false }) {
   if (!img || !url) return;
   if (photoId != null) img.dataset.photoId = String(photoId);
+  img.dataset.encTrip = String(tripId || '');
+  img.dataset.encUrl = url;
+  img.dataset.encMime = mime || '';
+  img.dataset.encOwner = isOwner ? '1' : '0';
   if (!encrypted) {
     img.src = url;
     return;
@@ -100,7 +104,8 @@ export function mountImage(img, { tripId, photoId, url, encrypted, mime }) {
   const token = String(photoId);
   img.dataset.encReq = token;
   img.classList.add('enc-pending');
-  resolveObjectUrl({ tripId, photoId, url, mime }).then(objUrl => {
+  img.classList.remove('enc-locked');
+  resolveObjectUrl({ tripId, photoId, url, mime, isOwner }).then(objUrl => {
     if (img.dataset.encReq !== token) return;
     img.classList.remove('enc-pending');
     if (objUrl) img.src = objUrl;
@@ -117,6 +122,21 @@ export function mountCover(img, trip) {
     url: trip.coverUrl,
     encrypted: trip.coverEncrypted,
     mime: trip.coverMime,
+    isOwner: Boolean(trip.isOwner),
+  });
+}
+
+/** Dopo lo sblocco E2E: ritenta le immagini rimaste bloccate. */
+export function remountLockedImages() {
+  document.querySelectorAll('img.enc-locked[data-enc-url]').forEach(img => {
+    mountImage(img, {
+      tripId: Number(img.dataset.encTrip),
+      photoId: img.dataset.photoId,
+      url: img.dataset.encUrl,
+      encrypted: true,
+      mime: img.dataset.encMime || '',
+      isOwner: img.dataset.encOwner === '1',
+    });
   });
 }
 

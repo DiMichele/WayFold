@@ -151,32 +151,35 @@ async function createFromTopic({ topicId, name }) {
  * Il topic viene creato PRIMA su Telegram (storage), poi localmente.
  * Ogni topic è prefissato con [username] nel gruppo Telegram.
  */
-async function createManual(user, { dest, country, year, month, days, type, tags, lang }) {
+async function createManual(user, { dest, country, year, month, days, type, tags, lang, kind }) {
   const cleanDest = String(dest || '').trim().slice(0, 60);
-  if (!cleanDest) throw Object.assign(new Error('La destinazione è obbligatoria'), { status: 400 });
+  if (!cleanDest) {
+    const msg = kind === 'event' ? 'Il nome dell\'evento è obbligatorio' : 'La destinazione è obbligatoria';
+    throw Object.assign(new Error(msg), { status: 400 });
+  }
 
-  const baseName = year ? `${cleanDest} ${year}` : cleanDest;
+  const isEvent = kind === 'event';
+  const baseName = !isEvent && year ? `${cleanDest} ${year}` : cleanDest;
   const topicName = telegramTopicName(user.username, baseName);
   const topic = await telegram.createTopic(topicName);
 
-  const loc = await enrichLocation(
-    cleanDest,
-    country ? String(country).trim() : null,
-    lang
-  );
+  const loc = isEvent
+    ? {}
+    : await enrichLocation(cleanDest, country ? String(country).trim() : null, lang);
   const now = new Date();
   return db.createTrip({
     userId: user.id,
     topicId: topic.message_thread_id,
     name: baseName,
     dest: cleanDest,
-    year: year ? Number(year) : now.getFullYear(),
-    month: month || MONTHS[now.getMonth()],
-    days: days ? Number(days) : null,
-    type: type || null,
-    tags: parseTags(tags),
+    year: year ? Number(year) : (isEvent ? null : now.getFullYear()),
+    month: month || (isEvent ? null : MONTHS[now.getMonth()]),
+    days: isEvent ? null : (days ? Number(days) : null),
+    type: isEvent ? null : (type || null),
+    tags: isEvent ? [] : parseTags(tags),
     ...loc,
-    scene: pickScene({ type, lat: loc.lat, countryCode: loc.countryCode, dest: cleanDest }),
+    scene: isEvent ? 'event' : pickScene({ type, lat: loc.lat, countryCode: loc.countryCode, dest: cleanDest }),
+    kind: isEvent ? 'event' : 'trip',
     e2e: true,
   });
 }
@@ -205,7 +208,8 @@ async function updateManual(user, id, patch) {
   // Se cambia la destinazione o il paese, ricalcola geocoding e scena
   const destChanged = fields.dest && fields.dest.toLowerCase() !== (trip.dest || '').toLowerCase();
   const countryChanged = fields.country !== undefined && fields.country !== trip.country;
-  if (destChanged || countryChanged) {
+  const isEvent = trip.kind === 'event' || patch.kind === 'event';
+  if (!isEvent && (destChanged || countryChanged)) {
     const loc = await enrichLocation(
       fields.dest || trip.dest,
       fields.country ?? trip.country,
@@ -503,6 +507,7 @@ function serializeTrip(trip, viewer = null) {
     isOwner,
     shared: Boolean(member),
     sharedPermission: member?.permission ?? null,
+    kind: trip.kind === 'event' ? 'event' : 'trip',
   };
 }
 

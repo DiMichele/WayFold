@@ -27,6 +27,9 @@ import { initAppHistory } from './historyNav.js';
 import { clearPlaceLabels, warmTripLabels } from './places.js';
 import { cryptoAutoUnlock, cryptoOnLogout } from './crypto/authCrypto.js';
 import { prefetchTripKeys } from './crypto/keyStore.js';
+import { sessionReady } from './crypto/sessionCrypto.js';
+import { promptCryptoUnlock } from './ui/cryptoUnlock.js';
+import { remountLockedImages } from './ui/photoDisplay.js';
 
 // ─── Navigazione (tabs mobile + sidebar desktop) ───────────────────────────
 
@@ -39,6 +42,24 @@ function initNav() {
     btn.addEventListener('click', e => {
       e.preventDefault();
       openTripForm({
+        onSaved: async saved => {
+          await reloadTrips({ silent: true, render: false });
+          if (state.view === 'gallery') {
+            const { goToGallery } = await import('./historyNav.js');
+            goToGallery(saved.id);
+          } else {
+            renderCurrentView();
+          }
+        },
+      });
+      btn.blur();
+    });
+  });
+  document.querySelectorAll('.nav-new-event').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      openTripForm({
+        kind: 'event',
         onSaved: async saved => {
           await reloadTrips({ silent: true, render: false });
           if (state.view === 'gallery') {
@@ -146,22 +167,30 @@ function initResize() {
 
 let _appStarted = false;
 
+async function ensureCryptoSession(user) {
+  await cryptoAutoUnlock(user);
+  if (sessionReady() || !user?.publicKey) return;
+  const unlocked = await promptCryptoUnlock(user);
+  if (unlocked) remountLockedImages();
+}
+
 async function startApp(user) {
   applyUser(user);
 
   if (_appStarted) {
-    await cryptoAutoUnlock(user);
+    await ensureCryptoSession(user);
     await reloadTrips();
-    prefetchTripKeys(state.trips).catch(() => {});
+    await prefetchTripKeys(state.trips).catch(() => {});
+    remountLockedImages();
     return;
   }
   _appStarted = true;
 
-  await cryptoAutoUnlock(user);
+  await ensureCryptoSession(user);
   await reloadTrips({ silent: true, render: false });
+  await prefetchTripKeys(state.trips).catch(() => {});
   initAppHistory();
   updateSyncGate();
-  prefetchTripKeys(state.trips).catch(() => {});
 
   try {
     await refreshPollBaseline();

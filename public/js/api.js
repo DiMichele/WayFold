@@ -253,7 +253,10 @@ export async function uploadPhotos(tripId, files, { caption = '', onProgress, on
 
   // E2E: cifratura obbligatoria nel browser prima dell'upload.
   const trip = state.trips.find(t => t.id === Number(tripId));
-  const cryptoKey = await getTripKey(tripId, { isOwner: Boolean(trip?.isOwner) });
+  const cryptoKey = await getTripKey(tripId, {
+    isOwner: Boolean(trip?.isOwner),
+    allowCreate: Boolean(trip?.isOwner) && !(trip?.photoCount > 0),
+  });
   if (!cryptoKey) {
     throw new Error('Chiave album non disponibile: sblocca la cifratura o apri l\'album dal dispositivo principale');
   }

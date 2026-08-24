@@ -77,6 +77,50 @@ async function getDeviceAesKey() {
   return _deviceAesKey;
 }
 
+const HOP_KEY = 'wf-e2e-hop-v1';
+
+/** Ponte login → /app: IndexedDB a volte non è pronto dopo un redirect (Safari/PWA). */
+export async function stashSessionHop() {
+  if (!sessionReady()) return;
+  const privateKey = getPrivateKey();
+  const publicKeyRaw = getPublicKeyRaw();
+  const masterKeyRaw = getMasterKeyRaw();
+  if (!privateKey || !publicKeyRaw || !masterKeyRaw) return;
+  try {
+    const privateKeyRaw = new Uint8Array(await crypto.subtle.exportKey('pkcs8', privateKey));
+    sessionStorage.setItem(HOP_KEY, JSON.stringify({
+      mk: bytesToB64(masterKeyRaw),
+      pk: bytesToB64(privateKeyRaw),
+      pub: bytesToB64(publicKeyRaw),
+    }));
+  } catch { /* sessionStorage non disponibile */ }
+}
+
+export async function consumeSessionHop() {
+  if (sessionReady()) {
+    try { sessionStorage.removeItem(HOP_KEY); } catch { /* ignore */ }
+    return true;
+  }
+  let raw = null;
+  try { raw = sessionStorage.getItem(HOP_KEY); } catch { return false; }
+  try { sessionStorage.removeItem(HOP_KEY); } catch { /* ignore */ }
+  if (!raw) return false;
+  try {
+    const blob = JSON.parse(raw);
+    const masterKeyRaw = b64ToBytes(blob.mk);
+    const privateKeyRaw = b64ToBytes(blob.pk);
+    const masterKey = await importMasterKey(masterKeyRaw);
+    const privateKey = await crypto.subtle.importKey(
+      'pkcs8', privateKeyRaw, { name: 'X25519' }, true, ['deriveKey', 'deriveBits'],
+    );
+    const publicKeyRaw = b64ToBytes(blob.pub);
+    setSessionCrypto({ masterKey, masterKeyRaw, privateKey, publicKeyRaw });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Salva la sessione crypto corrente per auto-sblocco futuro. */
 export async function persistDeviceSession(userId) {
   if (!userId || !sessionReady()) return;
@@ -94,6 +138,7 @@ export async function persistDeviceSession(userId) {
     publicKey: bytesToB64(publicKeyRaw),
     v: 1,
   });
+  await stashSessionHop();
 }
 
 /** Ripristina la sessione crypto dal vault locale (silenzioso). */

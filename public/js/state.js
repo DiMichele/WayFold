@@ -44,7 +44,8 @@ export function visibleTrips() {
   if (!q) return state.trips;
   return state.trips.filter(t => {
     const haystack = [
-      t.dest, t.name, t.country, t.continent, t.type,
+      t.dest, t.name, t.country, t.continent, t.type, t.kind,
+      t.year != null ? String(t.year) : '',
       t.year != null ? String(t.year) : '',
       ...(t.tags || []),
     ].join(' ').toLowerCase();

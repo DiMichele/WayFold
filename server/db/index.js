@@ -71,6 +71,7 @@ function load() {
       if (trip.keyEscrow === undefined) trip.keyEscrow = null;
       if (trip.keyWraps === undefined) trip.keyWraps = {};
       if (trip.e2e === undefined) trip.e2e = true;
+      if (trip.kind !== 'event') trip.kind = trip.kind || 'trip';
     }
     for (const sc of data.shareCodes || []) {
       if (sc.codeHash === undefined && sc.code) {
@@ -318,6 +319,7 @@ async function createTrip(fields) {
       type: fields.type || null,
       tags: Array.isArray(fields.tags) ? fields.tags : [],
       scene: fields.scene || 'coast',
+      kind: fields.kind === 'event' ? 'event' : 'trip',
       keyEscrow: null,
       e2e: fields.e2e !== false,
       keyWraps: fields.keyWraps && typeof fields.keyWraps === 'object' ? fields.keyWraps : {},

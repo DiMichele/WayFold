@@ -168,6 +168,11 @@ router.put('/:id/key-wrap', validateId, async (req, res, next) => {
     const trip = loadAccessibleTrip(req, 'read');
     const wrap = req.body?.wrap;
     if (!wrap) return res.status(400).json({ error: 'Wrap obbligatorio' });
+    const overwrite = req.body?.overwrite === true;
+    const existing = tripService.getKeyWrap(trip.id, req.user.id);
+    if (existing && !overwrite) {
+      return res.json({ ok: true, kept: true });
+    }
     await tripService.setKeyWrap(trip.id, req.user.id, wrap);
     res.json({ ok: true });
   } catch (err) { next(err); }

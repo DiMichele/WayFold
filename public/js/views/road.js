@@ -3,7 +3,7 @@
  */
 
 import { state, getTrip, visibleTrips } from '../state.js';
-import { joinParts, monthYear, esc, tripDest, tripCountry, mountPhotoEmptyThumb } from '../utils.js';
+import { joinParts, monthYear, esc, tripDest, tripCountry, mountPhotoEmptyThumb, isEvent } from '../utils.js';
 import { switchView } from '../router.js';
 import { goToGallery } from '../historyNav.js';
 import { reloadTrips } from '../data.js';
@@ -66,11 +66,19 @@ export function initRoad() {
 
 // ─── Render ────────────────────────────────────────────────────────────────
 
+function diaryTrips() {
+  return visibleTrips().filter(t => !isEvent(t));
+}
+
+function diaryEvents() {
+  return visibleTrips().filter(t => isEvent(t));
+}
+
 export function renderRoad() {
-  const hasTrips = state.trips.length > 0;
-  el('roadContent').hidden = !hasTrips;
-  el('roadEmpty').hidden = hasTrips;
-  if (!hasTrips) return;
+  const hasItems = state.trips.length > 0;
+  el('roadContent').hidden = !hasItems;
+  el('roadEmpty').hidden = hasItems;
+  if (!hasItems) return;
 
   buildHero();
   buildKPI();
@@ -82,7 +90,7 @@ export function renderRoad() {
 // ─── Hero ──────────────────────────────────────────────────────────────────
 
 function navigateHero(delta) {
-  const n = state.trips.length;
+  const n = diaryTrips().length || state.trips.length;
   if (n <= 1) return;
   state.heroIdx = (state.heroIdx + delta + n) % n;
   buildHero();
@@ -96,7 +104,8 @@ function updateHeroNav() {
 }
 
 function buildHero() {
-  const trip = state.trips[state.heroIdx];
+  const trips = diaryTrips();
+  const trip = trips[state.heroIdx] || state.trips[state.heroIdx];
   if (!trip) return;
 
   const photo = el('heroPhoto');
@@ -171,21 +180,22 @@ function countUp(node, target) {
 }
 
 function buildKPI() {
-  const trips = state.trips;
+  const trips = diaryTrips();
+  const events = diaryEvents();
   const countries = new Set(trips.map(t => t.country).filter(Boolean));
   const continents = new Set(trips.map(t => t.continent).filter(Boolean));
-  const photos = trips.reduce((n, t) => n + (t.photoCount || 0), 0);
+  const photos = [...trips, ...events].reduce((n, t) => n + (t.photoCount || 0), 0);
   const thisYear = new Date().getFullYear();
   const recent = trips.filter(t => (t.year ?? 0) >= thisYear - 1).length;
 
-  countUp(el('kpiT'), trips.length);
+  countUp(el('kpiT'), trips.length + events.length);
   el('kpiTSub').textContent = recent > 0 ? t('kpi.recent', { n: recent }) : '—';
   countries.size ? countUp(el('kpiC'), countries.size) : el('kpiC').textContent = '—';
   el('kpiCSub').textContent = [...continents].slice(0, 2).join(' · ') || t('kpi.awaitMap');
   continents.size ? countUp(el('kpiCont'), continents.size) : el('kpiCont').textContent = '—';
   el('kpiContSub').textContent = [...continents].join(', ').slice(0, 18) || '—';
   countUp(el('kpiP'), photos);
-  const withPhotos = trips.filter(tr => (tr.photoCount || 0) > 0).length;
+  const withPhotos = [...trips, ...events].filter(tr => (tr.photoCount || 0) > 0).length;
   el('kpiPSub').textContent = withPhotos > 0 ? t('kpi.inTrips', { n: withPhotos }) : '—';
 }
 
@@ -194,7 +204,7 @@ function buildKPI() {
 function buildTimeline() {
   const sc = el('tlScroll');
   sc.querySelectorAll('.tl-node').forEach(e => e.remove());
-  state.trips.forEach((t, i) => {
+  diaryTrips().forEach((t, i) => {
     const node = document.createElement('div');
     node.className = 'tl-node' + (i === state.heroIdx ? ' on' : '');
     node.innerHTML = `
@@ -214,7 +224,8 @@ function buildTimeline() {
 // ─── Lista destinazioni ────────────────────────────────────────────────────
 
 function buildJourneyList() {
-  const trips = visibleTrips();
+  const trips = diaryTrips();
+  const events = diaryEvents();
   const q = esc(state.search);
   renderJourneyList(el('journeyList'), trips, {
     emptyHtml: trips.length
@@ -226,6 +237,17 @@ function buildJourneyList() {
       goToGallery(trip.id);
     },
   });
+  const head = el('eventSectionHead');
+  const scroll = el('eventScroll');
+  if (head && scroll && el('eventList')) {
+    head.hidden = false;
+    scroll.hidden = events.length === 0;
+    if (events.length) {
+      renderJourneyList(el('eventList'), events, {
+        onTripClick: trip => goToGallery(trip.id),
+      });
+    }
+  }
 }
 
 // ─── Detail box ────────────────────────────────────────────────────────────
@@ -233,10 +255,14 @@ function buildJourneyList() {
 function openDetail(trip) {
   const box = el('detailBox');
   el('dboxTitle').textContent = tripDest(trip);
-  el('dboxWhere').textContent = joinParts(tripCountry(trip), monthYear(trip)) || '—';
-  el('dboxD').textContent = trip.days ?? '—';
+  el('dboxWhere').textContent = isEvent(trip)
+    ? (joinParts(monthYear(trip), t('kind.eventMeta')) || t('kind.event'))
+    : (joinParts(tripCountry(trip), monthYear(trip)) || '—');
+  el('dboxD').textContent = isEvent(trip) ? '—' : (trip.days ?? '—');
   el('dboxP').textContent = trip.photoCount ?? 0;
-  el('dboxType').textContent = trip.type ? displayTripType(trip.type).slice(0, 8) : '—';
+  el('dboxType').textContent = isEvent(trip) ? t('kind.event') : (trip.type ? displayTripType(trip.type).slice(0, 8) : '—');
+  const mapBtn = el('dboxMap');
+  if (mapBtn) mapBtn.hidden = isEvent(trip);
   box.classList.add('open');
 
   requestAnimationFrame(() => {

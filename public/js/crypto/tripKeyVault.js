@@ -102,37 +102,75 @@ async function importRaw(raw) {
 
 async function fetchKeyWrap(tripId) {
   const res = await fetch(`/api/trips/${tripId}/key-wrap`, { credentials: 'same-origin' });
-  if (res.status === 404) return null;
-  if (!res.ok) return null;
+  if (res.status === 404) return { missing: true, wrap: null };
+  if (!res.ok) {
+    const err = new Error(`Wrap non leggibile (${res.status})`);
+    err.status = res.status;
+    throw err;
+  }
   const body = await res.json().catch(() => null);
-  return body?.wrap || null;
+  const wrap = body?.wrap || null;
+  return { missing: !wrap, wrap };
 }
 
-async function uploadKeyWrap(tripId, wrap) {
-  await fetch(`/api/trips/${tripId}/key-wrap`, {
-    method: 'PUT',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ wrap }),
-  });
+async function uploadKeyWrap(tripId, wrap, { overwrite = false } = {}) {
+  let lastErr = null;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    if (attempt > 0) await new Promise(r => setTimeout(r, 250 * attempt));
+    try {
+      const res = await fetch(`/api/trips/${tripId}/key-wrap`, {
+        method: 'PUT',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ wrap, overwrite }),
+      });
+      if (res.ok) return;
+      lastErr = new Error(`Backup chiave non riuscito (${res.status})`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr || new Error('Backup chiave non riuscito');
+}
+
+async function backupLocalKey(tripId, raw) {
+  if (!sessionReady() || !raw) return;
+  try {
+    const remote = await fetchKeyWrap(tripId);
+    if (remote.wrap) return;
+    const backup = await wrapTripKeyForBackup(raw, getMasterKey());
+    await uploadKeyWrap(tripId, backup, { overwrite: false });
+  } catch { /* riprova al prossimo avvio */ }
 }
 
 /** Genera chiave, salva localmente e carica backup cifrato sul server. */
 export async function initTripKey(tripId) {
   if (!sessionReady()) return null;
+  try {
+    const remote = await fetchKeyWrap(tripId);
+    if (remote.wrap) {
+      const existing = await loadFromServerWrap(tripId, remote.wrap);
+      if (existing) return existing;
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
   const raw = generateTripKeyRaw();
   const mk = getMasterKey();
   const wrap = await wrapTripKeyForBackup(raw, mk);
   await idbSet(tripId, raw);
   const cryptoKey = await importRaw(raw);
   _mem.set(Number(tripId), cryptoKey);
-  await uploadKeyWrap(tripId, wrap);
+  await uploadKeyWrap(tripId, wrap, { overwrite: false });
   return cryptoKey;
 }
 
-async function loadFromServerWrap(tripId) {
-  const wrap = await fetchKeyWrap(tripId);
-  if (!wrap || !sessionReady()) return null;
+async function loadFromServerWrap(tripId, wrapArg = null) {
+  if (!sessionReady()) return null;
+  const wrap = wrapArg || (await fetchKeyWrap(tripId)).wrap;
+  if (!wrap) return null;
   try {
     const raw = await unwrapTripKeyFromBackup(wrap, getMasterKey());
     await idbSet(tripId, raw);
@@ -147,9 +185,9 @@ async function loadFromServerWrap(tripId) {
 /**
  * Restituisce CryptoKey del viaggio o null se non disponibile.
  * @param {number} tripId
- * @param {{ isOwner?: boolean }} opts
+ * @param {{ isOwner?: boolean, allowCreate?: boolean }} opts
  */
-export async function resolveTripKey(tripId, { isOwner = false } = {}) {
+export async function resolveTripKey(tripId, { isOwner = false, allowCreate = false } = {}) {
   const id = Number(tripId);
   if (_mem.has(id)) return _mem.get(id);
   if (_pending.has(id)) return _pending.get(id);
@@ -159,20 +197,16 @@ export async function resolveTripKey(tripId, { isOwner = false } = {}) {
     if (cached) {
       const key = await importRaw(cached);
       _mem.set(id, key);
-      // Garantisce backup account sul server (sync desktop ↔ mobile)
-      if (sessionReady()) {
-        fetchKeyWrap(id).then(async (wrap) => {
-          if (!wrap) {
-            const backup = await wrapTripKeyForBackup(cached, getMasterKey());
-            await uploadKeyWrap(id, backup);
-          }
-        }).catch(() => {});
-      }
+      if (sessionReady()) backupLocalKey(id, cached);
       return key;
     }
-    const fromServer = await loadFromServerWrap(id);
-    if (fromServer) return fromServer;
-    if (isOwner) return initTripKey(id);
+    try {
+      const fromServer = await loadFromServerWrap(id);
+      if (fromServer) return fromServer;
+    } catch {
+      return null;
+    }
+    if (allowCreate && isOwner) return initTripKey(id);
     return null;
   })();
 
@@ -188,7 +222,8 @@ export async function resolveTripKey(tripId, { isOwner = false } = {}) {
 export async function buildShareCodePayload(tripId, permission) {
   const id = Number(tripId);
   let key = _mem.get(id);
-  if (!key) key = await resolveTripKey(id, { isOwner: true });
+  if (!key) key = await resolveTripKey(id, { isOwner: true, allowCreate: false });
+  if (!key) key = await initTripKey(id);
   if (!key) throw new Error('Chiave album non disponibile');
 
   const raw = await idbGet(id);
@@ -234,5 +269,8 @@ export async function unlockTripKeyFromShare(tripId, shareCode, keyWrap, wrapSal
 /** Scarica/sblocca le chiavi album dal backup account sul server (cross-device). */
 export async function prefetchTripKeys(trips) {
   if (!sessionReady() || !Array.isArray(trips)) return;
-  await Promise.all(trips.map(t => resolveTripKey(t.id, { isOwner: t.isOwner })));
+  await Promise.all(trips.map(t => resolveTripKey(t.id, {
+    isOwner: Boolean(t.isOwner),
+    allowCreate: false,
+  })));
 }

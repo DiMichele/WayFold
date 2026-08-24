@@ -91,9 +91,10 @@ export function closeModal(fromHistory = false, { skipHistory = false } = {}) {
 
 
 
-export function openTripForm({ trip = null, onSaved }) {
+export function openTripForm({ trip = null, onSaved, kind = 'trip' }) {
 
   const isEdit = trip !== null;
+  const albumKind = trip?.kind === 'event' || kind === 'event' ? 'event' : 'trip';
 
   const now = new Date();
 
@@ -108,11 +109,16 @@ export function openTripForm({ trip = null, onSaved }) {
   const body = document.createElement('div');
 
   body.className = 'modal-body';
+  body.dataset.kind = albumKind;
 
   body.innerHTML = `
+    ${isEdit ? '' : `
+    <div class="kind-switch" role="tablist">
+      <button type="button" class="kind-switch-btn${albumKind === 'trip' ? ' on' : ''}" data-kind="trip">${t('kind.trip')}</button>
+      <button type="button" class="kind-switch-btn${albumKind === 'event' ? ' on' : ''}" data-kind="event">${t('kind.event')}</button>
+    </div>`}
     <div class="field">
-
-      <label for="f-dest">${t('modal.dest')}</label>
+      <label for="f-dest">${albumKind === 'event' ? t('modal.eventName') : t('modal.dest')}</label>
 
       <input id="f-dest" type="text" placeholder="${esc(t('modal.destPh'))}" value="${esc(trip?.dest || '')}" maxlength="60" autocomplete="off" spellcheck="false">
 
@@ -204,6 +210,18 @@ export function openTripForm({ trip = null, onSaved }) {
   bindTripPlaceSuggest(get('f-dest'), get('f-country'));
   get('f-cancel').addEventListener('click', closeModal);
 
+  const setKindUi = (next) => {
+    body.dataset.kind = next;
+    body.querySelectorAll('.kind-switch-btn').forEach(b => b.classList.toggle('on', b.dataset.kind === next));
+    const destLabel = body.querySelector('label[for="f-dest"]');
+    if (destLabel) destLabel.textContent = next === 'event' ? t('modal.eventName') : t('modal.dest');
+    body.classList.toggle('is-event', next === 'event');
+  };
+  setKindUi(albumKind);
+  body.querySelectorAll('.kind-switch-btn').forEach(btn => {
+    btn.addEventListener('click', () => setKindUi(btn.dataset.kind));
+  });
+
 
 
   get('f-save').addEventListener('click', async () => {
@@ -216,7 +234,7 @@ export function openTripForm({ trip = null, onSaved }) {
 
     if (!dest) {
 
-      err.textContent = t('modal.destRequired');
+      err.textContent = body.dataset.kind === 'event' ? t('modal.eventRequired') : t('modal.destRequired');
 
       err.classList.add('show');
 
@@ -228,15 +246,17 @@ export function openTripForm({ trip = null, onSaved }) {
 
 
 
+    const kind = body.dataset.kind === 'event' ? 'event' : 'trip';
     const payload = {
       dest,
-      country: get('f-country').value.trim() || null,
+      country: kind === 'event' ? null : (get('f-country').value.trim() || null),
       year: get('f-year').value ? Number(get('f-year').value) : null,
       month: get('f-month').value,
-      days: get('f-days').value ? Number(get('f-days').value) : null,
-      type: get('f-type').value || null,
-      tags: get('f-tags').value,
+      days: kind === 'event' ? null : (get('f-days').value ? Number(get('f-days').value) : null),
+      type: kind === 'event' ? null : (get('f-type').value || null),
+      tags: kind === 'event' ? '' : get('f-tags').value,
       lang: getLang(),
+      kind,
     };
 
 
@@ -259,7 +279,9 @@ export function openTripForm({ trip = null, onSaved }) {
 
       closeModal();
 
-      showToast(isEdit ? t('toast.tripUpdated') : t('toast.tripAdded', { dest: saved.dest }));
+      showToast(isEdit
+        ? t(kind === 'event' ? 'toast.eventUpdated' : 'toast.tripUpdated')
+        : t(kind === 'event' ? 'toast.eventAdded' : 'toast.tripAdded', { dest: saved.dest }));
 
       onSaved?.(saved);
 
@@ -279,7 +301,12 @@ export function openTripForm({ trip = null, onSaved }) {
 
 
 
-  openModal({ title: isEdit ? t('modal.editTrip') : t('modal.newTrip'), body });
+  openModal({
+    title: isEdit
+      ? t(albumKind === 'event' ? 'modal.editEvent' : 'modal.editTrip')
+      : t(albumKind === 'event' ? 'modal.newEvent' : 'modal.newTrip'),
+    body,
+  });
 
   setTimeout(() => focusNoScroll(get('f-dest')), 80);
 
