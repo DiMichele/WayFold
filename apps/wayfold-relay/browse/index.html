@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#F7F6F3" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#141A1F" media="(prefers-color-scheme: dark)" />
+    <title data-i18n="browse.title">WayFold</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;450;500;600&family=Jost:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" href="/icons/favicon-32.png" type="image/png" sizes="32x32" />
+    <link rel="stylesheet" href="../shared/style.css" />
+    <link rel="stylesheet" href="./browse.css" />
+    <script src="/browse/uv/uv.bundle.js"></script>
+    <script src="/browse/uv/uv.config.js"></script>
+  </head>
+  <body class="bz-page">
+    <header class="bz-bar">
+      <a class="bz-brand" href="/" target="wf-net">wayfold<span>relay</span></a>
+      <div class="bz-nav">
+        <button type="button" class="bz-icon" id="bz-back" data-i18n-title="browse.back" data-i18n-aria="browse.back">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" /></svg>
+        </button>
+        <button type="button" class="bz-icon" id="bz-forward" data-i18n-title="browse.forward" data-i18n-aria="browse.forward">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" /></svg>
+        </button>
+        <button type="button" class="bz-icon" id="bz-reload" data-i18n-title="browse.reload" data-i18n-aria="browse.reload">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 12a7 7 0 1 1-2.05-4.95M19 4v4h-4" /></svg>
+        </button>
+      </div>
+      <form class="bz-form" id="bz-form" autocomplete="off">
+        <input id="bz-url" type="text" inputmode="url" spellcheck="false" data-i18n-placeholder="browse.address" data-i18n-aria="browse.address" />
+        <button type="submit" class="btn-primary" data-i18n="browse.go">Go</button>
+      </form>
+      <div class="bz-status" role="status">
+        <span class="net-dot" id="bz-dot" aria-hidden="true"></span>
+        <span id="bz-state"></span>
+        <span class="bz-rate" id="bz-rate"></span>
+      </div>
+    </header>
+    <main class="bz-main">
+      <div class="banner banner--error bz-error" id="bz-error" hidden role="alert"></div>
+      <section class="bz-empty" id="bz-empty">
+        <h1 data-i18n="browse.empty.title"></h1>
+        <ol>
+          <li data-i18n="browse.empty.step1"></li>
+          <li data-i18n="browse.empty.step2"></li>
+          <li data-i18n="browse.empty.step3"></li>
+        </ol>
+        <p class="bz-note" data-i18n="browse.empty.note"></p>
+        <a class="btn-secondary" id="bz-open-net" href="/#net" target="wf-net" data-i18n="browse.openNet"></a>
+      </section>
+      <iframe class="bz-frame" id="bz-frame" hidden referrerpolicy="no-referrer"></iframe>
+      <div class="bz-loading" id="bz-loading" hidden>
+        <div class="bz-spin" aria-hidden="true"></div>
+        <p class="bz-loading-title" id="bz-loading-title"></p>
+        <p class="bz-loading-meta" id="bz-loading-meta"></p>
+      </div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

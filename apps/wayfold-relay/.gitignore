@@ -1,0 +1,12 @@
+node_modules/
+dist/
+*.local
+.DS_Store
+WayFold-Relay-offline.zip
+WayFold-Transfer-Portable/
+.offline-staging/
+offline/certs/*.pem
+offline/portable-wisp.key
+public/browse/
+docs/net-capture/pcap/
+docs/net-capture/**/keys-*.log

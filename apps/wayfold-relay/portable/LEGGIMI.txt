@@ -1,0 +1,10 @@
+WayFold Transfer
+================
+
+Copia sulla pen drive solo il file «WayFold Transfer.html».
+Doppio clic: si apre nel browser. Non c'è niente da installare e nessun programma da eseguire.
+
+Invia: scegli i file. Funziona in Chrome, Edge e Firefox.
+Ricevi: apri lo stesso file con Firefox. Chrome ed Edge non danno la fotocamera a un file aperto dal disco.
+
+I due dispositivi non devono essere sulla stessa rete. Il file passa dal QR.

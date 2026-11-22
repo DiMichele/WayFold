@@ -1,0 +1,86 @@
+[
+  {
+    "t": "2026-11-22T00:16:07.468Z",
+    "event": "test-start",
+    "base": "http://127.0.0.1:7801",
+    "target": "https://127.0.0.1:9443/"
+  },
+  {
+    "t": "2026-11-22T00:16:07.477Z",
+    "event": "chrome-share-started",
+    "pid": 37484,
+    "profile": "C:\\Users\\digen\\AppData\\Local\\Temp\\wf-net-share-ZIQuAC"
+  },
+  {
+    "t": "2026-11-22T00:16:11.136Z",
+    "event": "chrome-join-started",
+    "pid": 16688,
+    "profile": "C:\\Users\\digen\\AppData\\Local\\Temp\\wf-net-join-27WbL0"
+  },
+  {
+    "t": "2026-11-22T00:16:14.533Z",
+    "event": "join-offline-cache",
+    "controlled": true,
+    "uvActive": true,
+    "cached": 41,
+    "browse": true,
+    "proxy": true
+  },
+  {
+    "t": "2026-11-22T00:16:15.047Z",
+    "event": "join-app-server-stopped",
+    "status": "spento"
+  },
+  {
+    "t": "2026-11-22T00:16:16.352Z",
+    "event": "join-reloaded-offline",
+    "ok": true
+  },
+  {
+    "t": "2026-11-22T00:16:16.353Z",
+    "event": "app-loaded-both"
+  },
+  {
+    "t": "2026-11-22T00:16:16.362Z",
+    "event": "control-direct-fetch-from-join",
+    "result": "BLOCCATO: Failed to fetch"
+  },
+  {
+    "t": "2026-11-22T00:16:18.734Z",
+    "event": "sas-shown",
+    "code": "136822"
+  },
+  {
+    "t": "2026-11-22T00:16:19.579Z",
+    "event": "link-connected"
+  },
+  {
+    "t": "2026-11-22T00:16:20.411Z",
+    "event": "navigation-start",
+    "url": "https://127.0.0.1:9443/"
+  },
+  {
+    "t": "2026-11-22T00:16:23.640Z",
+    "event": "page-loaded",
+    "url": "https://127.0.0.1:9443/",
+    "seconds": 3.227,
+    "rate": "↓ 1.2 · ↑ 0.6 KB/s"
+  },
+  {
+    "t": "2026-11-22T00:16:25.405Z",
+    "event": "navigation-start",
+    "url": "https://example.com/"
+  },
+  {
+    "t": "2026-11-22T00:16:27.030Z",
+    "event": "page-loaded",
+    "url": "https://example.com/",
+    "seconds": 1.624,
+    "rate": "↓ 4.3 · ↑ 0.9 KB/s"
+  },
+  {
+    "t": "2026-11-22T00:16:29.355Z",
+    "event": "test-end",
+    "framesShuttled": 805
+  }
+]

@@ -19,6 +19,7 @@ apps/**/*-chrome-store.zip
 apps/wayfold-relay/node_modules/
 apps/wayfold-relay/dist/
 apps/wayfold-relay/WayFold-Relay-offline.zip
+apps/wayfold-relay/WayFold-Transfer-Portable/
 apps/wayfold-relay/.offline-staging/
 apps/wayfold-relay/offline/certs/*.pem
 
@@ -50,3 +51,4 @@ apps/wayfold-compliance/.wayfold/*.tmp
 # Sistema
 .DS_Store
 Thumbs.db
+~$*

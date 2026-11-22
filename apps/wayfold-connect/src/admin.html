@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wayfold Connect</title>
+<style>
+  :root { color-scheme: light dark; --bg:#f6f7f9; --card:#fff; --fg:#16181d; --mut:#6b7280; --line:#e3e6eb; --ok:#15803d; --warn:#b45309; --err:#b91c1c; --acc:#2563eb; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#0f1115; --card:#171a21; --fg:#e7e9ee; --mut:#9aa3b2; --line:#272b35; } }
+  * { box-sizing: border-box; }
+  body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--fg); }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 16px 48px; display:grid; gap:14px; }
+  header { display:flex; align-items:center; gap:12px; flex-wrap:wrap; }
+  h1 { font-size: 20px; margin: 0; }
+  .role { font-size:12px; font-weight:700; letter-spacing:.06em; padding:3px 8px; border-radius:6px; background:var(--acc); color:#fff; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; }
+  .card h2 { font-size:14px; margin:0 0 10px; color:var(--mut); font-weight:600; text-transform:uppercase; letter-spacing:.05em; }
+  .state { font-size:18px; font-weight:650; }
+  .dot { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:8px; background:var(--mut); vertical-align:middle; }
+  .dot.ok { background:var(--ok); } .dot.warn { background:var(--warn); } .dot.err { background:var(--err); }
+  .grid { display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:10px; }
+  .kv { border:1px solid var(--line); border-radius:8px; padding:8px 10px; }
+  .kv b { display:block; font-size:18px; font-variant-numeric: tabular-nums; }
+  .kv span { font-size:12px; color:var(--mut); }
+  .code { font: 700 34px/1 ui-monospace, "Cascadia Mono", Consolas, monospace; letter-spacing:.12em; }
+  .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size:13px; }
+  button { font:inherit; border-radius:8px; border:1px solid var(--line); padding:8px 14px; cursor:pointer; background:var(--card); color:var(--fg); }
+  button.primary { background:var(--ok); border-color:var(--ok); color:#fff; }
+  button.danger { background:var(--err); border-color:var(--err); color:#fff; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  table { width:100%; border-collapse: collapse; font-size:13px; }
+  td, th { text-align:left; padding:5px 6px; border-bottom:1px solid var(--line); }
+  th { color:var(--mut); font-weight:600; }
+  .log { max-height: 280px; overflow:auto; font-size:13px; }
+  .log div { padding:3px 0; border-bottom:1px dashed var(--line); }
+  .log .warn { color:var(--warn); } .log .error { color:var(--err); }
+  .mut { color:var(--mut); }
+  [hidden] { display:none !important; }
+  a { color: var(--acc); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Wayfold Connect</h1>
+    <span class="role" id="role">…</span>
+    <span class="mut" id="name"></span>
+  </header>
+
+  <section class="card">
+    <h2>Stato</h2>
+    <div class="state"><span class="dot" id="dot"></span><span id="state">Caricamento…</span></div>
+    <p class="mut" id="hint"></p>
+    <div class="row" id="actions"></div>
+  </section>
+
+  <section class="card" id="pairing" hidden>
+    <h2 id="pairing-title">Abbinamento</h2>
+    <div class="row" style="gap:24px; align-items:flex-end">
+      <div><div class="mut">Codice di verifica</div><div class="code" id="code">------</div></div>
+      <div id="peer-info" class="mono"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Link ottico</h2>
+    <div class="grid">
+      <div class="kv"><b id="m-down">–</b><span>KB/s ricevuti (dati)</span></div>
+      <div class="kv"><b id="m-up">–</b><span>KB/s inviati (dati)</span></div>
+      <div class="kv"><b id="m-rtt">–</b><span>RTT ms</span></div>
+      <div class="kv"><b id="m-fps">–</b><span>frame validi / s</span></div>
+      <div class="kv"><b id="m-retx">–</b><span>ritrasmissioni</span></div>
+      <div class="kv"><b id="m-streams">–</b><span>connessioni aperte</span></div>
+      <div class="kv"><b id="m-total">–</b><span>dati totali giù / su</span></div>
+      <div class="kv"><b id="m-modem">–</b><span>pagina modem</span></div>
+    </div>
+  </section>
+
+  <section class="card" id="proxy-card" hidden>
+    <h2>Come navigare</h2>
+    <p>Apri un profilo Chrome dedicato che usa il proxy locale (le richieste DNS passano dal gateway):</p>
+    <p class="mono" id="chrome-cmd"></p>
+    <p class="mut">Firefox: Impostazioni &rarr; Rete &rarr; Proxy manuale SOCKS v5 <span class="mono" id="socks-addr"></span>, con "DNS tramite proxy SOCKS v5" attivo.</p>
+  </section>
+
+  <section class="card" id="policy-card" hidden>
+    <h2>Policy del gateway</h2>
+    <div class="mono" id="policy"></div>
+  </section>
+
+  <section class="card">
+    <h2>Connessioni</h2>
+    <table><thead><tr><th>#</th><th>Destinazione</th><th>Stato</th><th>Su</th><th>Giù</th><th>Età</th></tr></thead><tbody id="streams"></tbody></table>
+    <p class="mut" id="streams-empty">Nessuna connessione aperta.</p>
+  </section>
+
+  <section class="card">
+    <h2>Eventi</h2>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const kb = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`;
+const sec = (ms) => ms < 60000 ? `${Math.round(ms / 1000)} s` : `${Math.floor(ms / 60000)} min`;
+
+async function act(action) {
+  await fetch(`/api/${action}`, { method: "POST", headers: { "x-wayfold": "1" } }).catch(() => undefined);
+  refresh();
+}
+
+function button(label, cls, action) {
+  const b = document.createElement("button");
+  b.textContent = label;
+  if (cls) b.className = cls;
+  b.onclick = () => act(action);
+  return b;
+}
+
+function render(s) {
+  const gw = s.role === "gateway";
+  $("role").textContent = gw ? "GATEWAY" : "CLIENT";
+  $("name").textContent = s.name;
+  document.title = `Wayfold Connect · ${gw ? "Gateway" : "Client"}`;
+  const ses = s.session;
+  let state, hint = "", dot = "";
+  const actions = [];
+  if (ses) {
+    if (ses.closing) { state = "Disconnessione in corso…"; dot = "warn"; }
+    else if (ses.linkUp) { state = "Connesso"; dot = "ok"; }
+    else { state = `Link interrotto da ${sec(ses.silentMs)}`; dot = "err"; hint = "Controlla che le webcam inquadrino gli schermi QR. Dopo 30 s le connessioni aperte vengono chiuse, dopo 5 min la sessione."; }
+    actions.push(button("Disconnetti", "danger", "disconnect"));
+  } else if (gw) {
+    if (s.pending) { state = "Richiesta di connessione in attesa"; dot = "warn"; hint = "Confronta il codice con quello mostrato dal client, poi autorizza."; actions.push(button("Autorizza", "primary", "authorize"), button("Rifiuta", "danger", "reject")); }
+    else { state = "In attesa di un client"; hint = "La pagina modem mostra l'offerta di abbinamento: punta la webcam del client sul suo schermo QR."; }
+  } else {
+    if (s.state === "searching") { state = "Ricerca del gateway"; hint = "Punta la webcam di questo PC sullo schermo QR del gateway."; }
+    else if (s.state === "requesting") { state = s.awaitingApproval ? "In attesa di autorizzazione" : "Richiesta inviata"; dot = "warn"; hint = s.awaitingApproval ? "Il gateway ha ricevuto la richiesta: comunica il codice all'operatore." : "Il gateway deve leggere lo schermo QR di questo PC."; }
+    else if (s.state === "rejected") { state = "Richiesta rifiutata dal gateway"; dot = "err"; actions.push(button("Riprova", "", "reconnect")); }
+    else if (s.state === "closed") { state = "Disconnesso"; actions.push(button("Riconnetti", "primary", "reconnect")); }
+    else state = s.state;
+  }
+  $("state").textContent = state;
+  $("hint").textContent = hint;
+  $("dot").className = `dot ${dot}`;
+  $("actions").replaceChildren(...actions);
+
+  const p = gw ? (s.pending ?? s.client) : (s.code ? s.gateway : null);
+  const code = gw ? (s.pending?.sas ?? s.client?.sas) : s.code;
+  $("pairing").hidden = !code;
+  $("code").textContent = code || "------";
+  $("pairing-title").textContent = ses ? "Sessione" : "Abbinamento";
+  $("peer-info").innerHTML = p ? `${gw ? "Client" : "Gateway"}: <b>${escape(p.name)}</b><br>Impronta: ${p.fingerprint}` : "";
+
+  $("m-down").textContent = s.rates ? s.rates.inKBs.toFixed(1) : "–";
+  $("m-up").textContent = s.rates ? s.rates.outKBs.toFixed(1) : "–";
+  $("m-rtt").textContent = ses?.rttMs ? ses.rttMs : "–";
+  $("m-fps").textContent = s.rates ? s.rates.framesInPerSec.toFixed(1) : "–";
+  $("m-retx").textContent = ses ? ses.retransmits : "–";
+  $("m-streams").textContent = ses ? ses.streams : "–";
+  $("m-total").textContent = ses ? `${kb(ses.dataIn)} / ${kb(ses.dataOut)}` : "–";
+  $("m-modem").textContent = s.modem ? `${s.modem.grid}×QR · ${s.modem.mtu} B · ${s.modem.fps} fps` : "non collegata";
+
+  $("proxy-card").hidden = gw;
+  if (!gw && s.proxy) {
+    $("chrome-cmd").textContent = `chrome --user-data-dir="%TEMP%\\wayfold-connect" --proxy-server="socks5://127.0.0.1:${s.proxy.socks}"`;
+    $("socks-addr").textContent = `127.0.0.1:${s.proxy.socks}`;
+  }
+  $("policy-card").hidden = !gw;
+  if (gw && s.policy) {
+    const pol = s.policy;
+    $("policy").innerHTML = [
+      `Domini consentiti: ${pol.allow.length ? escape(pol.allow.join(", ")) : "tutti"}`,
+      `Domini bloccati: ${pol.deny.length ? escape(pol.deny.join(", ")) : "nessuno"}`,
+      `Porte: ${pol.ports.length ? pol.ports.join(", ") : "tutte"}`,
+      `Reti private/LAN: ${pol.blockPrivate ? "bloccate" : "consentite"}`,
+      `Connessioni massime: ${pol.maxStreams} · aperte finora ${s.opened}, rifiutate ${s.refused}`,
+    ].join("<br>");
+  }
+
+  const rows = (s.streamsList ?? []).map((c) => `<tr><td>${c.id}</td><td class="mono">${escape(c.target)}</td><td>${c.opened ? "aperta" : "apertura…"}</td><td>${kb(c.up)}</td><td>${kb(c.down)}</td><td>${sec(c.ageMs)}</td></tr>`);
+  $("streams").innerHTML = rows.join("");
+  $("streams-empty").hidden = rows.length > 0;
+
+  const time = new Intl.DateTimeFormat("it-IT", { timeStyle: "medium" });
+  $("log").innerHTML = (s.log ?? []).slice().reverse().map((e) => `<div class="${e.level}">${time.format(e.at)} · ${escape(e.msg)}</div>`).join("");
+}
+
+function escape(t) {
+  return String(t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+}
+
+async function refresh() {
+  try {
+    const r = await fetch("/api/status", { cache: "no-store" });
+    render(await r.json());
+  } catch {
+    $("state").textContent = "Helper non raggiungibile";
+    $("dot").className = "dot err";
+  }
+}
+refresh();
+setInterval(refresh, 1000);
+</script>
+</body>
+</html>

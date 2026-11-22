@@ -1,0 +1,29 @@
+{
+  "name": "wayfold-connect",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Wayfold Connect PoC: navigazione web tra due PC su un link ottico bidirezionale (QR schermo -> webcam).",
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "gateway": "node src/cli.ts gateway",
+    "client": "node src/cli.ts client",
+    "sim": "node scripts/sim.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\""
+  },
+  "dependencies": {
+    "@noble/ciphers": "^2.4.0",
+    "@noble/curves": "^2.4.0",
+    "@noble/hashes": "^2.4.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.8.0"
+  }
+}

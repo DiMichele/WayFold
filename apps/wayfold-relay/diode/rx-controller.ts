@@ -1,0 +1,640 @@
+import { envelopeDigest, parseEnvelope } from "../shared/envelope.ts";
+import { LTDecoder } from "../shared/fountain.ts";
+import { t } from "../shared/i18n.ts";
+import {
+  ENVELOPE_FIXED_LEN,
+  MAX_FILENAME_BYTES,
+  MAX_MIME_BYTES,
+  SESSION_STALL_TIMEOUT_MS,
+} from "../shared/limits.ts";
+import { symbolsFromWorker } from "../shared/optical.ts";
+import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
+import {
+  applyFirstSupportedConstraint,
+  qrFocusConstraintFallbacks,
+  tapPointFromEvent,
+  type QrTrackCapabilities,
+} from "../receive/camera.ts";
+import { renderChat, type ChatLine } from "./chat.ts";
+import { ScreenWake, currentPolicy, el, formatBytes, logEvent, showBanner } from "./common.ts";
+import { decodeLiveRecord, isLiveMime, isNewerLive, type LiveRecord } from "./live.ts";
+import { acceptVideoPacket, renderVideoStats, resetVideoPlayback } from "./video-rx.ts";
+import { isVideoMime } from "./video-wire.ts";
+import { toHex } from "./inbox.ts";
+import { checkPolicy } from "./policy.ts";
+import { listInbox, putInbox, removeInbox, type InboxItem } from "./store.ts";
+
+const CAPTURE_WIDTH = 1280;
+const CAPTURE_FPS = 30;
+const WORKER_COUNT = 2;
+const MAX_OPEN_SESSIONS = 4;
+const MAX_FINISHED_KEYS = 512;
+const OVERHEAD_EST = 1.12;
+const STATS_TICK_MS = 500;
+/** Envelope bytes that can sit on top of the file: wire length minus this is a floor on the original size. */
+const MAX_ENVELOPE_OVERHEAD = ENVELOPE_FIXED_LEN + MAX_FILENAME_BYTES + MAX_MIME_BYTES;
+
+interface OpenSession {
+  key: string;
+  header: FrameHeader;
+  decoder: LTDecoder;
+  openedAt: number;
+  touchedAt: number;
+}
+
+let wired = false;
+let mounted = false;
+let running = false;
+let suspended = false;
+let stream: MediaStream | null = null;
+let captureGen = 0;
+let frameId = 0;
+let statsTimer: number | null = null;
+const workers: Worker[] = [];
+const busy: boolean[] = [];
+const grab = document.createElement("canvas");
+const open = new Map<string, OpenSession>();
+const finished: string[] = [];
+const finishedSet = new Set<string>();
+let lastKey: string | null = null;
+let counts = { received: 0, rejected: 0, duplicates: 0 };
+const liveLines: ChatLine[] = [];
+let liveCursor: Pick<LiveRecord, "epoch" | "seq"> | null = null;
+let draftText = "";
+let linked = false;
+let inbox: InboxItem[] = [];
+const wake = new ScreenWake();
+
+function sessionKey(h: FrameHeader): string {
+  return [h.sessionId, h.k, h.blockLen, h.totalLen, h.payloadFnv].join(":");
+}
+
+function markFinished(key: string): void {
+  if (finishedSet.has(key)) return;
+  finishedSet.add(key);
+  finished.push(key);
+  while (finished.length > MAX_FINISHED_KEYS) finishedSet.delete(finished.shift()!);
+}
+
+function sessionPct(s: OpenSession): number {
+  const frames = s.decoder.framesNew / (s.decoder.k * OVERHEAD_EST);
+  const solved = s.decoder.solvedCount / s.decoder.k;
+  return Math.min(99, Math.max(frames, solved) * 100);
+}
+
+function closeSession(s: OpenSession, reasonKey: string): void {
+  open.delete(s.key);
+  if (lastKey === s.key) lastKey = null;
+  logEvent("warn", reasonKey, {
+    session: s.header.sessionId,
+    pct: Math.round(sessionPct(s)),
+    size: formatBytes(s.header.totalLen),
+  });
+}
+
+function onDecoded(bytes: Uint8Array): void {
+  if (!running) return;
+  const parsed = parseFrame(bytes);
+  if (!parsed) return;
+  const { header, block } = parsed;
+  const key = sessionKey(header);
+  if (finishedSet.has(key)) return;
+
+  let session = open.get(key);
+  if (!session) {
+    const policy = currentPolicy();
+    if (header.totalLen - MAX_ENVELOPE_OVERHEAD > policy.maxBytes) {
+      markFinished(key);
+      counts.rejected++;
+      logEvent("warn", "diode.log.rxRejectSizeEarly", {
+        session: header.sessionId,
+        size: formatBytes(header.totalLen),
+        max: formatBytes(policy.maxBytes),
+      });
+      renderStats();
+      return;
+    }
+    if (open.size >= MAX_OPEN_SESSIONS) {
+      const oldest = [...open.values()].sort((a, b) => a.touchedAt - b.touchedAt)[0];
+      if (oldest) closeSession(oldest, "diode.log.rxEvicted");
+    }
+    const now = performance.now();
+    session = {
+      key,
+      header: { ...header },
+      decoder: new LTDecoder(header.k, header.blockLen, header.sessionId, header.totalLen),
+      openedAt: now,
+      touchedAt: now,
+    };
+    open.set(key, session);
+  }
+
+  const before = session.decoder.framesNew;
+  session.decoder.addFrame(header.seq, block);
+  if (session.decoder.framesNew > before) {
+    session.touchedAt = performance.now();
+    lastKey = key;
+  }
+
+  if (session.decoder.isComplete) {
+    const payload = session.decoder.assemble();
+    open.delete(key);
+    if (lastKey === key) lastKey = null;
+    markFinished(key);
+    if (payload) void complete(session, payload);
+  }
+}
+
+function acceptLive(record: LiveRecord, seconds: string): void {
+  if (!isNewerLive(liveCursor, record)) return;
+  if (!(record.epoch === 0 && record.seq === 0)) liveCursor = { epoch: record.epoch, seq: record.seq };
+  linked = true;
+  if (record.kind === "beacon") {
+    draftText = "";
+    renderLive();
+    return;
+  }
+  if (record.kind === "draft") {
+    draftText = record.text;
+    renderLive();
+    return;
+  }
+  draftText = "";
+  liveLines.push({ text: record.text, at: Date.now() });
+  counts.received++;
+  const preview = record.text.length > 80 ? `${record.text.slice(0, 77)}…` : record.text;
+  logEvent("info", "diode.log.rxLive", { text: preview, sec: seconds });
+  renderLive();
+  renderStats();
+}
+
+async function complete(session: OpenSession, payload: Uint8Array): Promise<void> {
+  const seconds = ((performance.now() - session.openedAt) / 1000).toFixed(1);
+  if (fnv1a(payload) !== session.header.payloadFnv) {
+    counts.rejected++;
+    logEvent("error", "diode.log.rxIntegrityFnv", { session: session.header.sessionId });
+    renderStats();
+    return;
+  }
+  const parsed = await parseEnvelope(payload);
+  const digest = envelopeDigest(payload);
+  if (!parsed || !digest) {
+    counts.rejected++;
+    logEvent("error", "diode.log.rxIntegrityEnvelope", { session: session.header.sessionId });
+    renderStats();
+    return;
+  }
+  if (isLiveMime(parsed.mime)) {
+    const record = decodeLiveRecord(parsed.file);
+    if (!record || parsed.file.length > currentPolicy().maxBytes) {
+      counts.rejected++;
+      logEvent("warn", "diode.log.rxRejectSize", {
+        name: parsed.filename,
+        size: formatBytes(parsed.file.length),
+        max: formatBytes(currentPolicy().maxBytes),
+      });
+      renderStats();
+      return;
+    }
+    acceptLive(record, seconds);
+    return;
+  }
+  if (isVideoMime(parsed.mime)) {
+    acceptVideoPacket(parsed.file);
+    return;
+  }
+  const policy = currentPolicy();
+  const verdict = checkPolicy(policy, { filename: parsed.filename, size: parsed.file.length });
+  if (!verdict.ok) {
+    counts.rejected++;
+    logEvent("warn", verdict.reason === "size" ? "diode.log.rxRejectSize" : "diode.log.rxRejectType", {
+      name: parsed.filename,
+      size: formatBytes(parsed.file.length),
+      max: formatBytes(policy.maxBytes),
+    });
+    renderStats();
+    return;
+  }
+  const item: InboxItem = {
+    sha: toHex(digest),
+    name: parsed.filename,
+    mime: parsed.mime,
+    size: parsed.file.length,
+    receivedAt: Date.now(),
+    data: new Blob([parsed.file as BlobPart], { type: parsed.mime }),
+  };
+  let stored = false;
+  try {
+    stored = await putInbox(item);
+  } catch (error) {
+    logEvent("error", "diode.log.rxStoreFailed", {
+      name: item.name,
+      msg: error instanceof Error ? error.message : String(error),
+    });
+    return;
+  }
+  if (stored) {
+    counts.received++;
+    logEvent("info", "diode.log.rxReceived", { name: item.name, size: formatBytes(item.size), sec: seconds });
+    await refreshInbox();
+  } else {
+    counts.duplicates++;
+    logEvent("info", "diode.log.rxDuplicate", { name: item.name });
+  }
+  renderStats();
+}
+
+function checkStalls(): void {
+  const now = performance.now();
+  for (const s of [...open.values()]) {
+    if (now - s.touchedAt > SESSION_STALL_TIMEOUT_MS) closeSession(s, "diode.log.rxStall");
+  }
+}
+
+function videoTrack(): MediaStreamTrack | null {
+  return stream?.getVideoTracks()[0] ?? null;
+}
+
+async function focusAt(point: { x: number; y: number }, pref: "continuous" | "single-shot"): Promise<void> {
+  const track = videoTrack();
+  if (!track) return;
+  let caps: QrTrackCapabilities = {};
+  try {
+    caps = (track.getCapabilities?.() ?? {}) as QrTrackCapabilities;
+  } catch {
+    /* ignore */
+  }
+  await applyFirstSupportedConstraint(track, qrFocusConstraintFallbacks(caps, point, pref)).catch(() => false);
+}
+
+async function acquireCamera(): Promise<MediaStream> {
+  const video: MediaTrackConstraints = {
+    facingMode: { ideal: "environment" },
+    width: { ideal: CAPTURE_WIDTH },
+    height: { ideal: Math.round((CAPTURE_WIDTH * 3) / 4) },
+    frameRate: { ideal: CAPTURE_FPS },
+  };
+  Object.assign(video, { focusMode: { ideal: "continuous" } });
+  try {
+    return await navigator.mediaDevices.getUserMedia({ audio: false, video });
+  } catch (preferredErr) {
+    try {
+      return await navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: "environment" } } });
+    } catch {
+      throw preferredErr;
+    }
+  }
+}
+
+function releaseCamera(): void {
+  stream?.getTracks().forEach((track) => track.stop());
+  stream = null;
+  const video = el<HTMLVideoElement>("dr-video");
+  if (video) video.srcObject = null;
+}
+
+async function attachCamera(): Promise<boolean> {
+  const video = el<HTMLVideoElement>("dr-video");
+  if (!video) return false;
+  const attempt = ++captureGen;
+  try {
+    const next = await acquireCamera();
+    if (!running || attempt !== captureGen) {
+      next.getTracks().forEach((track) => track.stop());
+      return false;
+    }
+    stream = next;
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    const denied = /NotAllowedError|Permission denied|PermissionDismissed/i.test(msg);
+    showBanner("dr-error", denied ? t("receive.deniedHelp") : t("receive.cameraError", { msg }));
+    logEvent("error", "diode.log.rxCameraError", { msg });
+    return false;
+  }
+  video.srcObject = stream;
+  await video.play().catch(() => undefined);
+  void focusAt({ x: 0.5, y: 0.5 }, "continuous");
+  scheduleFrame(captureGen);
+  return true;
+}
+
+type VideoRVFC = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
+
+function scheduleFrame(gen: number): void {
+  if (!running || gen !== captureGen) return;
+  const video = el<HTMLVideoElement>("dr-video") as VideoRVFC | null;
+  if (!video) return;
+  const next = () => {
+    if (!running || gen !== captureGen) return;
+    if (!suspended) captureFrame(video);
+    scheduleFrame(gen);
+  };
+  if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
+  else requestAnimationFrame(next);
+}
+
+function captureFrame(video: HTMLVideoElement): void {
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  if (!vw || !vh) return;
+  const slot = busy.indexOf(false);
+  if (slot === -1) return;
+  if (grab.width !== vw || grab.height !== vh) {
+    grab.width = vw;
+    grab.height = vh;
+  }
+  const ctx = grab.getContext("2d", { willReadFrequently: true })!;
+  ctx.drawImage(video, 0, 0);
+  const img = ctx.getImageData(0, 0, vw, vh);
+  busy[slot] = true;
+  workers[slot]!.postMessage({ id: frameId++, buf: img.data.buffer, w: vw, h: vh }, [img.data.buffer]);
+}
+
+function startWorkers(): void {
+  for (let i = 0; i < WORKER_COUNT; i++) {
+    const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
+    const slot = i;
+    worker.onmessage = (e: MessageEvent) => {
+      const { id, error } = e.data as { id: number; error?: string };
+      if (error) {
+        showBanner("dr-error", t("receive.workerError", { msg: error }));
+        logEvent("error", "diode.log.rxWorkerError", { msg: error });
+        return;
+      }
+      if (id === -1) return;
+      busy[slot] = false;
+      for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
+    };
+    worker.onerror = (event) => {
+      busy[slot] = false;
+      showBanner("dr-error", t("receive.workerError", { msg: event.message }));
+      logEvent("error", "diode.log.rxWorkerError", { msg: event.message });
+    };
+    workers.push(worker);
+    busy.push(false);
+  }
+}
+
+function stopWorkers(): void {
+  for (const worker of workers) worker.terminate();
+  workers.length = 0;
+  busy.length = 0;
+}
+
+async function start(): Promise<void> {
+  if (running) return;
+  showBanner("dr-error", null);
+  if (!navigator.mediaDevices?.getUserMedia) {
+    showBanner("dr-error", location.protocol === "file:" ? t("receive.fileCamera") : t("receive.secureError"));
+    return;
+  }
+  running = true;
+  suspended = false;
+  resetVideoPlayback();
+  counts = { received: 0, rejected: 0, duplicates: 0 };
+  open.clear();
+  lastKey = null;
+  renderControls();
+  startWorkers();
+  const ok = await attachCamera();
+  if (!running) return;
+  if (!ok) {
+    stopRx(false);
+    return;
+  }
+  wake.acquire();
+  statsTimer = window.setInterval(() => {
+    checkStalls();
+    renderStats();
+  }, STATS_TICK_MS);
+  logEvent("info", "diode.log.rxStarted");
+  renderControls();
+  renderStats();
+}
+
+export function stopRx(log = true): void {
+  if (!running) return;
+  running = false;
+  suspended = false;
+  captureGen++;
+  releaseCamera();
+  stopWorkers();
+  wake.release();
+  if (statsTimer !== null) {
+    window.clearInterval(statsTimer);
+    statsTimer = null;
+  }
+  for (const s of [...open.values()]) closeSession(s, "diode.log.rxAbandoned");
+  linked = false;
+  resetVideoPlayback();
+  if (log) logEvent("info", "diode.log.rxStopped", { received: counts.received, rejected: counts.rejected });
+  renderControls();
+  renderLive();
+  renderStats();
+}
+
+export function isRxRunning(): boolean {
+  return running;
+}
+
+async function resumeCamera(): Promise<void> {
+  if (!running) return;
+  showBanner("dr-error", null);
+  const ok = await attachCamera();
+  if (ok) {
+    suspended = false;
+    wake.refresh();
+  }
+  renderControls();
+  renderStats();
+}
+
+function onVisibility(): void {
+  if (!running) return;
+  if (document.hidden) {
+    suspended = true;
+    captureGen++;
+    releaseCamera();
+    for (let i = 0; i < busy.length; i++) busy[i] = false;
+    renderControls();
+    return;
+  }
+  void resumeCamera();
+}
+
+function onPreviewPointer(ev: PointerEvent): void {
+  if (!running || suspended) return;
+  const preview = el("dr-preview");
+  if (!preview) return;
+  const point = tapPointFromEvent(ev.clientX, ev.clientY, preview.getBoundingClientRect());
+  void focusAt(point, "single-shot").then(() =>
+    window.setTimeout(() => {
+      if (running) void focusAt(point, "continuous");
+    }, 500),
+  );
+}
+
+function renderControls(): void {
+  const startBtn = el<HTMLButtonElement>("dr-start");
+  const stopBtn = el<HTMLButtonElement>("dr-stop");
+  const resumeBtn = el<HTMLButtonElement>("dr-resume");
+  const camera = el("dr-camera");
+  const intro = el("dr-intro");
+  if (startBtn) startBtn.hidden = running;
+  if (stopBtn) stopBtn.hidden = !running;
+  if (resumeBtn) resumeBtn.hidden = !running || !!stream;
+  if (camera) camera.hidden = !running;
+  if (intro) intro.hidden = running;
+}
+
+function renderLive(): void {
+  renderChat("dr-chat", "dr-chat-empty", liveLines);
+  const meta = el("dr-chat-meta");
+  if (meta) {
+    const count = liveLines.length ? String(liveLines.length) : "";
+    const link = running && linked ? t("diode.live.link") : "";
+    meta.textContent = link && count ? `${link} · ${count}` : link || count;
+  }
+  const draft = el("dr-draft");
+  if (!draft) return;
+  draft.replaceChildren();
+  if (!draftText) {
+    draft.hidden = true;
+    return;
+  }
+  draft.hidden = false;
+  const label = document.createElement("strong");
+  label.textContent = t("diode.live.draft");
+  const body = document.createElement("span");
+  body.textContent = draftText;
+  draft.append(label, body);
+}
+
+function renderStats(): void {
+  const stateEl = el("dr-state");
+  const pctEl = el("dr-pct");
+  const bar = el("dr-bar");
+  const progress = el("dr-progress");
+  const current = lastKey ? open.get(lastKey) : undefined;
+  const pct = current ? sessionPct(current) : 0;
+  if (stateEl) {
+    if (!running) stateEl.textContent = "";
+    else if (!stream) stateEl.textContent = t("diode.rx.cameraPaused");
+    else if (current) {
+      stateEl.textContent = t("diode.rx.receiving", {
+        session: current.header.sessionId,
+        size: formatBytes(current.header.totalLen),
+      });
+    } else stateEl.textContent = t("diode.rx.listening");
+  }
+  if (pctEl) pctEl.textContent = current ? `${Math.round(pct)}%` : "";
+  if (bar) bar.style.width = `${pct.toFixed(1)}%`;
+  progress?.classList.toggle("is-searching", running && !current);
+  progress?.classList.toggle("is-receiving", running && !!current);
+  const set = (id: string, value: number) => {
+    const node = el(id);
+    if (node) node.textContent = String(value);
+  };
+  set("dr-received", counts.received);
+  set("dr-rejected", counts.rejected);
+  set("dr-dupes", counts.duplicates);
+  set("dr-open", open.size);
+}
+
+function download(item: InboxItem): void {
+  const url = URL.createObjectURL(new Blob([item.data], { type: "application/octet-stream" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = item.name;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
+}
+
+function renderInbox(): void {
+  const list = el("dr-inbox");
+  const empty = el("dr-inbox-empty");
+  if (!list) return;
+  if (empty) empty.hidden = inbox.length > 0;
+  const time = new Intl.DateTimeFormat(document.documentElement.lang || undefined, {
+    dateStyle: "short",
+    timeStyle: "medium",
+  });
+  list.replaceChildren(
+    ...inbox.map((item) => {
+      const li = document.createElement("li");
+      li.className = "diode-item";
+      const body = document.createElement("div");
+      body.className = "diode-item-body";
+      const name = document.createElement("span");
+      name.className = "diode-item-name";
+      name.textContent = item.name;
+      const meta = document.createElement("span");
+      meta.className = "diode-item-meta";
+      meta.textContent = `${formatBytes(item.size)} · ${time.format(item.receivedAt)}`;
+      meta.title = `SHA-256 ${item.sha}`;
+      body.append(name, meta);
+
+      const save = document.createElement("button");
+      save.type = "button";
+      save.className = "btn-secondary diode-item-btn";
+      save.textContent = t("diode.rx.save");
+      save.addEventListener("click", () => download(item));
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "btn-ghost diode-item-btn";
+      remove.textContent = t("diode.remove");
+      remove.addEventListener("click", () => {
+        void removeInbox(item.sha)
+          .catch(() => undefined)
+          .then(refreshInbox);
+      });
+      li.append(body, save, remove);
+      return li;
+    }),
+  );
+}
+
+async function refreshInbox(): Promise<void> {
+  try {
+    inbox = await listInbox();
+  } catch (error) {
+    showBanner("dr-error", t("diode.storeError", { msg: error instanceof Error ? error.message : String(error) }));
+  }
+  renderInbox();
+}
+
+export function refreshRxText(): void {
+  renderInbox();
+  renderLive();
+  renderStats();
+  renderVideoStats();
+}
+
+function wireOnce(): void {
+  if (wired) return;
+  wired = true;
+  el("dr-start")?.addEventListener("click", () => void start());
+  el("dr-stop")?.addEventListener("click", () => stopRx());
+  el("dr-resume")?.addEventListener("click", () => void resumeCamera());
+  el("dr-preview")?.addEventListener("pointerdown", onPreviewPointer);
+}
+
+export async function mountRx(): Promise<void> {
+  wireOnce();
+  if (!mounted) {
+    mounted = true;
+    document.addEventListener("visibilitychange", onVisibility);
+  }
+  renderControls();
+  renderLive();
+  renderStats();
+  await refreshInbox();
+}
+
+export function unmountRx(): void {
+  stopRx();
+  mounted = false;
+  document.removeEventListener("visibilitychange", onVisibility);
+}

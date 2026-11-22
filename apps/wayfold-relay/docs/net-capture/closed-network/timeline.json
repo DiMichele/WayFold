@@ -1,0 +1,86 @@
+[
+  {
+    "t": "2026-11-21T23:27:04.977Z",
+    "event": "test-start",
+    "base": "http://127.0.0.1:7801",
+    "target": "http://192.168.1.101:9099/"
+  },
+  {
+    "t": "2026-11-21T23:27:04.985Z",
+    "event": "chrome-share-started",
+    "pid": 48760,
+    "profile": "C:\\Users\\digen\\AppData\\Local\\Temp\\wf-net-share-CtyaUC"
+  },
+  {
+    "t": "2026-11-21T23:27:08.072Z",
+    "event": "chrome-join-started",
+    "pid": 37420,
+    "profile": "C:\\Users\\digen\\AppData\\Local\\Temp\\wf-net-join-LJKtZp"
+  },
+  {
+    "t": "2026-11-21T23:27:10.648Z",
+    "event": "join-offline-cache",
+    "controlled": true,
+    "uvActive": true,
+    "cached": 41,
+    "browse": true,
+    "proxy": true
+  },
+  {
+    "t": "2026-11-21T23:27:11.157Z",
+    "event": "join-app-server-stopped",
+    "status": "spento"
+  },
+  {
+    "t": "2026-11-21T23:27:12.467Z",
+    "event": "join-reloaded-offline",
+    "ok": true
+  },
+  {
+    "t": "2026-11-21T23:27:12.468Z",
+    "event": "app-loaded-both"
+  },
+  {
+    "t": "2026-11-21T23:27:12.484Z",
+    "event": "control-direct-fetch-from-join",
+    "result": "BLOCCATO: Failed to fetch"
+  },
+  {
+    "t": "2026-11-21T23:27:14.839Z",
+    "event": "sas-shown",
+    "code": "670163"
+  },
+  {
+    "t": "2026-11-21T23:27:15.661Z",
+    "event": "link-connected"
+  },
+  {
+    "t": "2026-11-21T23:27:16.496Z",
+    "event": "navigation-start",
+    "url": "http://192.168.1.101:9099/"
+  },
+  {
+    "t": "2026-11-21T23:27:17.720Z",
+    "event": "page-loaded",
+    "url": "http://192.168.1.101:9099/",
+    "seconds": 1.223,
+    "rate": "↓ 0.4 · ↑ 0.6 KB/s"
+  },
+  {
+    "t": "2026-11-21T23:27:19.409Z",
+    "event": "navigation-start",
+    "url": "https://example.com/"
+  },
+  {
+    "t": "2026-11-21T23:27:21.027Z",
+    "event": "page-loaded",
+    "url": "https://example.com/",
+    "seconds": 1.617,
+    "rate": "↓ 4.2 · ↑ 0.6 KB/s"
+  },
+  {
+    "t": "2026-11-21T23:27:23.245Z",
+    "event": "test-end",
+    "framesShuttled": 1020
+  }
+]

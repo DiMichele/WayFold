@@ -1,0 +1,14 @@
+{
+  "name": "wayfold-wisp",
+  "private": true,
+  "version": "0.1.0",
+  "license": "MIT",
+  "description": "Wisp exit for the WayFold Relay Network page.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "dependencies": {
+    "@mercuryworkshop/wisp-js": "0.5.3"
+  }
+}
