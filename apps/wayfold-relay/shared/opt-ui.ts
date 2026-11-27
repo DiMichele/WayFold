@@ -47,6 +47,12 @@ export function renderOptHud(host: HTMLElement | null): void {
         (s.exposure.applied ? "" : " · non applicata"),
     );
   }
+  if (s.tx) {
+    const div = s.tx.integerDivisor == null ? "refresh n/d" : s.tx.integerDivisor ? "divisore sì" : "divisore no";
+    lines.push(
+      `tx ${s.tx.configuredFps} fps · ${s.tx.refreshHz ?? "–"} Hz · ${div} · gap ${s.tx.medianGapMs ?? "–"} ms · late ${s.tx.late} · hold ${s.tx.starved} · skip ${s.tx.skipped}`,
+    );
+  }
   if (s.arqRttMs != null) {
     lines.push(
       `ARQ RTT ${s.arqRttMs.toFixed(0)} ms` +

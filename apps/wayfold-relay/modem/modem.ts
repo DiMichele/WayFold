@@ -1,4 +1,5 @@
 import { QR_MARGIN, frameBytesForGrid, rasterizeQr, symbolsFromWorker, type EccLevel } from "../shared/optical.ts";
+import { TxPaintClock } from "../shared/tx-paint.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
 import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
@@ -182,6 +183,7 @@ export class Modem {
   // transmit
   private raf = 0;
   private nextTick = 0;
+  private paintClock: TxPaintClock | null = null;
   private qrWorker: Worker | null = null;
   private encodeId = 0;
   private encoding = false;
@@ -464,6 +466,7 @@ export class Modem {
     this.last = { ...this.c, t: performance.now() };
     this.statsTimer = window.setInterval(() => this.tickStats(), 1000);
     this.nextTick = performance.now();
+    this.paintClock = getOptFlags().perf ? new TxPaintClock(this.settings.fps || 30) : null;
     this.raf = requestAnimationFrame(this.frame);
     void this.acquireWake();
     this.renderSide();
@@ -607,14 +610,24 @@ export class Modem {
   private readonly frame = (t: number) => {
     if (!this.running) return;
     this.raf = requestAnimationFrame(this.frame);
+    this.paintClock?.noteFrame(t);
     if (t < this.nextTick) return;
     const step = 1000 / this.settings.fps;
-    this.nextTick = t - this.nextTick > 3 * step ? t + step : this.nextTick + step;
+    const behind = t - this.nextTick;
+    const skipped = behind > 3 * step ? Math.floor(behind / step) : 0;
+    this.nextTick = skipped > 0 ? t + step : this.nextTick + step;
     if (this.ready) {
       this.shown = this.ready;
       this.ready = null;
       this.draw(this.shown);
       if (this.shown.mods.length) this.c.tx++;
+      this.paintClock?.noteSwap(t, skipped);
+    } else {
+      this.paintClock?.noteStarved();
+    }
+    if (this.paintClock) {
+      optTrace.noteTx(this.paintClock.snapshot());
+      renderOptHud(this.root);
     }
     this.requestNext();
   };

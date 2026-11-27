@@ -14,7 +14,11 @@ import {
   normalizeGrid,
   rasterizeQr,
 } from "../shared/optical.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace } from "../shared/opt-trace.ts";
+import { ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { HEADER_LEN, createSessionId, fnv1a, packFrame, type FrameHeader } from "../shared/protocol.ts";
+import { TxPaintClock } from "../shared/tx-paint.ts";
 import { airBudget, carrierYieldsToFile, dwellFrames, nextOnAir } from "./carousel.ts";
 import {
   LIVE_FILENAME,
@@ -462,14 +466,25 @@ function run(): void {
   pump();
 
   let nextAt = performance.now();
+  const paintClock = getOptFlags().perf ? new TxPaintClock(fps()) : null;
+  const hudHost = el("dx-status");
+  if (paintClock) ensureOptHud(hudHost);
+  const publishPaint = () => {
+    if (!paintClock) return;
+    optTrace.noteTx(paintClock.snapshot());
+    renderOptHud(hudHost);
+  };
   const tick = (now: number) => {
     if (gen !== generation) return;
     requestAnimationFrame(tick);
+    paintClock?.noteFrame(now);
     if (paused || now < nextAt) return;
     const interval = 1000 / fps();
     if (lookahead.length === 0) fill();
     const frame = lookahead.shift();
     if (!frame) {
+      paintClock?.noteStarved();
+      publishPaint();
       if (onAirId !== null) {
         onAirId = null;
         setStage(false);
@@ -504,7 +519,13 @@ function run(): void {
     }
     if (framesSent % 15 === 0) renderStatus();
     nextAt += interval;
-    if (now - nextAt > 3 * interval) nextAt = now + interval;
+    let skipped = 0;
+    if (now - nextAt > 3 * interval) {
+      skipped = Math.floor((now - nextAt) / interval);
+      nextAt = now + interval;
+    }
+    paintClock?.noteSwap(now, skipped);
+    publishPaint();
   };
   requestAnimationFrame(tick);
 }

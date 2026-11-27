@@ -5,6 +5,7 @@
  */
 
 import { getOptFlags, type ExposureIntent } from "./opt-flags.ts";
+import type { TxPaintStats } from "./tx-paint.ts";
 
 export type OptPhase =
   | "capture"
@@ -79,6 +80,8 @@ export interface OptSnapshot {
     fullFrames: number;
     last: { jobs: number; pixels: number; full: boolean } | null;
   };
+  /** Transmitter paint clock. Null on a receive page. */
+  tx: TxPaintStats | null;
 }
 
 const RING = 512;
@@ -127,6 +130,7 @@ class OptTrace {
   private grabPixels = 0;
   private grabFull = 0;
   private lastGrab: { jobs: number; pixels: number; full: boolean } | null = null;
+  private tx: TxPaintStats | null = null;
   private readonly windows: OptSnapshot["windows"] = [];
   private windowStarted = 0;
   private windowOptical = 0;
@@ -168,6 +172,12 @@ class OptTrace {
     this.grabPixels = 0;
     this.grabFull = 0;
     this.lastGrab = null;
+    this.tx = null;
+  }
+
+  noteTx(stats: TxPaintStats): void {
+    if (!this.enabled()) return;
+    this.tx = stats;
   }
 
   noteExposure(next: NonNullable<OptSnapshot["exposure"]>): void {
@@ -414,6 +424,7 @@ class OptTrace {
         fullFrames: this.grabFull,
         last: this.lastGrab,
       },
+      tx: this.tx,
     };
   }
 

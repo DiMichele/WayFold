@@ -19,7 +19,11 @@ import {
   normalizeGrid,
   rasterizeQr,
 } from "../shared/optical.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace } from "../shared/opt-trace.ts";
+import { ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { isReadFailure, readBlobBytes } from "../shared/read-blob.ts";
+import { TxPaintClock } from "../shared/tx-paint.ts";
 import { zipFiles } from "../shared/zip.ts";
 
 const LOOKAHEAD = 3;
@@ -437,11 +441,26 @@ async function startStream(): Promise<void> {
 
   const interval = gridHoldMs(txFps, gridCodes);
   let nextAt = performance.now();
+  const paintClock = getOptFlags().perf ? new TxPaintClock(txFps) : null;
+  const hudHost = el("send-xfer");
+  if (paintClock) {
+    optTrace.reset();
+    optTrace.configuredFps = txFps;
+    ensureOptHud(hudHost);
+  }
+  const publishPaint = () => {
+    if (!paintClock) return;
+    optTrace.noteTx(paintClock.snapshot());
+    renderOptHud(hudHost);
+  };
   const tick = (now: number) => {
     if (gen !== generation || generatorFailed) return;
     requestAnimationFrame(tick);
+    paintClock?.noteFrame(now);
     if (paused || now < nextAt) return;
     if (modules === 0 || queue.length < gridCodes) {
+      paintClock?.noteStarved();
+      publishPaint();
       pump(gridCodes);
       nextAt = now + Math.min(interval, 16);
       return;
@@ -464,7 +483,13 @@ async function startStream(): Promise<void> {
     ctx.drawImage(staging, 0, 0, canvas.width, canvas.height);
     pump(gridCodes);
     nextAt += interval;
-    if (now - nextAt > interval) nextAt = now + interval;
+    let skipped = 0;
+    if (now - nextAt > interval) {
+      skipped = Math.floor((now - nextAt) / interval);
+      nextAt = now + interval;
+    }
+    paintClock?.noteSwap(now, skipped);
+    publishPaint();
   };
   requestAnimationFrame(tick);
 }

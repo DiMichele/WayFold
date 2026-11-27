@@ -10,8 +10,8 @@ export type OptFlag =
 
 export type OptSchedule = "drop" | "latest" | "pool";
 
-/** Camera exposure experiment. Off leaves the device as it is. */
-export type ExposureIntent = "off" | "continuous" | "short";
+/** Camera exposure experiment. Off leaves the device as it is. Numbers are manual shutter times in ms. */
+export type ExposureIntent = "off" | "continuous" | "short" | 4 | 8 | 16;
 
 export interface OptFlags {
   perf: boolean;
@@ -57,6 +57,7 @@ function parseSchedule(raw: string | undefined): OptSchedule {
 }
 
 function parseExposure(raw: string | undefined): ExposureIntent {
+  if (raw === "4" || raw === "8" || raw === "16") return Number(raw) as 4 | 8 | 16;
   if (raw === "short") return "short";
   if (raw === "continuous" || raw === "" || raw === undefined) return "continuous";
   return "off";

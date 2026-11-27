@@ -11,6 +11,7 @@ import {
   tapPointInVideoFrame,
   applyFirstSupportedConstraint,
   exposureAdvanced,
+  exposureCapSeconds,
   hasFocusControl,
   shortestExposure,
   SHORT_EXPOSURE_S,
@@ -114,6 +115,16 @@ test("short exposure asks for manual time when that mode exists", () => {
   const adv = exposureAdvanced({ exposureMode: ["manual"], exposureTime: { min: 0.001, max: 0.05 } }, "short");
   assert.equal(adv.exposureMode, "manual");
   assert.ok(adv.exposureTime <= SHORT_EXPOSURE_S);
+});
+
+test("manual shutters of 4, 8 and 16 ms stay inside the device range", () => {
+  const caps = { exposureMode: ["manual", "continuous"], exposureTime: { min: 0.001, max: 0.05 } };
+  assert.equal(exposureCapSeconds(4), 0.004);
+  assert.equal(exposureAdvanced(caps, 4).exposureTime, 0.004);
+  assert.equal(exposureAdvanced(caps, 8).exposureTime, 0.008);
+  assert.equal(exposureAdvanced(caps, 16).exposureTime, 0.016);
+  const slow = { exposureMode: ["manual"], exposureTime: { min: 0.01, max: 0.05 } };
+  assert.equal(exposureAdvanced(slow, 4).exposureTime, 0.01);
 });
 
 test("no capabilities yields an empty constraint chain", () => {

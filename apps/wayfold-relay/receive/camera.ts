@@ -16,10 +16,16 @@ export type FocusModePref = "continuous" | "single-shot" | "auto";
 /** Startup keeps continuous AF. Tap fires a single-shot on the point. */
 export type FocusApplyKind = "startup" | "tap";
 
-/** Opt-in exposure experiment. 8 ms is a motion-blur hypothesis, not a default. */
+/** Opt-in exposure experiment. These shutters are hypotheses for the validation matrix, not defaults. */
 export const SHORT_EXPOSURE_S = 1 / 125;
 
-export type ExposureIntent = "off" | "continuous" | "short";
+export type ExposureIntent = "off" | "continuous" | "short" | 4 | 8 | 16;
+
+export function exposureCapSeconds(intent: ExposureIntent): number | null {
+  if (intent === "short") return SHORT_EXPOSURE_S;
+  if (intent === 4 || intent === 8 || intent === 16) return intent / 1000;
+  return null;
+}
 
 export function shortestExposure(
   range: { min: number; max: number },
@@ -42,8 +48,9 @@ export function exposureAdvanced(
   if (intent === "continuous") {
     return modes.includes("continuous") ? { exposureMode: "continuous" } : null;
   }
-  if (caps.exposureTime && (modes.length === 0 || modes.includes("manual"))) {
-    const time = shortestExposure(caps.exposureTime);
+  const cap = exposureCapSeconds(intent);
+  if (cap != null && caps.exposureTime && (modes.length === 0 || modes.includes("manual"))) {
+    const time = shortestExposure(caps.exposureTime, cap);
     if (time == null) return null;
     const out: Record<string, unknown> = { exposureTime: time };
     if (modes.includes("manual")) out.exposureMode = "manual";

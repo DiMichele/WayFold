@@ -2,7 +2,7 @@
 
 Protocollo QR + fountain invariato. Ogni ottimizzazione è un flag spento di default; i numeri entrano qui solo dopo un benchmark eseguito.
 
-Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`, `exp`, `exp:short`.
+Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`, `exp`, `exp:4`, `exp:8`, `exp:16`. `exp:short` resta l’alias di 8 ms. Nessuno di questi è il default.
 
 ## Unità
 
@@ -118,7 +118,7 @@ Ogni URL va tenuto abbastanza a lungo da riempire almeno una finestra da 10 s ne
 | 5 Budget aggressivo | `?wfopt=perf,fast,roi,budget:0.5` |
 | 6 Budget permissivo | `?wfopt=perf,fast,roi,budget:2` |
 
-Nel JSON: `fps.negotiated` contro `fps.observed` e `fps.processed`; `samples` con fase `extract` (copia pixel), `queue` (attesa prima del decode), `wasm` (solo il decode, da `startedAt`), `aggregate` (chiusura del batch ROI); `passes` / `skippedPasses`; `grabs` (pixel letti, job, frame interi); `exposure`; `goodput.opticalBps` contro `goodput.fountainBps` in byte/s; `windows`; `busyWorkers`.
+Nel JSON del ricevitore: `fps.negotiated` contro `fps.observed` e `fps.processed`; `samples` con fase `extract`, `queue`, `wasm`, `aggregate`; `passes` / `skippedPasses`; `grabs`; `exposure`; `goodput` in byte/s; `windows`; `busyWorkers`. Nel JSON del trasmettitore, con lo stesso `?wfopt=perf`, il campo `tx` è l’orologio di disegno: refresh stimato dai `requestAnimationFrame`, se il FPS scelto ne è un divisore intero, gap mediano e p95, ritardi (`late`), simboli tenuti perché la coda era vuota (`starved`), intervalli saltati (`skipped`), refresh extra (`extraRefreshes`).
 
 | Risultato osservato | Collo di bottiglia probabile |
 |---|---|
@@ -199,7 +199,7 @@ Uno smear di 6 px è un modulo e mezzo di scia: il simbolo non si legge. Un foto
 
 ### Esposizione
 
-`exp` chiede `exposureMode: continuous` se le capability lo elencano. `exp:short` chiede un tempo di posa di al più 8 ms (1/125 s), agganciato al minimo del dispositivo se non può arrivare così in basso, e `exposureMode: manual` solo se quel modo esiste. Il vincolo viaggia nello stesso `applyConstraints` del fuoco, così un tentativo non cancella l’altro. Se il device rifiuta la posa corta, resta il fuoco. Spento di default: senza JSON di un telefono non c’è un prima/dopo. La HUD e il campo `exposure` del JSON riportano modo, tempo e se il vincolo è rimasto attaccato.
+`exp` chiede `exposureMode: continuous` se le capability lo elencano. `exp:4`, `exp:8` e `exp:16` chiedono quella posa manuale, in millisecondi; se il dispositivo non scende così in basso si usa il suo minimo. `exp:short` è l’alias di 8 ms. Il vincolo viaggia nello stesso `applyConstraints` del fuoco. Se il device rifiuta la posa, resta il fuoco. Spento di default. La HUD e `exposure` riportano modo, tempo letto da `getSettings` e se il vincolo è rimasto attaccato. Un tempo richiesto di 4 ms che torna più lungo, o una nitidezza e un goodput che calano insieme, è sottoesposizione, non un guadagno.
 
 ### Payload a camera 1280, ECC L, proiezione dello screening
 
@@ -236,10 +236,60 @@ I quattro simboli riempiono quasi il fotogramma, quindi il risparmio di pixel è
 
 File: `bench/results/optics.json`. Camera reale: **non misurato**.
 
-## Priorità ancora aperte
+## Piano di validazione del canale fisico
 
-1. Leggere i JSON dei sei test, più `?wfopt=perf,exp` e `?wfopt=perf,exp:short` sullo stesso telefono.
-2. Latest Frame Only solo se `queue` nei JSON mostra worker fermi in attesa.
-3. BarcodeDetector resta rimandato: `rawValue` è una stringa.
+Priorità: il goodput sostenibile su schermo e fotocamera veri. Il decoder non si tocca prima di questi JSON. I default restano 24 FPS, 1850 byte, ECC L, camera 1280, 2 worker. Nessun protocollo nuovo e nessuna modifica al fountain.
 
-Nessun default cambia senza un prima/dopo di camera. Nessun altro intervento sul decoder prima di quei JSON.
+Stesso file incomprimibile, stessa distanza, stesso telefono, luce della stanza lasciata com’è. Ogni riga dura almeno 20 secondi, così entra più di una finestra da 10 s. Si copiano due JSON: trasmettitore (`tx`) e ricevitore (`goodput`, `exposure`, `sharpness`, `fps`). Il ricevitore, in tutta la matrice di goodput, usa solo `?wfopt=perf`. `fast`, `roi`, `mem` restano fuori da queste righe, altrimenti il canale si mescola col decoder.
+
+### 1. Frequenze che dividono il refresh
+
+Il selettore ha già 10, 15, 20, 24, 30 e 60. Non se ne aggiungono. 24 FPS non divide un pannello a 60 Hz: il simbolo resta alternativamente 2 o 3 refresh (circa 33 ms e 50 ms) intorno ai 42 ms. Divide 120 Hz (5 refresh) e 144 Hz (6). Il JSON del trasmettitore dice il refresh stimato e `tx.integerDivisor`.
+
+Si provano, a 1 QR e 1850 byte, tutte le voci del selettore per cui `tx.integerDivisor` è vero, più 24 anche quando non lo è: è il riferimento, non un candidato da promuovere. Si scarta una frequenza se `tx.late` o `tx.skipped` crescono mentre il goodput non sale, o se `tx.starved` non è zero.
+
+### 2. Intervalli reali di disegno
+
+`tx.medianGapMs` va letto accanto a `tx.intervalMs`. Un gap di 33 o 50 ms a 24 FPS su 60 Hz è la quantizzazione del pannello (`onTime`), non un ritardo. È un ritardo quando `late` sale, cioè il simbolo è rimasto su più a lungo di un intervallo più un refresh. `extraRefreshes` conta quei refresh in più. `skipped` è lo scheduler che ha buttato uno o più intervalli per rimettersi in pari. `starved` è la coda vuota: il QR precedente resta su perché il successivo non era pronto. Il disegno in sé non è stato modificato; con `perf` spento il contatore non esiste e il tick è quello di prima.
+
+### 3. Esposizione automatica e manuale
+
+Fisso il caso di riferimento del punto 1 (di default 24 FPS, 1 QR, 1850 byte) e si varia solo la posa sul ricevitore:
+
+| Riga | Query | Cosa ci si aspetta dal JSON |
+|---|---|---|
+| Automatica, dispositivo lasciato com’è | `?wfopt=perf` | `exposure.intent` = `off`. Tempo e modo sono quelli che il telefono già usa |
+| Continua, se esiste | `?wfopt=perf,exp` | `exposure.applied` vero solo se `exposureMode` continuous è stato accettato |
+| Manuale 4 ms | `?wfopt=perf,exp:4` | `exposure.timeS` vicino a 0.004, oppure il minimo del dispositivo se non ci arriva |
+| Manuale 8 ms | `?wfopt=perf,exp:8` | come sopra, verso 0.008 |
+| Manuale 16 ms | `?wfopt=perf,exp:16` | come sopra, verso 0.016 |
+
+Una posa corta che abbassa `sharpness` e insieme `goodput.fountainBps` è sottoesposizione. Non si tiene. Se `exposure.applied` è falso, quella riga non esiste su quel telefono e non si insiste.
+
+### 4. Pixel per modulo, posa, rolling shutter, simboli buoni
+
+Dai JSON del punto 3 e del punto 5 si compila una riga per condizione: payload, griglia, FPS, `tx.refreshHz`, `tx.integerDivisor`, `exposure.timeS`, `sharpness`, `goodput.uniqueQrPerSec`, `goodput.opticalBps`, `goodput.fountainBps`, `tx.late`. Lo span in pixel del simbolo, quando il worker restituisce i quad (`roi` acceso), diviso i moduli ECC L qui sotto dà i pixel per modulo. Quella riga con `roi` è separata e non entra nel goodput di confronto.
+
+| Payload ECC L | Moduli del QR (senza quiet zone) |
+|---|---:|
+| 1200 byte | 117 (versione 25, capacità 1273 byte) |
+| 1850 byte | 145 (versione 32, capacità 1952 byte) |
+
+I byte esatti della versione dipendono dal header da 20 byte già contato nel payload. Se il mittente mostra una versione diversa, si usano `17 + 4 × versione` moduli, non questa tabella. Un rolling shutter che taglia due simboli, nel sintetico, porta il successo a zero: sul telefono si riconosce da molti simboli decodificati e pochi `seq` nuovi, oppure da `sharpness` che crolla solo mentre `tx.late` è basso (la posa è lunga, il disegno era puntuale).
+
+### 5. Due e quattro QR, 1200 e 1850 byte
+
+Prima a 24 FPS, poi alla frequenza più alta del punto 1 che aveva `integerDivisor` vero, `starved` zero e goodput non peggiore del 24. Ricevitore ancora solo `perf`.
+
+| QR | Byte | FPS |
+|---|---:|---|
+| 2 | 1200 | 24, poi la frequenza scelta |
+| 4 | 1200 | 24, poi la frequenza scelta |
+| 2 | 1850 | 24, poi la frequenza scelta |
+| 4 | 1850 | 24, poi la frequenza scelta |
+
+Il goodput che conta è `fountainBps` (byte/s; in HUD è KiB/s), a file integro. Il tetto sintetico a 24 FPS e quattro QR da 1830 byte utili è 175.7 kB/s e non è il numero da battere qui: è il riferimento di un canale senza perdite. Il massimo sostenibile è il `fountainBps` più alto di questa tabella che non peggiora l’integrità del file e non alza `tx.late` né `tx.starved`.
+
+## Dopo i JSON
+
+Latest Frame Only solo se `queue` mostra worker fermi. BarcodeDetector resta rimandato. Nessun default cambia senza il prima/dopo di queste righe. Nessun altro intervento sul decoder prima di quei JSON.

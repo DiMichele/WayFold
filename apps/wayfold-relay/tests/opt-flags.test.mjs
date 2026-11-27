@@ -24,6 +24,10 @@ test("exp defaults off and exp:short is opt-in", () => {
   assert.equal(parseOptList(null).exposure, "off");
   assert.equal(parseOptList("exp").exposure, "continuous");
   assert.equal(parseOptList("perf,exp:short").exposure, "short");
+  assert.equal(parseOptList("exp:4").exposure, 4);
+  assert.equal(parseOptList("exp:8").exposure, 8);
+  assert.equal(parseOptList("exp:16").exposure, 16);
+  assert.equal(parseOptList("exp:4").perf, false);
   assert.equal(parseOptList("exp:short").perf, false);
 });
 
