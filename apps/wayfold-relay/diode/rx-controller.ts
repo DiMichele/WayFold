@@ -18,6 +18,7 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
+import { workerPlanFields } from "../receive/worker-plan.ts";
 import { ScreenWake, currentPolicy, el, formatBytes, logEvent, showBanner } from "./common.ts";
 import { decodeLiveRecord, isLiveMime, isNewerLive, type LiveRecord } from "./live.ts";
 import { acceptVideoPacket, renderVideoStats, resetVideoPlayback } from "./video-rx.ts";
@@ -376,8 +377,9 @@ function captureFrame(video: HTMLVideoElement): void {
   busy[slot] = true;
   optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
   optTrace.noteProcessed();
+  const plan = workerPlanFields(optTrace.observedFps() || optTrace.negotiatedFps || CAPTURE_FPS);
   workers[slot]!.postMessage(
-    { id: frameId++, buf: img.data.buffer, w: vw, h: vh, postedAt },
+    { id: frameId++, buf: img.data.buffer, w: vw, h: vh, postedAt, ...plan },
     [img.data.buffer],
   );
 }

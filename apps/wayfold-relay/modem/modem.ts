@@ -8,6 +8,7 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
+import { workerPlanFields } from "../receive/worker-plan.ts";
 
 /**
  * Optical modem for Wayfold Connect. Knows nothing about the protocol: it
@@ -868,8 +869,11 @@ export class Modem {
     this.busy[slot] = true;
     optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
     optTrace.noteProcessed();
+    const plan = workerPlanFields(
+      optTrace.observedFps() || optTrace.negotiatedFps || this.settings.fps || 30,
+    );
     this.workers[slot]!.postMessage(
-      { id: this.c.cam, buf: img.data.buffer, w: dw, h: dh, postedAt },
+      { id: this.c.cam, buf: img.data.buffer, w: dw, h: dh, postedAt, ...plan },
       [img.data.buffer],
     );
   }

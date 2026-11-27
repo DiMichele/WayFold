@@ -44,8 +44,8 @@ export interface Hit {
   position?: Quad;
 }
 
-/** zxing-wasm `readBarcodes`: a pixmap is RGBA; bytes are an encoded image (PGM here). */
-export type ReadFn = (input: Pixmap | Uint8Array, opts: ReadOpts) => Promise<Hit[]>;
+/** zxing-wasm `readBarcodes`: a pixmap/ImageData is RGBA; bytes are an encoded image (PGM here). */
+export type ReadFn = (input: Pixmap | ImageData | Uint8Array, opts: ReadOpts) => Promise<Hit[]>;
 
 export const READ_OPTS: ReadOpts = {
   formats: ["QRCode"],

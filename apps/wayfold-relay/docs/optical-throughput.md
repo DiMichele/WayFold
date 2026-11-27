@@ -64,6 +64,18 @@ Camera reale: non misurato.
 
 **Regressioni:** nessuna attesa sul protocollo. Su Firefox/Safari l’hint dichiara l’assenza di controllo lente.
 
+## Profilo veloce + budget + ROI (flag `fast`, `roi`, `budget:N`)
+
+**File:** `receive/decode-core.ts`, `receive/worker.ts`, `receive/worker-plan.ts`, `receive/roi.ts`; wiring Transfer in `receive/controller.ts`.
+
+**Motivo:** chiudere un frame multi-QR dopo un solo simbolo era prematuro; un budget fisso a 1× periodo camera è troppo rigido con più worker.
+
+**Cosa cambia:** con `fast`, profilo leggero prima; se i simboli sono parziali rispetto al layout noto, solo le ROI mancanti; se zero, profilo duro e crop; il budget (0.5/1/1.5/2 × periodo) si controlla prima di ogni passaggio WASM. Con `roi`, margine adattivo, full-frame periodico, scarto di `frameId` vecchi; con una sola ROI, crop prima di `getImageData`.
+
+**Benchmark eseguiti:** unit `decode-core.test.mjs`, `roi.test.mjs`. Camera reale / goodput: **non misurato**. Flag restano spenti di default.
+
+**Regressioni:** senza flag il worker usa `legacyDecode` (cascata precedente).
+
 ## Esperimenti successivi
 
-Sezioni da riempire solo con numeri reali: profilo veloce + budget, ROI adattiva, memoria/grayscale, Latest Frame (`sched:latest` vs `sched:pool`), screening progressivo, BarcodeDetector corpus, combinazione delle migliori.
+Memoria/grayscale, Latest Frame (`sched:latest` vs `sched:pool`), screening progressivo, BarcodeDetector corpus, combinazione delle migliori; wiring ROI anche su Diode e modem.

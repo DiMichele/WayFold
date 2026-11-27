@@ -16,6 +16,9 @@ import {
   type QrTrackCapabilities,
 } from "./camera.ts";
 import { sharpnessOfRgba } from "./sharpness.ts";
+import { workerPlanFields } from "./worker-plan.ts";
+import { createRoiState, roiUpdate, type RoiState } from "./roi.ts";
+import type { Quad } from "./decode-core.ts";
 
 /** Overhead tipico LT per stimare i frame ancora necessari (spesso si completa prima). */
 const OVERHEAD_EST = 1.12;
@@ -61,6 +64,12 @@ let focusQueued: { point: FocusPoint; pref: FocusModePref; kind: "startup" | "ta
 let lastFocusPoint: FocusPoint = { x: 0.5, y: 0.5 };
 let lastSharpnessAt = 0;
 let focusSupported: boolean | null = null;
+let roiState: RoiState = createRoiState();
+let roiFullNext = true;
+let lastSentFull = true;
+let lastSentW = 0;
+let lastSentH = 0;
+let lastCropOrigin = { x: 0, y: 0 };
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${Math.max(0, Math.round(n))} B`;
@@ -639,6 +648,10 @@ async function start(): Promise<void> {
     optTrace.reset();
     optTrace.configuredFps = captureFps;
   }
+  roiState = createRoiState();
+  roiFullNext = true;
+  lastSentFull = true;
+  lastCropOrigin = { x: 0, y: 0 };
   settings.hidden = true;
   startBtn.hidden = true;
   setReceiveWaitVisible(false);
@@ -692,11 +705,12 @@ async function start(): Promise<void> {
     const w = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     w.onmessage = (e: MessageEvent) => {
-      const { id, error, postedAt, doneAt } = e.data as {
+      const { id, error, postedAt, doneAt, quads } = e.data as {
         id: number;
         error?: string;
         postedAt?: number;
         doneAt?: number;
+        quads?: (Quad | null)[];
       };
       if (error) {
         abortTransfer(`✗ ${t("receive.workerError", { msg: error })}`);
@@ -707,6 +721,20 @@ async function start(): Promise<void> {
       syncOptWorkers();
       if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
         optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
+      }
+      if (getOptFlags().roi && lastSentW > 0) {
+        const shifted = (quads ?? []).map((q) =>
+          q
+            ? {
+                topLeft: { x: q.topLeft.x + lastCropOrigin.x, y: q.topLeft.y + lastCropOrigin.y },
+                topRight: { x: q.topRight.x + lastCropOrigin.x, y: q.topRight.y + lastCropOrigin.y },
+                bottomRight: { x: q.bottomRight.x + lastCropOrigin.x, y: q.bottomRight.y + lastCropOrigin.y },
+                bottomLeft: { x: q.bottomLeft.x + lastCropOrigin.x, y: q.bottomLeft.y + lastCropOrigin.y },
+              }
+            : null,
+        );
+        const next = roiUpdate(roiState, id, lastSentW, lastSentH, shifted, lastSentFull);
+        roiFullNext = next.fullNext;
       }
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
@@ -755,26 +783,41 @@ function captureFrame(): void {
   captureTimes.push(performance.now());
   const slot = busy.indexOf(false);
   if (slot === -1) return;
-  if (grab.width !== vw || grab.height !== vh) {
-    grab.width = vw;
-    grab.height = vh;
-  }
   const postedAt = wallNow();
+  const flags = getOptFlags();
+  const useRoi = flags.roi && !roiFullNext && roiState.boxes.length === 1;
+  const box = useRoi ? roiState.boxes[0]!.rect : null;
+  const sx = box ? Math.max(0, Math.min(vw - 1, box.x)) : 0;
+  const sy = box ? Math.max(0, Math.min(vh - 1, box.y)) : 0;
+  const sw = box ? Math.max(1, Math.min(vw - sx, box.w)) : vw;
+  const sh = box ? Math.max(1, Math.min(vh - sy, box.h)) : vh;
+  if (grab.width !== sw || grab.height !== sh) {
+    grab.width = sw;
+    grab.height = sh;
+  }
   const img = timed("extract", () => {
     const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-    ctx.drawImage(video, 0, 0);
-    return ctx.getImageData(0, 0, vw, vh);
-  });
-  if (getOptFlags().perf && postedAt - lastSharpnessAt > 500) {
+    if (box) ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
+    else ctx.drawImage(video, 0, 0);
+    return ctx.getImageData(0, 0, sw, sh);
+  }, box ? "crop" : "full");
+  lastCropOrigin = { x: sx, y: sy };
+  lastSentFull = !box;
+  lastSentW = vw;
+  lastSentH = vh;
+  if (flags.perf && postedAt - lastSharpnessAt > 500) {
     lastSharpnessAt = postedAt;
-    const sharp = sharpnessOfRgba(img.data, vw, vh);
+    const sharp = sharpnessOfRgba(img.data, sw, sh);
     optTrace.setSharpness(sharp);
   }
   busy[slot] = true;
   syncOptWorkers();
   optTrace.noteProcessed();
+  const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
+  const rects = flags.roi && !box ? roiState.boxes.map((b) => b.rect) : null;
+  const plan = workerPlanFields(fps, roiState.expected, rects);
   workers[slot]!.postMessage(
-    { id: frameId++, buf: img.data.buffer, w: vw, h: vh, postedAt },
+    { id: frameId++, buf: img.data.buffer, w: sw, h: sh, postedAt, ...plan },
     [img.data.buffer],
   );
 }
