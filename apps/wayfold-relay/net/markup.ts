@@ -6,14 +6,11 @@ const VIEW = `
       <div class="diode-roles" role="tablist" data-i18n-aria="net.roles">
         <button type="button" class="diode-role" role="tab" data-net-role="share">
           <span class="diode-role-label" data-i18n="net.roleShare">Share</span>
-          <span class="diode-role-hint" data-i18n="net.roleShareHint">This PC has internet</span>
         </button>
         <button type="button" class="diode-role" role="tab" data-net-role="join">
           <span class="diode-role-label" data-i18n="net.roleJoin">Connect</span>
-          <span class="diode-role-hint" data-i18n="net.roleJoinHint">This PC browses through the other one</span>
         </button>
       </div>
-      <p class="diode-note" data-i18n="net.disclaimer"></p>
     </div>
 
     <div class="banner banner--error" id="net-error" hidden role="alert"></div>
@@ -22,6 +19,14 @@ const VIEW = `
       <div class="net-status-head">
         <span class="net-dot" id="net-dot" aria-hidden="true"></span>
         <strong class="net-state" id="net-state" role="status"></strong>
+        <div class="net-transport">
+          <button type="button" id="net-start" class="btn-primary" data-i18n="net.start">Start link</button>
+          <button type="button" id="net-fullscreen" class="btn-secondary" data-i18n="net.fullscreen" hidden>Full-screen QR</button>
+          <button type="button" id="net-stop" class="btn-secondary btn-icon-text" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>
+            <span data-i18n="net.stop">Stop</span>
+          </button>
+        </div>
       </div>
       <p class="net-hint" id="net-hint"></p>
       <div class="net-code" id="net-code" hidden>
@@ -49,8 +54,8 @@ const VIEW = `
       <p class="net-small" data-i18n="net.browse.note"></p>
     </section>
 
-    <div class="diode-controls net-controls">
-      <div class="layout-picker diode-layout">
+    <div class="diode-screen-bar net-tools">
+      <div class="diode-screen-group">
         <span class="layout-label" id="net-layout-label" data-i18n="send.layout">Codes on screen</span>
         <div class="segmented" role="group" aria-labelledby="net-layout-label">
           <button type="button" class="segmented-btn" data-net-grid="1" aria-pressed="false">1</button>
@@ -58,18 +63,80 @@ const VIEW = `
           <button type="button" class="segmented-btn" data-net-grid="4" aria-pressed="false">4</button>
         </div>
       </div>
-      <label class="diode-field diode-field--inline">
-        <span data-i18n="net.camera">Camera</span>
-        <select id="net-camera"></select>
+      <label class="diode-screen-group">
+        <span class="layout-label" data-i18n="diode.tx.fps" data-i18n-title="diode.tx.fpsTip">Speed</span>
+        <span class="diode-fps">
+          <select id="net-fps" data-i18n-aria="diode.tx.fps">
+            <option value="8">8</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="24">24</option>
+            <option value="30">30</option>
+          </select>
+          <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
+        </span>
       </label>
-      <div class="xfer-actions diode-transport">
-        <button type="button" id="net-start" class="btn-primary" data-i18n="net.start">Start link</button>
-        <button type="button" id="net-fullscreen" class="btn-secondary" data-i18n="net.fullscreen" hidden>Full-screen QR</button>
-        <button type="button" id="net-stop" class="btn-secondary btn-icon-text" hidden>
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h12v12H6z"/></svg>
-          <span data-i18n="net.stop">Stop</span>
+      <label class="diode-screen-group">
+        <span class="layout-label" data-i18n="net.camera">Camera</span>
+        <select id="net-camera" class="net-camera"></select>
+      </label>
+    </div>
+
+    <div class="diode-payload">
+      <h2 data-i18n="diode.pay.label">What to send</h2>
+      <div class="diode-pay" role="tablist" data-i18n-aria="diode.pay.label">
+        <button type="button" class="diode-pay-btn is-on" role="tab" data-net-pay="chat" aria-selected="true">
+          <span data-i18n="diode.live.title">Messages</span>
+        </button>
+        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="file" aria-selected="false">
+          <span data-i18n="diode.pay.file">File</span>
+        </button>
+        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="video" aria-selected="false">
+          <span data-i18n="diode.video.title">Video</span>
         </button>
       </div>
+      <section class="diode-block" data-net-panel="chat">
+        <form class="diode-live-form" id="net-live-form" autocomplete="off">
+          <input id="net-live-input" type="text" maxlength="400" data-i18n-placeholder="diode.live.placeholder" />
+          <button type="submit" class="btn-primary" data-i18n="diode.live.send">Send</button>
+        </form>
+        <ol class="diode-chat" id="net-chat" aria-live="polite"></ol>
+        <p class="diode-empty" id="net-chat-empty" data-i18n="diode.live.empty"></p>
+      </section>
+      <section class="diode-block" data-net-panel="file" hidden>
+        <div class="drop-zone" id="net-drop">
+          <input id="net-desk-files" type="file" class="sr-only" multiple />
+          <div class="drop-zone-inner">
+            <label class="btn-outline" for="net-desk-files" data-i18n="diode.tx.addFiles">Add files</label>
+            <p class="drop-zone-hint" data-i18n="send.dropHint">or drag and drop here</p>
+          </div>
+        </div>
+        <ul class="diode-list" id="net-files-in"></ul>
+      </section>
+      <section class="diode-block" data-net-panel="video" hidden>
+        <div class="diode-video-row">
+          <video id="net-video-preview" class="diode-video-preview" muted playsinline autoplay hidden></video>
+          <div class="diode-video-actions">
+            <label class="diode-fps" data-i18n-title="diode.video.fpsTip">
+              <select id="net-video-fps" data-i18n-aria="diode.video.fps">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+              </select>
+              <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
+            </label>
+            <button type="button" id="net-video-start" class="btn-primary" data-i18n="diode.video.start">Start video</button>
+            <button type="button" id="net-video-flip" class="btn-secondary" hidden data-i18n="diode.video.flip">Flip camera</button>
+            <button type="button" id="net-video-stop" class="btn-ghost" hidden data-i18n="diode.video.stop">Stop video</button>
+          </div>
+        </div>
+        <div class="diode-video-stage">
+          <canvas id="net-video-out" width="176" height="144"></canvas>
+          <p class="diode-video-wait" id="net-video-wait" data-i18n="diode.video.waiting"></p>
+        </div>
+      </section>
     </div>
   </div>
 </section>

@@ -12,6 +12,7 @@ import type { HelperStatus, ModemLink } from "../modem/modem.ts";
  */
 
 export const WISP_TARGET = "wisp";
+export const DESK_TARGET = "desk";
 const MAX_TUNNELS = 4;
 /** Wisp has no flow control towards the client: past this the sharing PC drops the stream. */
 const MAX_BUFFERED = 32 * 1024 * 1024;
@@ -115,7 +116,7 @@ class TunnelHost implements StreamHost {
     return this.mux !== null;
   }
 
-  open(): Promise<WispStreams> {
+  open(host = WISP_TARGET): Promise<WispStreams> {
     const mux = this.mux;
     if (!mux) return Promise.reject(new Error("link not connected"));
     const id = this.nextId;
@@ -143,7 +144,7 @@ class TunnelHost implements StreamHost {
         else reject(new Error("tunnel refused"));
       };
       this.tunnels.set(id, t);
-      mux.open(id, WISP_TARGET, 0);
+      mux.open(id, host, 0);
     });
   }
 
@@ -198,6 +199,10 @@ class WispEgress implements StreamHost {
   private mux: Mux | null = null;
   private readonly conns = new Map<number, Egress>();
   private readonly url: string;
+  private deskId: number | null = null;
+  private deskFrame = new Deframer();
+  deskIn: ((msg: Uint8Array) => void) | null = null;
+  onDesk: (() => void) | null = null;
   opened = 0;
 
   constructor(url: string) {
@@ -207,12 +212,22 @@ class WispEgress implements StreamHost {
   readonly events: MuxEvents = {
     open: (id, host) => this.onOpen(id, host),
     data: (id, bytes) => {
+      if (id === this.deskId) {
+        for (const msg of this.deskFrame.push(bytes)) this.deskIn?.(msg);
+        return;
+      }
       const c = this.conns.get(id);
       if (!c || c.closed || c.ws.readyState !== WebSocket.OPEN) return;
       for (const msg of c.deframer.push(bytes)) c.ws.send(msg);
     },
-    end: (id) => this.drop(id),
-    reset: (id) => this.drop(id),
+    end: (id) => {
+      if (id === this.deskId) this.deskId = null;
+      this.drop(id);
+    },
+    reset: (id) => {
+      if (id === this.deskId) this.deskId = null;
+      this.drop(id);
+    },
   };
 
   sessionStart(mux: Mux): void {
@@ -221,7 +236,19 @@ class WispEgress implements StreamHost {
 
   sessionEnd(): void {
     this.mux = null;
+    this.deskId = null;
     for (const id of [...this.conns.keys()]) this.drop(id);
+  }
+
+  get hasDesk(): boolean {
+    return this.deskId !== null;
+  }
+
+  sendDesk(msg: Uint8Array): boolean {
+    const mux = this.mux;
+    if (!mux || this.deskId === null) return false;
+    mux.send(this.deskId, frameMessage(msg));
+    return true;
   }
 
   linkLost(): void {
@@ -247,6 +274,14 @@ class WispEgress implements StreamHost {
   private onOpen(id: number, host: string): void {
     const mux = this.mux;
     if (!mux || this.conns.has(id)) return;
+    if (host === DESK_TARGET) {
+      if (this.deskId !== null) return mux.openFail(id, FAIL_LIMIT);
+      this.deskId = id;
+      this.deskFrame = new Deframer();
+      mux.openOk(id);
+      this.onDesk?.();
+      return;
+    }
     if (host !== WISP_TARGET) return mux.openFail(id, FAIL_POLICY);
     if (this.conns.size >= MAX_TUNNELS) return mux.openFail(id, FAIL_LIMIT);
     let ws: WebSocket;
@@ -304,14 +339,22 @@ export class LocalLink implements ModemLink {
   readonly role: Role;
   private readonly peer: Peer;
   private readonly tunnels: TunnelHost | null = null;
+  private readonly egress: WispEgress | null = null;
   private readonly rates = new Rates();
   private readonly timer: number;
   private readonly listeners = new Set<() => void>();
+  private deskIn: ((msg: Uint8Array) => void) | null = null;
+  private deskWriter: WritableStreamDefaultWriter<Uint8Array> | null = null;
+  private deskOpening = false;
+  onDeskReady: (() => void) | null = null;
 
   constructor(role: Role, name: string, wispUrl: string) {
     this.role = role;
     if (role === "share") {
-      this.peer = new GatewayPeer({ name, host: new WispEgress(wispUrl) });
+      this.egress = new WispEgress(wispUrl);
+      this.egress.deskIn = (msg) => this.deskIn?.(msg);
+      this.egress.onDesk = () => this.onDeskReady?.();
+      this.peer = new GatewayPeer({ name, host: this.egress });
     } else {
       this.tunnels = new TunnelHost();
       this.peer = new ClientPeer({ name, host: this.tunnels });
@@ -340,6 +383,56 @@ export class LocalLink implements ModemLink {
 
   get connected(): boolean {
     return this.peer.state === "connected";
+  }
+
+  /** Messages, files and video share one stream. The browsing PC opens it. */
+  setDeskReceiver(fn: ((msg: Uint8Array) => void) | null): void {
+    this.deskIn = fn;
+  }
+
+  get deskOpen(): boolean {
+    return this.deskWriter !== null || !!this.egress?.hasDesk;
+  }
+
+  sendDesk(msg: Uint8Array): boolean {
+    if (this.egress?.sendDesk(msg)) return true;
+    if (!this.deskWriter) return false;
+    void this.deskWriter.write(msg).catch(() => undefined);
+    return true;
+  }
+
+  async ensureDesk(): Promise<void> {
+    if (this.role !== "join" || !this.tunnels || this.deskWriter || this.deskOpening || !this.connected) return;
+    this.deskOpening = true;
+    try {
+      const streams = await this.tunnels.open(DESK_TARGET);
+      if (!this.connected) {
+        await streams.write.abort().catch(() => undefined);
+        return;
+      }
+      this.deskWriter = streams.write.getWriter();
+      this.onDeskReady?.();
+      void this.readDesk(streams.read);
+    } catch {
+      this.deskWriter = null;
+    } finally {
+      this.deskOpening = false;
+    }
+  }
+
+  private async readDesk(read: ReadableStream<ArrayBuffer>): Promise<void> {
+    const reader = read.getReader();
+    try {
+      for (;;) {
+        const next = await reader.read();
+        if (next.done) break;
+        this.deskIn?.(new Uint8Array(next.value));
+      }
+    } catch {
+      /* stream reset */
+    } finally {
+      this.deskWriter = null;
+    }
   }
 
   /** Browsing PC only: one Wisp connection over the optical link. */
@@ -383,6 +476,8 @@ export class LocalLink implements ModemLink {
   }
 
   close(): void {
+    void this.deskWriter?.abort().catch(() => undefined);
+    this.deskWriter = null;
     this.peer.disconnect(CLOSE_SHUTDOWN);
     window.clearInterval(this.timer);
     this.listeners.clear();

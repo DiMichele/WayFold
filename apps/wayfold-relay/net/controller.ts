@@ -2,6 +2,7 @@ import { onLangChange, t } from "../shared/i18n.ts";
 import { Modem, type HelperStatus, type ModemErrorKind, type ModemSnapshot } from "../modem/modem.ts";
 import { LocalLink, type Role } from "./link.ts";
 import { NET_CHANNEL, type NetBroadcast } from "./channel.ts";
+import { syncDesk } from "./live.ts";
 
 const ROLE_KEY = "wf-net-role";
 const GRID_KEY = "wf-net-grid";
@@ -308,6 +309,11 @@ function render(): void {
   el("net-start")!.hidden = running;
   el("net-stop")!.hidden = !running;
   el("net-fullscreen")!.hidden = !running;
+
+  const fps = el<HTMLSelectElement>("net-fps");
+  const currentFps = String(modem?.current.fps ?? LINK.fps);
+  if (fps && fps.value !== currentFps && [...fps.options].some((option) => option.value === currentFps)) fps.value = currentFps;
+  syncDesk(link, !!(running && h?.state === "connected" && h.linkUp));
 }
 
 function pageUrl(raw: string): string {
@@ -353,6 +359,11 @@ function wireOnce(): void {
       ensureModem().configure({ grid });
       render();
     });
+  });
+  el<HTMLSelectElement>("net-fps")?.addEventListener("change", (e) => {
+    const fps = Number((e.target as HTMLSelectElement).value);
+    if (!Number.isFinite(fps)) return;
+    ensureModem().configure({ fps });
   });
   el<HTMLSelectElement>("net-camera")?.addEventListener("change", (e) => {
     const camera = (e.target as HTMLSelectElement).value;

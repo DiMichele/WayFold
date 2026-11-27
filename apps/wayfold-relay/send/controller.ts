@@ -529,7 +529,29 @@ function wireLayout(): void {
   syncLayoutButtons();
 }
 
+const SEND_FPS_KEY = "wf-send-fps";
+
+function restoreSendFps(): void {
+  const select = el<HTMLSelectElement>("cfg-fps");
+  if (!select || select.dataset.fpsReady === "1") return;
+  select.dataset.fpsReady = "1";
+  try {
+    const saved = localStorage.getItem(SEND_FPS_KEY);
+    if (saved && [...select.options].some((option) => option.value === saved)) select.value = saved;
+  } catch {
+    /* ignore */
+  }
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem(SEND_FPS_KEY, select.value);
+    } catch {
+      /* ignore */
+    }
+  });
+}
+
 export function mountSend(): void {
+  restoreSendFps();
   const controls = ["cfg-payload", "cfg-fps", "cfg-bytes", "cfg-ecc", "cfg-size", "cfg-grid"];
   for (const id of controls) {
     document.getElementById(id)?.addEventListener("change", onChange);

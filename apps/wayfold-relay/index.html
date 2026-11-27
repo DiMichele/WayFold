@@ -208,15 +208,26 @@
             </div>
           </div>
           <div class="banner banner--error" id="send-error" hidden role="alert"></div>
-          <div class="layout-picker">
-            <span class="layout-label" id="layout-label" data-i18n="send.layout">Codes on screen</span>
-            <div class="segmented" role="group" aria-labelledby="layout-label">
-              <button type="button" class="segmented-btn is-on" data-layout-grid="1" aria-pressed="true">1</button>
-              <button type="button" class="segmented-btn" data-layout-grid="2" aria-pressed="false">2</button>
-              <button type="button" class="segmented-btn" data-layout-grid="4" aria-pressed="false">4</button>
+          <div class="diode-screen-bar">
+            <div class="layout-picker diode-layout">
+              <span class="layout-label" id="layout-label" data-i18n="send.layout">Codes on screen</span>
+              <div class="segmented" role="group" aria-labelledby="layout-label">
+                <button type="button" class="segmented-btn is-on" data-layout-grid="1" aria-pressed="true">1</button>
+                <button type="button" class="segmented-btn" data-layout-grid="2" aria-pressed="false">2</button>
+                <button type="button" class="segmented-btn" data-layout-grid="4" aria-pressed="false">4</button>
+              </div>
             </div>
-            <p class="layout-hint" data-i18n="send.publicChannel">Any camera pointed at this screen can read the file. The link is not encrypted.</p>
+            <label class="diode-screen-group">
+              <span class="layout-label" data-i18n="diode.tx.fps" data-i18n-title="diode.tx.fpsTip">Speed</span>
+              <span class="diode-fps">
+                <select id="cfg-fps" data-i18n-aria="diode.tx.fps">
+                  <option>10</option><option>15</option><option>20</option><option selected>24</option><option>30</option><option>60</option>
+                </select>
+                <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
+              </span>
+            </label>
           </div>
+          <p class="layout-hint" data-i18n="send.publicChannel">Any camera pointed at this screen can read the file. The link is not encrypted.</p>
           <div class="stage-wrap">
             <div class="stage" id="qr-stage" hidden aria-hidden="true">
               <canvas id="qr" width="16" height="16"></canvas>
@@ -243,7 +254,6 @@
           </div>
         </div>
         <div class="settings-defaults" hidden aria-hidden="true">
-          <select id="cfg-fps"><option>10</option><option>15</option><option>20</option><option selected>24</option><option>30</option><option>60</option></select>
           <select id="cfg-bytes"><option>500</option><option>1000</option><option>1465</option><option selected>1850</option><option>2331</option><option>2953</option></select>
           <select id="cfg-ecc"><option value="L" selected>L</option><option value="M">M</option><option value="Q">Q</option><option value="H">H</option></select>
           <select id="cfg-grid"><option value="1" selected>1</option><option value="2">2</option><option value="4">4</option></select>

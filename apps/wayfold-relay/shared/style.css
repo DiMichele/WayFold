@@ -2444,6 +2444,9 @@ body.role-diode.diode-rx .btn-primary {
   justify-content: space-between;
   gap: 16px 28px;
 }
+.diode-screen-bar .layout-picker {
+  margin: 0;
+}
 .diode-screen-group {
   display: flex;
   flex-direction: column;
@@ -2825,6 +2828,40 @@ body.role-net .app-shell {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.net-transport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.net-transport .btn-primary,
+.net-transport .btn-secondary {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.net-transport svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+.net-camera {
+  height: 36px;
+  max-width: 220px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background: var(--srf);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+}
+.net-tools {
+  align-items: flex-end;
+}
+.diode-chat li.is-mine {
+  align-self: flex-end;
+  border-radius: 12px 12px 4px 12px;
 }
 .net-state {
   font-size: 17px;
