@@ -10,7 +10,10 @@ import {
   tapPointFromEvent,
   tapPointInVideoFrame,
   applyFirstSupportedConstraint,
+  exposureAdvanced,
   hasFocusControl,
+  shortestExposure,
+  SHORT_EXPOSURE_S,
 } from "../receive/camera.ts";
 import { centerTileRects, cropRgbaCenter, cropRgbaRect, gridSliceRects } from "../receive/image-crop.ts";
 import { laplacianVariance, sharpnessOfRgba } from "../receive/sharpness.ts";
@@ -91,6 +94,26 @@ test("manual-only lenses still get a close distance", () => {
   );
   assert.equal(advanced.focusMode, "manual");
   assert.equal(advanced.focusDistance, 0.28);
+});
+
+test("short exposure stays inside the device range and caps at 8 ms", () => {
+  assert.equal(shortestExposure({ min: 0.02, max: 0.1 }), 0.02);
+  assert.equal(shortestExposure({ min: 0.001, max: 0.05 }), SHORT_EXPOSURE_S);
+});
+
+test("continuous exposure does not set a shutter time", () => {
+  const adv = exposureAdvanced(
+    { exposureMode: ["continuous", "manual"], exposureTime: { min: 0.001, max: 0.05 } },
+    "continuous",
+  );
+  assert.deepEqual(adv, { exposureMode: "continuous" });
+  assert.equal(exposureAdvanced({ exposureMode: ["continuous"] }, "off"), null);
+});
+
+test("short exposure asks for manual time when that mode exists", () => {
+  const adv = exposureAdvanced({ exposureMode: ["manual"], exposureTime: { min: 0.001, max: 0.05 } }, "short");
+  assert.equal(adv.exposureMode, "manual");
+  assert.ok(adv.exposureTime <= SHORT_EXPOSURE_S);
 });
 
 test("no capabilities yields an empty constraint chain", () => {

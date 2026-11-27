@@ -9,8 +9,8 @@ import {
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
-import { RoiSession, type GrabJob } from "../receive/roi.ts";
-import type { Quad, Rect } from "../receive/decode-core.ts";
+import { jobLocalRects, RoiSession } from "../receive/roi.ts";
+import type { Quad } from "../receive/decode-core.ts";
 
 /**
  * Optical modem for Wayfold Connect. Knows nothing about the protocol: it
@@ -107,14 +107,6 @@ function defaultSettings(over: Partial<ModemSettings>): ModemSettings {
 function layout(n: number, landscape: boolean): { cols: number; rows: number } {
   const g = n === 4 ? { cols: 2, rows: 2 } : { cols: Math.max(1, Math.min(3, n)), rows: 1 };
   return landscape ? g : { cols: g.rows, rows: g.cols };
-}
-
-function modemJobRects(job: GrabJob, jobs: GrabJob[], boxes: Rect[]): Rect[] | null {
-  if (job.full) return boxes.length ? boxes : null;
-  if (jobs.length === 1 && boxes.length > 1) {
-    return boxes.map((r) => ({ x: r.x - job.rect.x, y: r.y - job.rect.y, w: r.w, h: r.h }));
-  }
-  return null;
 }
 
 function hexKey(b: Uint8Array): string {
@@ -419,13 +411,23 @@ export class Modem {
       } catch {
         /* ignore */
       }
-      await applyQrFocusConstraints(
+      const flags = getOptFlags();
+      const result = await applyQrFocusConstraints(
         track,
         caps,
         point,
         kind === "tap" ? "single-shot" : "continuous",
         kind,
+        flags.exposure,
       );
+      optTrace.noteExposure({
+        intent: flags.exposure,
+        applied: result.exposureApplied,
+        mode: result.settings.exposureMode ?? null,
+        timeS: result.settings.exposureTime ?? null,
+        compensation: result.settings.exposureCompensation ?? null,
+        modes: caps.exposureMode ?? [],
+      });
     } finally {
       this.focusBusy = false;
       const next = this.focusQueued;
@@ -737,11 +739,12 @@ export class Modem {
       const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
       const slot = i;
       worker.onmessage = (e: MessageEvent) => {
-        const { id, error, postedAt, doneAt, quads, passes, skipped } = e.data as {
+        const { id, error, postedAt, doneAt, startedAt, quads, passes, skipped } = e.data as {
           id: number;
           error?: string;
           postedAt?: number;
           doneAt?: number;
+          startedAt?: number;
           quads?: (Quad | null)[];
           passes?: { pass: string; ms: number }[];
           skipped?: number;
@@ -753,12 +756,14 @@ export class Modem {
         if (id === -1) return;
         this.busy[slot] = false;
         optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
-        if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
-          optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
-        }
+        optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
         optTrace.notePasses(passes, skipped ?? 0);
         const grabMeta = this.slotGrab[slot];
-        if (grabMeta) this.roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
+        if (grabMeta) {
+          const t0 = wallNow();
+          this.roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
+          optTrace.mark("aggregate", t0, wallNow() - t0);
+        }
         this.c.decodes++;
         for (const s of symbolsFromWorker(e.data)) this.onSymbol(s);
       };
@@ -870,8 +875,10 @@ export class Modem {
     const flags = getOptFlags();
     const jobs = this.roi.jobs(dw, dh, free.length, flags.roi).slice(0, free.length);
     const gen = ++this.grabGen;
-    const boxes = this.roi.state.boxes.map((b) => b.rect);
     this.roi.begin(gen, jobs.length, jobs.every((j) => j.full), dw, dh);
+    let pixels = 0;
+    for (const job of jobs) pixels += job.rect.w * job.rect.h;
+    optTrace.noteGrab(jobs.length, pixels, jobs.some((j) => j.full));
     const rotated = this.turn !== 0;
     const ctx = this.grab.getContext("2d", { willReadFrequently: true })!;
     if (rotated) {
@@ -908,8 +915,8 @@ export class Modem {
       this.busy[slot] = true;
       this.slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
       const fps = optTrace.observedFps() || optTrace.negotiatedFps || this.settings.fps || 30;
-      const rects = modemJobRects(job, jobs, boxes);
-      const plan = workerPlanFields(fps, rects ? this.roi.state.expected : 1, rects);
+      const rects = jobLocalRects(job);
+      const plan = workerPlanFields(fps, job.full ? this.roi.state.expected : Math.max(1, job.boxes.length), rects);
       this.workers[slot]!.postMessage(
         { id: gen, buf: img.data.buffer, w: job.rect.w, h: job.rect.h, postedAt: wallNow(), ...plan },
         [img.data.buffer],
@@ -1008,10 +1015,10 @@ export class Modem {
     badge.className = `mdm-badge ${cls}`;
 
     const strip = this.r.strip!;
-    const capacity = ((s.grid * s.fps * s.mtu) / 1024).toFixed(0);
+    const capacity = (s.grid * s.fps * s.mtu / 1024).toFixed(0);
     strip.textContent = h
       ? `${this.opts.title} · ${h.name} · ${STATE_TEXT[h.state] ?? h.state}${h.code ? ` · codice ${h.code}` : ""}${h.state === "connected" ? ` · ${h.linkUp ? "link attivo" : "LINK INTERROTTO"} · RTT ${h.rttMs} ms` : ""}`
-      : `${this.opts.title} · ${s.grid} QR × ${s.fps} fps × ${s.mtu} B (max ${capacity} KB/s)`;
+      : `${this.opts.title} · ${s.grid} QR × ${s.fps} fps × ${s.mtu} B (max ${capacity} KiB/s)`;
 
     const peer = this.r.peer!;
     if (h?.code && h.state !== "connected") {
@@ -1025,14 +1032,14 @@ export class Modem {
       ["Fotogrammi webcam/s", this.running ? (r.cam ?? 0).toFixed(1) : "–"],
       ["Decodifiche/s", this.running ? (r.decodes ?? 0).toFixed(1) : "–"],
       ["QR letti nuovi/s", this.running ? (r.unique ?? 0).toFixed(1) : "–"],
-      ["KB/s ricevuti (grezzi)", this.running ? (r.kbs ?? 0).toFixed(1) : "–"],
+      ["KiB/s ricevuti (grezzi)", this.running ? (r.kbs ?? 0).toFixed(1) : "–"],
     ];
     if (r.loss !== undefined) rows.push(["Perdita (test)", `${(r.loss * 100).toFixed(0)}%`]);
     if (h?.state === "connected") {
-      rows.push(["Dati giù / su KB/s", `${h.inKBs.toFixed(1)} / ${h.outKBs.toFixed(1)}`]);
+      rows.push(["Dati giù / su KiB/s", `${h.inKBs.toFixed(1)} / ${h.outKBs.toFixed(1)}`]);
       rows.push(["RTT", `${h.rttMs} ms`]);
     }
-    rows.push(["Capacità TX teorica", `${capacity} KB/s`]);
+    rows.push(["Capacità TX teorica", `${capacity} KiB/s`]);
     this.r.stats!.replaceChildren(
       ...rows.flatMap(([k, v]) => {
         const dt = document.createElement("dt");

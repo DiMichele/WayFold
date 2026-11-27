@@ -143,10 +143,17 @@ function modelRow(row, txFps, camFps, workers) {
   const captureFrac = Math.min(1, decodesPerSec / txFps);
   const delivery = captureFrac * row.success;
   const blockLen = row.payload - HEADER;
-  const optical = (txFps * row.grid * delivery * blockLen) / 1024;
+  const opticalBps = txFps * row.grid * delivery * blockLen;
   const ratio = delivery > 0 ? ltRatio(1 - delivery) : Infinity;
-  const fountain = Number.isFinite(ratio) ? (txFps * row.grid * blockLen) / ratio / 1024 : 0;
-  return { ...row, txFps, camFps, workers, decodesPerSec: +decodesPerSec.toFixed(1), delivery: +delivery.toFixed(3), opticalKBs: +optical.toFixed(1), fountainKBs: +fountain.toFixed(1) };
+  const fountainBps = Number.isFinite(ratio) ? (txFps * row.grid * blockLen) / ratio : 0;
+  const round = (n) => +n.toFixed(1);
+  return {
+    ...row, txFps, camFps, workers,
+    decodesPerSec: round(decodesPerSec), delivery: +delivery.toFixed(3),
+    opticalBps: round(opticalBps), fountainBps: round(fountainBps),
+    opticalKBps: round(opticalBps / 1000), opticalKiBps: round(opticalBps / 1024),
+    fountainKBps: round(fountainBps / 1000), fountainKiBps: round(fountainBps / 1024),
+  };
 }
 
 function model(rows = load("screen.json").rows) {
@@ -155,7 +162,7 @@ function model(rows = load("screen.json").rows) {
     if (row.success === 0) continue;
     for (const txFps of TX_FPS) for (const camFps of CAM_FPS) for (const workers of WORKERS) all.push(modelRow(row, txFps, camFps, workers));
   }
-  all.sort((a, b) => b.fountainKBs - a.fountainKBs);
+  all.sort((a, b) => b.fountainBps - a.fountainBps);
   const total = PAYLOADS.length * ECCS.length * CAMS.length * GRIDS.length * TX_FPS.length * CAM_FPS.length * WORKERS.length;
   // A config only stays if its decode was clean: wrong bytes are a reject, not a loss.
   const viable = all.filter((r) => r.wrong === 0 && r.success >= 0.95);
@@ -169,10 +176,40 @@ function model(rows = load("screen.json").rows) {
     if (selected.length >= 8) break;
   }
   const defaults = all.filter((r) => r.payload === 1850 && r.ecc === "L" && r.grid === 1 && r.camW === 1280 && r.txFps === 24 && r.camFps === 30 && r.workers === 2);
-  save("model.json", { machine, cartesian: total, modelled: all.length, top: all.slice(0, 40), selected, defaults });
+  const payloadCompare = rows.filter((r) => r.ecc === "L" && r.camW === 1280 && [1, 2, 4].includes(r.grid) && [800, 1200, 1850, 2331].includes(r.payload));
+  const workersAt30 = workerSplit(rows);
+  save("model.json", {
+    machine, units: { "kB/s": "bytes/s / 1000", "KiB/s": "bytes/s / 1024" },
+    cartesian: total, modelled: all.length, top: all.slice(0, 40), selected, defaults, payloadCompare, workersAt30,
+  });
   console.log(`model: ${total} combinazioni nel prodotto, ${all.length} valutate, ${selected.length} selezionate`);
-  for (const r of selected) console.log(`  ${r.payload}B ${r.ecc} ${r.grid}x cam${r.camW} tx${r.txFps} cam${r.camFps}fps w${r.workers}: ${r.fountainKBs} kB/s (decode ${r.ms} ms)`);
-  for (const r of defaults) console.log(`  default: ${r.fountainKBs} kB/s`);
+  for (const r of selected) console.log(`  ${r.payload}B ${r.ecc} ${r.grid}x cam${r.camW} tx${r.txFps} cam${r.camFps}fps w${r.workers}: ${r.fountainKBps} kB/s (${r.fountainKiBps} KiB/s, decode ${r.ms} ms)`);
+  for (const r of defaults) console.log(`  default: ${r.fountainKBps} kB/s (${r.fountainKiBps} KiB/s)`);
+  console.log(`  worker a 30 fps: ${workersAt30.twoFillsCamera}/${workersAt30.clean} celle già piene con 2 worker; 4 worker alzano il tetto in ${workersAt30.fourHelps}`);
+}
+
+/** At 30 camera fps, 2 workers already fill the camera when a full-frame decode is under ~67 ms. */
+function workerSplit(rows) {
+  const cameraFps = 30;
+  let clean = 0;
+  let twoFillsCamera = 0;
+  let fourHelps = 0;
+  const fourHelpsRows = [];
+  for (const row of rows) {
+    if (row.wrong !== 0 || row.success < 0.95) continue;
+    clean++;
+    const d2 = Math.min(cameraFps, (2 * 1000) / row.ms);
+    const d4 = Math.min(cameraFps, (4 * 1000) / row.ms);
+    if (d2 >= cameraFps - 0.05) twoFillsCamera++;
+    else if (d4 > d2 + 0.05) {
+      fourHelps++;
+      fourHelpsRows.push({
+        payload: row.payload, ecc: row.ecc, grid: row.grid, camW: row.camW, ms: row.ms,
+        decodes2: +d2.toFixed(1), decodes4: +d4.toFixed(1),
+      });
+    }
+  }
+  return { cameraFps, clean, twoFillsCamera, fourHelps, fourHelpsRows };
 }
 
 // --- stage 3: stress -------------------------------------------------------

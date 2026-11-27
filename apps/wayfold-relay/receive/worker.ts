@@ -69,6 +69,7 @@ ctx.onmessage = async (e: MessageEvent) => {
   const req = e.data as WorkerReq;
   const { id, buf, w, h } = req;
   const queueAt = typeof req.postedAt === "number" ? req.postedAt : wallNow();
+  const startedAt = wallNow();
   try {
     const pixels = new Uint8ClampedArray(buf);
     const usePlan = !!(req.fast || req.mem || req.gray || (req.rects && req.rects.length) || Number.isFinite(req.budgetMs));
@@ -108,10 +109,11 @@ ctx.onmessage = async (e: MessageEvent) => {
       passes,
       skipped,
       postedAt: queueAt,
+      startedAt,
       doneAt: wallNow(),
     });
   } catch {
-    ctx.postMessage({ id, bytes: null, postedAt: queueAt, doneAt: wallNow() });
+    ctx.postMessage({ id, bytes: null, postedAt: queueAt, startedAt, doneAt: wallNow() });
   }
 };
 

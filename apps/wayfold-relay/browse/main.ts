@@ -156,7 +156,7 @@ function renderStatus(): void {
   else [text, dot] = [t("browse.status.waiting"), "warn"];
   $("bz-state").textContent = text;
   $("bz-dot").className = `net-dot ${dot}`;
-  $("bz-rate").textContent = s?.state === "connected" && s.linkUp ? `↓ ${s.inKBs.toFixed(1)} · ↑ ${s.outKBs.toFixed(1)} KB/s` : "";
+  $("bz-rate").textContent = s?.state === "connected" && s.linkUp ? `↓ ${s.inKBs.toFixed(1)} · ↑ ${s.outKBs.toFixed(1)} KiB/s` : "";
   renderLoading();
   watchFrame();
 }

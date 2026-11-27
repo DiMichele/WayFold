@@ -1,0 +1,540 @@
+{
+ "units": {
+  "kB/s": "bytes/s / 1000",
+  "KiB/s": "bytes/s / 1024"
+ },
+ "note": "Synthetic sensor. Not a camera measurement. Defaults are unchanged.",
+ "rows": [
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 1,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 13.5
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 1,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 13.5
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 1,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 15.7
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 1,
+   "ppm": 5,
+   "fit": true,
+   "success": 1,
+   "ms": 13.2
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 2,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 12.8
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 2,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 13.2
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 2,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 17.2
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 2,
+   "ppm": 5,
+   "fit": true,
+   "success": 1,
+   "ms": 16.6
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 4,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 15.1
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 4,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 14.9
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 4,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 17.4
+  },
+  {
+   "kind": "integer",
+   "payload": 800,
+   "grid": 4,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 1,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 13.8
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 1,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 16
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 1,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 15.4
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 1,
+   "ppm": 5,
+   "fit": true,
+   "success": 1,
+   "ms": 15.6
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 2,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 16.7
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 2,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 23.7
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 2,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 18.9
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 2,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 4,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 16.1
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 4,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 16.1
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 4,
+   "ppm": 4,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1200,
+   "grid": 4,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 13.7
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 13.6
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 16.3
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 5,
+   "fit": true,
+   "success": 1,
+   "ms": 14.6
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 2,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 15.5
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 2,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 15.6
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 2,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 21.1
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 2,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 16.6
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 16.2
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 4,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 1,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 14.9
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 1,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 16.4
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 1,
+   "ppm": 4,
+   "fit": true,
+   "success": 1,
+   "ms": 15.5
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 1,
+   "ppm": 5,
+   "fit": true,
+   "success": 1,
+   "ms": 15.3
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 2,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 16.5
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 2,
+   "ppm": 3,
+   "fit": true,
+   "success": 1,
+   "ms": 23
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 2,
+   "ppm": 4,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 2,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 4,
+   "ppm": 2,
+   "fit": true,
+   "success": 1,
+   "ms": 18.8
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 4,
+   "ppm": 3,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 4,
+   "ppm": 4,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "integer",
+   "payload": 2331,
+   "grid": 4,
+   "ppm": 5,
+   "success": null,
+   "ms": null,
+   "fit": false
+  },
+  {
+   "kind": "scale-nearest",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 2.5,
+   "success": 1,
+   "ms": 13.3
+  },
+  {
+   "kind": "scale-linear",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 2.5,
+   "success": 1,
+   "ms": 12.5
+  },
+  {
+   "kind": "smear-2px",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 4,
+   "success": 1,
+   "ms": 16
+  },
+  {
+   "kind": "smear-6px",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 4,
+   "success": 0,
+   "ms": 64.7
+  },
+  {
+   "kind": "scale-nearest",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 2.5,
+   "success": 1,
+   "ms": 20
+  },
+  {
+   "kind": "scale-linear",
+   "payload": 1850,
+   "grid": 4,
+   "ppm": 2.5,
+   "success": 1,
+   "ms": 18.1
+  },
+  {
+   "kind": "mixed-blend",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 4,
+   "success": 0,
+   "ms": 72.2
+  },
+  {
+   "kind": "mixed-rolling",
+   "payload": 1850,
+   "grid": 1,
+   "ppm": 4,
+   "success": 0,
+   "ms": 73.7
+  }
+ ],
+ "pipeline": {
+  "note": "Synthetic. slowestDecodeMs is the wall time if each job has its own worker. extractMs is the copy, not a camera getImageData.",
+  "full": {
+   "jobs": 1,
+   "pixels": 1228800,
+   "extractMs": 1.36,
+   "decodeSumMs": 16.8,
+   "slowestDecodeMs": 16.8,
+   "symbols": 4
+  },
+  "oneWorker": {
+   "jobs": 1,
+   "pixels": 894916,
+   "extractMs": 1.41,
+   "decodeSumMs": 15,
+   "slowestDecodeMs": 15,
+   "symbols": 4
+  },
+  "twoWorkers": {
+   "jobs": 2,
+   "pixels": 853292,
+   "extractMs": 1.84,
+   "decodeSumMs": 18.1,
+   "slowestDecodeMs": 9.5,
+   "symbols": 4
+  },
+  "fourWorkers": {
+   "jobs": 4,
+   "pixels": 813604,
+   "extractMs": 0.61,
+   "decodeSumMs": 15.5,
+   "slowestDecodeMs": 4.2,
+   "symbols": 4
+  }
+ }
+}

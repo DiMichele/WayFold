@@ -4,6 +4,9 @@ export type QrTrackCapabilities = {
   focusDistance?: { min: number; max: number; step?: number };
   zoom?: { min: number; max: number; step?: number };
   pointsOfInterest?: boolean;
+  exposureMode?: string[];
+  exposureCompensation?: { min: number; max: number; step?: number };
+  exposureTime?: { min: number; max: number; step?: number };
 };
 
 export type FocusPoint = { x: number; y: number };
@@ -12,6 +15,42 @@ export type FocusModePref = "continuous" | "single-shot" | "auto";
 
 /** Startup keeps continuous AF. Tap fires a single-shot on the point. */
 export type FocusApplyKind = "startup" | "tap";
+
+/** Opt-in exposure experiment. 8 ms is a motion-blur hypothesis, not a default. */
+export const SHORT_EXPOSURE_S = 1 / 125;
+
+export type ExposureIntent = "off" | "continuous" | "short";
+
+export function shortestExposure(
+  range: { min: number; max: number },
+  cap = SHORT_EXPOSURE_S,
+): number | null {
+  const min = range.min;
+  const max = range.max;
+  if (!(max > min) || !(cap > 0)) return null;
+  if (min >= cap) return min;
+  return Math.min(cap, max);
+}
+
+/** Constraint fields for the exposure experiment. Null when the device cannot express the intent. */
+export function exposureAdvanced(
+  caps: QrTrackCapabilities,
+  intent: ExposureIntent,
+): Record<string, unknown> | null {
+  if (intent === "off") return null;
+  const modes = caps.exposureMode ?? [];
+  if (intent === "continuous") {
+    return modes.includes("continuous") ? { exposureMode: "continuous" } : null;
+  }
+  if (caps.exposureTime && (modes.length === 0 || modes.includes("manual"))) {
+    const time = shortestExposure(caps.exposureTime);
+    if (time == null) return null;
+    const out: Record<string, unknown> = { exposureTime: time };
+    if (modes.includes("manual")) out.exposureMode = "manual";
+    return out;
+  }
+  return modes.includes("continuous") ? { exposureMode: "continuous" } : null;
+}
 
 export function clamp01(n: number): number {
   if (!Number.isFinite(n)) return 0.5;
@@ -186,30 +225,66 @@ export async function applyFirstSupportedConstraint(
 export type FocusApplyResult = {
   applied: boolean;
   supported: boolean;
-  settings: { focusMode?: string; focusDistance?: number };
+  /** True when the constraint that stuck included an exposure field. */
+  exposureApplied: boolean;
+  settings: {
+    focusMode?: string;
+    focusDistance?: number;
+    exposureMode?: string;
+    exposureTime?: number;
+    exposureCompensation?: number;
+  };
 };
 
 /** Apply focus constraints and read back getSettings when possible. */
+function withExposure(constraints: MediaTrackConstraints, exposure: Record<string, unknown>): MediaTrackConstraints {
+  const advanced = (constraints as { advanced?: Record<string, unknown>[] }).advanced;
+  const first = advanced?.[0] ?? {};
+  return { advanced: [{ ...first, ...exposure }] } as MediaTrackConstraints;
+}
+
 export async function applyQrFocusConstraints(
   track: MediaStreamTrack,
   caps: QrTrackCapabilities,
   point: FocusPoint,
   pref: FocusModePref,
   kind: FocusApplyKind,
+  exposure: ExposureIntent = "off",
 ): Promise<FocusApplyResult> {
   const supported = hasFocusControl(caps);
-  const chain = qrFocusConstraintFallbacks(caps, point, pref, kind);
-  if (!chain.length) return { applied: false, supported, settings: {} };
-  const applied = await applyFirstSupportedConstraint(track, chain);
+  const focusChain = qrFocusConstraintFallbacks(caps, point, pref, kind);
+  const exp = exposureAdvanced(caps, exposure);
+  const chain: MediaTrackConstraints[] = [];
+  if (exp) {
+    if (focusChain[0]) chain.push(withExposure(focusChain[0], exp));
+    chain.push({ advanced: [exp] } as MediaTrackConstraints);
+  }
+  chain.push(...focusChain);
+  let applied = false;
+  let exposureApplied = false;
+  for (const constraints of chain) {
+    try {
+      await track.applyConstraints(constraints);
+      applied = true;
+      const adv = (constraints as { advanced?: Record<string, unknown>[] }).advanced?.[0];
+      exposureApplied = !!adv && ("exposureMode" in adv || "exposureTime" in adv);
+      break;
+    } catch {
+      /* device rejected this combination — try a simpler one */
+    }
+  }
   let settings: FocusApplyResult["settings"] = {};
   try {
-    const s = track.getSettings?.() as { focusMode?: string; focusDistance?: number };
+    const s = track.getSettings?.() as FocusApplyResult["settings"];
     settings = {
-      focusMode: typeof s.focusMode === "string" ? s.focusMode : undefined,
-      focusDistance: typeof s.focusDistance === "number" ? s.focusDistance : undefined,
+      focusMode: typeof s?.focusMode === "string" ? s.focusMode : undefined,
+      focusDistance: typeof s?.focusDistance === "number" ? s.focusDistance : undefined,
+      exposureMode: typeof s?.exposureMode === "string" ? s.exposureMode : undefined,
+      exposureTime: typeof s?.exposureTime === "number" ? s.exposureTime : undefined,
+      exposureCompensation: typeof s?.exposureCompensation === "number" ? s.exposureCompensation : undefined,
     };
   } catch {
     /* ignore */
   }
-  return { applied, supported, settings };
+  return { applied, supported, exposureApplied, settings };
 }

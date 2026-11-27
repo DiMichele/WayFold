@@ -255,6 +255,77 @@ export function senderFrame(payload, ecc, grid, seed) {
   return { bytes, codes, scr: screen(codes, cols, rows), version: codes[0].version };
 }
 
+/**
+ * Paint the sender raster into a camera frame at `ppm` camera pixels per module.
+ * `nearest` copies whole modules. `linear` samples fractional positions, which is
+ * what a non-integer scale does to module edges.
+ */
+export function renderModules(scr, o = {}) {
+  const W = o.camW ?? 1280;
+  const H = o.camH ?? Math.round((W * 3) / 4);
+  const ppm = o.ppm ?? 3;
+  const sw = Math.round(scr.w * ppm);
+  const sh = Math.round(scr.h * ppm);
+  if (sw > W || sh > H || !(ppm > 0)) return null;
+  const ox = Math.floor((W - sw) / 2);
+  const oy = Math.floor((H - sh) / 2);
+  const out = new Uint8ClampedArray(W * H * 4);
+  out.fill(40);
+  for (let i = 3; i < out.length; i += 4) out[i] = 255;
+  const white = 232;
+  const black = 28;
+  const nearest = (o.sample ?? "nearest") === "nearest";
+  const at = (u, v) => {
+    if (u < 0 || v < 0 || u >= scr.w || v >= scr.h) return null;
+    if (nearest) return scr.lum[Math.floor(v) * scr.w + Math.floor(u)] ? white : black;
+    const x0 = Math.floor(u);
+    const y0 = Math.floor(v);
+    const x1 = Math.min(scr.w - 1, x0 + 1);
+    const y1 = Math.min(scr.h - 1, y0 + 1);
+    const tx = u - x0;
+    const ty = v - y0;
+    const p00 = scr.lum[y0 * scr.w + x0] ? white : black;
+    const p10 = scr.lum[y0 * scr.w + x1] ? white : black;
+    const p01 = scr.lum[y1 * scr.w + x0] ? white : black;
+    const p11 = scr.lum[y1 * scr.w + x1] ? white : black;
+    return p00 * (1 - tx) * (1 - ty) + p10 * tx * (1 - ty) + p01 * (1 - tx) * ty + p11 * tx * ty;
+  };
+  for (let y = 0; y < sh; y++) {
+    for (let x = 0; x < sw; x++) {
+      const v = at((x + 0.5) / ppm, (y + 0.5) / ppm);
+      if (v == null) continue;
+      const p = ((oy + y) * W + (ox + x)) * 4;
+      out[p] = v;
+      out[p + 1] = v;
+      out[p + 2] = v;
+      out[p + 3] = 255;
+    }
+  }
+  return { data: out, width: W, height: H, screenW: sw, screenH: sh };
+}
+
+export function smearHorizontal(frame, radius) {
+  const r = Math.max(1, Math.round(radius));
+  const { width: W, height: H, data } = frame;
+  const out = new Uint8ClampedArray(data);
+  const span = r * 2 + 1;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      let acc = 0;
+      for (let k = -r; k <= r; k++) {
+        const xx = Math.min(W - 1, Math.max(0, x + k));
+        acc += data[(y * W + xx) * 4];
+      }
+      const v = acc / span;
+      const p = (y * W + x) * 4;
+      out[p] = v;
+      out[p + 1] = v;
+      out[p + 2] = v;
+    }
+  }
+  return { data: out, width: W, height: H };
+}
+
 export const DEGRADATIONS = {
   clean: {},
   blur1: { blur: 1 },

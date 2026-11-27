@@ -4,7 +4,7 @@
  * worker and the main thread stay comparable.
  */
 
-import { getOptFlags } from "./opt-flags.ts";
+import { getOptFlags, type ExposureIntent } from "./opt-flags.ts";
 
 export type OptPhase =
   | "capture"
@@ -14,7 +14,8 @@ export type OptPhase =
   | "parse"
   | "fountain"
   | "txWait"
-  | "rxWait";
+  | "rxWait"
+  | "aggregate";
 
 export interface OptSample {
   phase: OptPhase;
@@ -61,6 +62,23 @@ export interface OptSnapshot {
   /** Decode passes actually run, and passes skipped because the budget was spent. */
   passes: Record<string, { n: number; ms: number }>;
   skippedPasses: number;
+  /** What the camera reported for exposure, and whether an experiment constraint stuck. */
+  exposure: {
+    intent: ExposureIntent;
+    applied: boolean;
+    mode: string | null;
+    timeS: number | null;
+    compensation: number | null;
+    modes: string[];
+  } | null;
+  /** Pixel copies actually handed to workers. `fullFrames` counts generations that read the whole frame. */
+  grabs: {
+    frames: number;
+    jobs: number;
+    pixels: number;
+    fullFrames: number;
+    last: { jobs: number; pixels: number; full: boolean } | null;
+  };
 }
 
 const RING = 512;
@@ -103,6 +121,12 @@ class OptTrace {
 
   private passCounts = new Map<string, { n: number; ms: number }>();
   private skippedPasses = 0;
+  private exposure: OptSnapshot["exposure"] = null;
+  private grabFrames = 0;
+  private grabJobs = 0;
+  private grabPixels = 0;
+  private grabFull = 0;
+  private lastGrab: { jobs: number; pixels: number; full: boolean } | null = null;
   private readonly windows: OptSnapshot["windows"] = [];
   private windowStarted = 0;
   private windowOptical = 0;
@@ -138,6 +162,38 @@ class OptTrace {
     this.rxWaitMs = null;
     this.passCounts.clear();
     this.skippedPasses = 0;
+    this.exposure = null;
+    this.grabFrames = 0;
+    this.grabJobs = 0;
+    this.grabPixels = 0;
+    this.grabFull = 0;
+    this.lastGrab = null;
+  }
+
+  noteExposure(next: NonNullable<OptSnapshot["exposure"]>): void {
+    this.exposure = next;
+  }
+
+  /** Split a worker turn into queue wait and decode. Without `startedAt`, the whole turn stays one wasm sample. */
+  noteWorkerTurn(postedAt?: number, startedAt?: number, doneAt?: number): void {
+    if (!this.enabled()) return;
+    if (typeof postedAt === "number" && typeof startedAt === "number") {
+      this.mark("queue", postedAt, Math.max(0, startedAt - postedAt));
+    }
+    if (typeof startedAt === "number" && typeof doneAt === "number") {
+      this.mark("wasm", startedAt, Math.max(0, doneAt - startedAt));
+    } else if (typeof postedAt === "number" && typeof doneAt === "number") {
+      this.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
+    }
+  }
+
+  noteGrab(jobs: number, pixels: number, full: boolean): void {
+    if (!this.enabled()) return;
+    this.grabFrames += 1;
+    this.grabJobs += jobs;
+    this.grabPixels += pixels;
+    if (full) this.grabFull += 1;
+    this.lastGrab = { jobs, pixels, full };
   }
 
   mark(phase: OptPhase, t0: number, dt: number, detail?: string): void {
@@ -350,6 +406,14 @@ class OptTrace {
       jitterMs: this.jitterMs(),
       passes: Object.fromEntries(this.passCounts),
       skippedPasses: this.skippedPasses,
+      exposure: this.exposure,
+      grabs: {
+        frames: this.grabFrames,
+        jobs: this.grabJobs,
+        pixels: this.grabPixels,
+        fullFrames: this.grabFull,
+        last: this.lastGrab,
+      },
     };
   }
 

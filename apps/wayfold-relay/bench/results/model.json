@@ -5,6 +5,10 @@
   "node": "v24.14.1",
   "platform": "win32"
  },
+ "units": {
+  "kB/s": "bytes/s / 1000",
+  "KiB/s": "bytes/s / 1024"
+ },
  "cartesian": 13440,
  "modelled": 9296,
  "top": [
@@ -24,8 +28,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -43,8 +51,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -62,8 +74,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -81,8 +97,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -100,8 +120,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -119,8 +143,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -138,8 +166,12 @@
    "workers": 2,
    "decodesPerSec": 53.1,
    "delivery": 0.884,
-   "opticalKBs": 596.8,
-   "fountainKBs": 554.8
+   "opticalBps": 611140.6,
+   "fountainBps": 568109.6,
+   "opticalKBps": 611.1,
+   "opticalKiBps": 596.8,
+   "fountainKBps": 568.1,
+   "fountainKiBps": 554.8
   },
   {
    "payload": 2331,
@@ -157,8 +189,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -176,8 +212,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -195,8 +235,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -214,8 +258,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -233,8 +281,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -252,8 +304,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -271,8 +327,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -290,8 +350,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -309,8 +373,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -328,8 +396,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -347,8 +419,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -366,8 +442,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2900,
@@ -385,8 +465,12 @@
    "workers": 3,
    "decodesPerSec": 46.9,
    "delivery": 0.781,
-   "opticalKBs": 527.3,
-   "fountainKBs": 525.3
+   "opticalBps": 540000,
+   "fountainBps": 537898.8,
+   "opticalKBps": 540,
+   "opticalKiBps": 527.3,
+   "fountainKBps": 537.9,
+   "fountainKiBps": 525.3
   },
   {
    "payload": 2900,
@@ -404,8 +488,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 506.3,
-   "fountainKBs": 506.3
+   "opticalBps": 518400,
+   "fountainBps": 518400,
+   "opticalKBps": 518.4,
+   "opticalKiBps": 506.3,
+   "fountainKBps": 518.4,
+   "fountainKiBps": 506.3
   },
   {
    "payload": 2900,
@@ -423,8 +511,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 506.3,
-   "fountainKBs": 506.3
+   "opticalBps": 518400,
+   "fountainBps": 518400,
+   "opticalKBps": 518.4,
+   "opticalKiBps": 506.3,
+   "fountainKBps": 518.4,
+   "fountainKiBps": 506.3
   },
   {
    "payload": 2900,
@@ -442,8 +534,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 506.3,
-   "fountainKBs": 506.3
+   "opticalBps": 518400,
+   "fountainBps": 518400,
+   "opticalKBps": 518.4,
+   "opticalKiBps": 506.3,
+   "fountainKBps": 518.4,
+   "fountainKiBps": 506.3
   },
   {
    "payload": 2900,
@@ -461,8 +557,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 506.3,
-   "fountainKBs": 506.3
+   "opticalBps": 518400,
+   "fountainBps": 518400,
+   "opticalKBps": 518.4,
+   "opticalKiBps": 506.3,
+   "fountainKBps": 518.4,
+   "fountainKiBps": 506.3
   },
   {
    "payload": 2331,
@@ -480,8 +580,12 @@
    "workers": 2,
    "decodesPerSec": 57.5,
    "delivery": 0.958,
-   "opticalKBs": 518.8,
-   "fountainKBs": 462.3
+   "opticalBps": 531264.4,
+   "fountainBps": 473377,
+   "opticalKBps": 531.3,
+   "opticalKiBps": 518.8,
+   "fountainKBps": 473.4,
+   "fountainKiBps": 462.3
   },
   {
    "payload": 2331,
@@ -499,8 +603,12 @@
    "workers": 3,
    "decodesPerSec": 56.1,
    "delivery": 0.935,
-   "opticalKBs": 506.2,
-   "fountainKBs": 462.3
+   "opticalBps": 518355.1,
+   "fountainBps": 473377,
+   "opticalKBps": 518.4,
+   "opticalKiBps": 506.2,
+   "fountainKBps": 473.4,
+   "fountainKiBps": 462.3
   },
   {
    "payload": 2900,
@@ -518,8 +626,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -537,8 +649,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -556,8 +672,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -575,8 +695,12 @@
    "workers": 2,
    "decodesPerSec": 53.1,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -594,8 +718,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -613,8 +741,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -632,8 +764,12 @@
    "workers": 3,
    "decodesPerSec": 46.9,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2900,
@@ -651,8 +787,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 450,
-   "fountainKBs": 450
+   "opticalBps": 460800,
+   "fountainBps": 460800,
+   "opticalKBps": 460.8,
+   "opticalKiBps": 450,
+   "fountainKBps": 460.8,
+   "fountainKiBps": 450
   },
   {
    "payload": 2331,
@@ -670,8 +810,12 @@
    "workers": 1,
    "decodesPerSec": 52.4,
    "delivery": 0.873,
-   "opticalKBs": 472.6,
-   "fountainKBs": 433.9
+   "opticalBps": 483979.1,
+   "fountainBps": 444304.4,
+   "opticalKBps": 484,
+   "opticalKiBps": 472.6,
+   "fountainKBps": 444.3,
+   "fountainKiBps": 433.9
   },
   {
    "payload": 2331,
@@ -689,8 +833,12 @@
    "workers": 2,
    "decodesPerSec": 51.9,
    "delivery": 0.866,
-   "opticalKBs": 469,
-   "fountainKBs": 433.9
+   "opticalBps": 480207.8,
+   "fountainBps": 444304.4,
+   "opticalKBps": 480.2,
+   "opticalKiBps": 469,
+   "fountainKBps": 444.3,
+   "fountainKiBps": 433.9
   },
   {
    "payload": 1850,
@@ -708,8 +856,12 @@
    "workers": 1,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 428.9,
-   "fountainKBs": 428.9
+   "opticalBps": 439200,
+   "fountainBps": 439200,
+   "opticalKBps": 439.2,
+   "opticalKiBps": 428.9,
+   "fountainKBps": 439.2,
+   "fountainKiBps": 428.9
   },
   {
    "payload": 1850,
@@ -727,8 +879,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 428.9,
-   "fountainKBs": 428.9
+   "opticalBps": 439200,
+   "fountainBps": 439200,
+   "opticalKBps": 439.2,
+   "opticalKiBps": 428.9,
+   "fountainKBps": 439.2,
+   "fountainKiBps": 428.9
   },
   {
    "payload": 1850,
@@ -746,8 +902,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 428.9,
-   "fountainKBs": 428.9
+   "opticalBps": 439200,
+   "fountainBps": 439200,
+   "opticalKBps": 439.2,
+   "opticalKiBps": 428.9,
+   "fountainKBps": 439.2,
+   "fountainKiBps": 428.9
   },
   {
    "payload": 1850,
@@ -765,8 +925,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 428.9,
-   "fountainKBs": 428.9
+   "opticalBps": 439200,
+   "fountainBps": 439200,
+   "opticalKBps": 439.2,
+   "opticalKiBps": 428.9,
+   "fountainKBps": 439.2,
+   "fountainKiBps": 428.9
   }
  ],
  "selected": [
@@ -786,8 +950,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -805,8 +973,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2900,
@@ -824,8 +996,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 675,
-   "fountainKBs": 675
+   "opticalBps": 691200,
+   "fountainBps": 691200,
+   "opticalKBps": 691.2,
+   "opticalKiBps": 675,
+   "fountainKBps": 691.2,
+   "fountainKiBps": 675
   },
   {
    "payload": 2331,
@@ -843,8 +1019,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -862,8 +1042,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -881,8 +1065,12 @@
    "workers": 4,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -900,8 +1088,12 @@
    "workers": 2,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   },
   {
    "payload": 2331,
@@ -919,8 +1111,12 @@
    "workers": 3,
    "decodesPerSec": 60,
    "delivery": 1,
-   "opticalKBs": 541.6,
-   "fountainKBs": 541.6
+   "opticalBps": 554640,
+   "fountainBps": 554640,
+   "opticalKBps": 554.6,
+   "opticalKiBps": 541.6,
+   "fountainKBps": 554.6,
+   "fountainKiBps": 541.6
   }
  ],
  "defaults": [
@@ -940,8 +1136,220 @@
    "workers": 2,
    "decodesPerSec": 30,
    "delivery": 1,
-   "opticalKBs": 42.9,
-   "fountainKBs": 42.9
+   "opticalBps": 43920,
+   "fountainBps": 43920,
+   "opticalKBps": 43.9,
+   "opticalKiBps": 42.9,
+   "fountainKBps": 43.9,
+   "fountainKiBps": 42.9
   }
- ]
+ ],
+ "payloadCompare": [
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "version": 20,
+   "pxPerModule": 6.4,
+   "success": 1,
+   "wrong": 0,
+   "ms": 12.7,
+   "msMax": 13.2
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 2,
+   "camW": 1280,
+   "version": 20,
+   "pxPerModule": 6.4,
+   "success": 1,
+   "wrong": 0,
+   "ms": 14.5,
+   "msMax": 17.8
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "version": 20,
+   "pxPerModule": 3.08,
+   "success": 1,
+   "wrong": 0,
+   "ms": 11.6,
+   "msMax": 12.7
+  },
+  {
+   "payload": 1200,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "version": 25,
+   "pxPerModule": 5.38,
+   "success": 1,
+   "wrong": 0,
+   "ms": 13.6,
+   "msMax": 35
+  },
+  {
+   "payload": 1200,
+   "ecc": "L",
+   "grid": 2,
+   "camW": 1280,
+   "version": 25,
+   "pxPerModule": 5.38,
+   "success": 1,
+   "wrong": 0,
+   "ms": 15.6,
+   "msMax": 16.3
+  },
+  {
+   "payload": 1200,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "version": 25,
+   "pxPerModule": 2.58,
+   "success": 1,
+   "wrong": 0,
+   "ms": 13.4,
+   "msMax": 13.9
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "version": 32,
+   "pxPerModule": 4.39,
+   "success": 1,
+   "wrong": 0,
+   "ms": 15.2,
+   "msMax": 15.5
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 2,
+   "camW": 1280,
+   "version": 32,
+   "pxPerModule": 4.39,
+   "success": 1,
+   "wrong": 0,
+   "ms": 20.4,
+   "msMax": 22.4
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "version": 32,
+   "pxPerModule": 2.11,
+   "success": 1,
+   "wrong": 0,
+   "ms": 15,
+   "msMax": 17.8
+  },
+  {
+   "payload": 2331,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "version": 36,
+   "pxPerModule": 3.98,
+   "success": 1,
+   "wrong": 0,
+   "ms": 24.1,
+   "msMax": 27
+  },
+  {
+   "payload": 2331,
+   "ecc": "L",
+   "grid": 2,
+   "camW": 1280,
+   "version": 36,
+   "pxPerModule": 3.98,
+   "success": 1,
+   "wrong": 0,
+   "ms": 28.1,
+   "msMax": 29.9
+  },
+  {
+   "payload": 2331,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "version": 36,
+   "pxPerModule": 1.91,
+   "success": 1,
+   "wrong": 0,
+   "ms": 19.1,
+   "msMax": 25.9
+  }
+ ],
+ "workersAt30": {
+  "cameraFps": 30,
+  "clean": 165,
+  "twoFillsCamera": 159,
+  "fourHelps": 6,
+  "fourHelpsRows": [
+   {
+    "payload": 1850,
+    "ecc": "M",
+    "grid": 4,
+    "camW": 2560,
+    "ms": 69.1,
+    "decodes2": 28.9,
+    "decodes4": 30
+   },
+   {
+    "payload": 2331,
+    "ecc": "L",
+    "grid": 3,
+    "camW": 2560,
+    "ms": 76.5,
+    "decodes2": 26.1,
+    "decodes4": 30
+   },
+   {
+    "payload": 2331,
+    "ecc": "M",
+    "grid": 3,
+    "camW": 2560,
+    "ms": 75.4,
+    "decodes2": 26.5,
+    "decodes4": 30
+   },
+   {
+    "payload": 2900,
+    "ecc": "L",
+    "grid": 1,
+    "camW": 2560,
+    "ms": 69.1,
+    "decodes2": 28.9,
+    "decodes4": 30
+   },
+   {
+    "payload": 2900,
+    "ecc": "L",
+    "grid": 2,
+    "camW": 2560,
+    "ms": 78.9,
+    "decodes2": 25.3,
+    "decodes4": 30
+   },
+   {
+    "payload": 2900,
+    "ecc": "L",
+    "grid": 3,
+    "camW": 2560,
+    "ms": 73.1,
+    "decodes2": 27.4,
+    "decodes4": 30
+   }
+  ]
+ }
 }

@@ -10,6 +10,9 @@ export type OptFlag =
 
 export type OptSchedule = "drop" | "latest" | "pool";
 
+/** Camera exposure experiment. Off leaves the device as it is. */
+export type ExposureIntent = "off" | "continuous" | "short";
+
 export interface OptFlags {
   perf: boolean;
   roi: boolean;
@@ -21,6 +24,8 @@ export interface OptFlags {
   budget: 0.5 | 1 | 1.5 | 2;
   /** Latest-frame strategy when `latest` is on. */
   schedule: OptSchedule;
+  /** Exposure constraint experiment. Default off. */
+  exposure: ExposureIntent;
 }
 
 const STORAGE_KEY = "wf-opt";
@@ -35,6 +40,7 @@ const DEFAULTS: OptFlags = {
   native: false,
   budget: 1,
   schedule: "drop",
+  exposure: "off",
 };
 
 let cached: OptFlags | null = null;
@@ -48,6 +54,12 @@ function parseBudget(raw: string | undefined): OptFlags["budget"] {
 function parseSchedule(raw: string | undefined): OptSchedule {
   if (raw === "latest" || raw === "pool") return raw;
   return "drop";
+}
+
+function parseExposure(raw: string | undefined): ExposureIntent {
+  if (raw === "short") return "short";
+  if (raw === "continuous" || raw === "" || raw === undefined) return "continuous";
+  return "off";
 }
 
 /** Parse a comma-separated `wfopt` token list. Exported for unit tests. */
@@ -64,6 +76,10 @@ export function parseOptList(raw: string | null): OptFlags {
     if (token.startsWith("sched:")) {
       out.schedule = parseSchedule(token.slice("sched:".length));
       if (out.schedule !== "drop") out.latest = true;
+      continue;
+    }
+    if (token === "exp" || token.startsWith("exp:")) {
+      out.exposure = parseExposure(token === "exp" ? "continuous" : token.slice("exp:".length));
       continue;
     }
     if ((ALL as string[]).includes(token)) {

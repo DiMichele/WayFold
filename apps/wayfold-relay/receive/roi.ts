@@ -186,11 +186,30 @@ export interface GrabJob {
   rect: Rect;
   /** True when the job is the whole camera frame. */
   full: boolean;
+  /** Layout boxes covered by this job, in camera coordinates. */
+  boxes: Rect[];
+}
+
+/** Split boxes into contiguous row-major bands, one band per free worker. */
+export function partitionRects(rects: Rect[], groups: number): Rect[][] {
+  const n = Math.max(1, Math.min(groups, rects.length));
+  const sorted = [...rects].sort((a, b) => a.y - b.y || a.x - b.x);
+  const base = Math.floor(sorted.length / n);
+  const extra = sorted.length % n;
+  const out: Rect[][] = [];
+  let i = 0;
+  for (let g = 0; g < n; g++) {
+    const count = base + (g < extra ? 1 : 0);
+    out.push(sorted.slice(i, i + count));
+    i += count;
+  }
+  return out;
 }
 
 /**
- * What to read from the camera. One job per free worker when each ROI fits
- * its own slot; otherwise a single union, never the full frame, once a layout exists.
+ * What to read from the camera. One crop per code when a worker is free for each.
+ * Fewer workers than codes: one compact union per free worker, never an idle slot
+ * and never the full frame, once a layout exists.
  */
 export function planGrabs(
   roi: boolean,
@@ -200,11 +219,24 @@ export function planGrabs(
   frameH: number,
   freeSlots: number,
 ): GrabJob[] {
-  const full: GrabJob = { rect: { x: 0, y: 0, w: frameW, h: frameH }, full: true };
-  if (!roi || fullNext || boxes.length === 0 || freeSlots < 1) return [full];
+  const fullRect = { x: 0, y: 0, w: frameW, h: frameH };
+  if (!roi || boxes.length === 0 || freeSlots < 1) return [{ rect: fullRect, full: true, boxes: [] }];
   const clamped = boxes.map((b) => clampRect(b, frameW, frameH));
-  if (freeSlots >= clamped.length) return clamped.map((rect) => ({ rect, full: false }));
-  return [{ rect: clampRect(unionRect(clamped), frameW, frameH), full: false }];
+  if (fullNext) return [{ rect: fullRect, full: true, boxes: clamped }];
+  if (freeSlots >= clamped.length) return clamped.map((rect) => ({ rect, full: false, boxes: [rect] }));
+  return partitionRects(clamped, freeSlots).map((group) => ({
+    rect: group.length === 1 ? group[0]! : clampRect(unionRect(group), frameW, frameH),
+    full: false,
+    boxes: group,
+  }));
+}
+
+/** ROI rectangles in the buffer about to be sent. One tight crop needs none. */
+export function jobLocalRects(job: GrabJob): Rect[] | null {
+  if (job.boxes.length === 0) return null;
+  if (job.boxes.length === 1 && !job.full) return null;
+  if (job.full) return job.boxes;
+  return job.boxes.map((r) => ({ x: r.x - job.rect.x, y: r.y - job.rect.y, w: r.w, h: r.h }));
 }
 
 /** Expanded boxes for a set of finder quads. Used by the synthetic bench. */

@@ -2,7 +2,11 @@
 
 Protocollo QR + fountain invariato. Ogni ottimizzazione è un flag spento di default; i numeri entrano qui solo dopo un benchmark eseguito.
 
-Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`.
+Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`, `exp`, `exp:short`.
+
+## Unità
+
+`kB/s` = byte/s ÷ 1000. `KiB/s` = byte/s ÷ 1024. I campi JSON `opticalBps`, `fountainBps` e `fileBps` sono byte al secondo, senza prefisso. La HUD li mostra in KiB/s. Il modello in `bench/results/model.json` riporta entrambe le colonne (`fountainKBps`, `fountainKiBps`).
 
 ## Criteri di accettazione
 
@@ -21,7 +25,7 @@ Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `
 | Observed FPS | Delta di `presentedFrames` / `mediaTime` da `requestVideoFrameCallback` |
 | Processed FPS | Frame consegnati ai worker |
 | Unique QR/s | Simboli con `seq` nuovo |
-| Reconstructed kB/s | Crescita di `solvedCount * blockLen` |
+| Ricostruiti | Crescita di `solvedCount * blockLen`, in byte/s (HUD: KiB/s) |
 
 L’RTT ARQ (`sender.srtt` / `helper.rttMs`) si misura sul solo mittente tramite ACK. Non richiede orologi sincronizzati. È distinto dalla latenza unidirezionale ottica (coda TX, attesa RX, jitter tra simboli nuovi).
 
@@ -114,7 +118,7 @@ Ogni URL va tenuto abbastanza a lungo da riempire almeno una finestra da 10 s ne
 | 5 Budget aggressivo | `?wfopt=perf,fast,roi,budget:0.5` |
 | 6 Budget permissivo | `?wfopt=perf,fast,roi,budget:2` |
 
-Nel JSON: `fps.negotiated` contro `fps.observed`, `fps.processed`, `samples` con fase `wasm` e `extract`, `passes` / `skippedPasses`, `goodput.opticalBps` contro `goodput.fountainBps`, `windows` nel tempo, `busyWorkers`.
+Nel JSON: `fps.negotiated` contro `fps.observed` e `fps.processed`; `samples` con fase `extract` (copia pixel), `queue` (attesa prima del decode), `wasm` (solo il decode, da `startedAt`), `aggregate` (chiusura del batch ROI); `passes` / `skippedPasses`; `grabs` (pixel letti, job, frame interi); `exposure`; `goodput.opticalBps` contro `goodput.fountainBps` in byte/s; `windows`; `busyWorkers`.
 
 | Risultato osservato | Collo di bottiglia probabile |
 |---|---|
@@ -130,7 +134,7 @@ Nel JSON: `fps.negotiated` contro `fps.observed`, `fps.processed`, `samples` con
 
 ## Simulazione, non benchmark
 
-A 24 FPS e circa 1830 byte utili per QR, uno schizzo a efficienza netta 70% (perdite, duplicati, ridondanza) indica circa 123 kB/s di goodput simulato e 176 kB/s di tetto della configurazione. Non è una misura. Il goodput dichiarato dalla pipeline attuale, prima di questi flag, è circa 40 kB/s e non è stato rimisurato in questa sessione. Quattro QR simultanei raggiungerebbero 100 kB/s intorno al 57% di efficienza solo se la fotocamera risolve tutti i simboli a quella densità.
+A 24 FPS e 1830 byte utili per QR, `4 × 1830 × 24` fa 175.7 kB/s (171.6 KiB/s). Il 70% di quel tetto, per perdite, duplicati e ridondanza, è 123.0 kB/s. Non è una misura. Il goodput dichiarato della pipeline attuale, prima di questi flag, è circa 40 kB/s e non è stato rimisurato in questa sessione. Quattro QR simultanei raggiungerebbero 100 kB/s intorno al 57% di efficienza solo se la fotocamera risolve tutti i simboli a quella densità.
 
 ## Screening sintetico
 
@@ -138,9 +142,9 @@ Eseguito `node --experimental-strip-types bench/decode-bench.mjs screen` su Node
 
 Il prodotto completo è 13440 combinazioni. Lo screening ne ha decodificate 240 (payload × ECC × griglia × larghezza camera) e il modello ne ha valutate 9296 scartando i decode a successo zero. Il filtro di sopravvivenza chiede successo ≥ 95% e zero byte sbagliati: è più stretto del criterio di accettazione del prodotto, dove il fountain può assorbire simboli persi.
 
-Sulla cella di default (1850 byte, ECC L, 1 QR, camera 1280) il decode mediano è 15.2 ms e il modello, a 24 FPS di trasmissione e 30 FPS di camera con 2 worker, dà **42.9 kB/s** di goodput fountain. È il tetto del modello a perdita zero, vicino ai 40 kB/s dichiarati per la pipeline attuale.
+Sulla cella di default (1850 byte, ECC L, 1 QR, camera 1280) il decode mediano è 15.2 ms e il modello, a 24 FPS di trasmissione e 30 FPS di camera con 2 worker, dà **43.9 kB/s (42.9 KiB/s)** di goodput fountain. È il tetto del modello a perdita zero, vicino ai 40 kB/s dichiarati per la pipeline attuale.
 
-La stessa cella a 4 QR resta a successo 100% in 15.0 ms. Due worker bastano, su questo PC e su questi frame puliti, a stare dietro a una camera da 30 FPS. Il tetto del modello a 24 FPS e perdita zero è circa 172 kB/s (4 × 1830 byte × 24 / 1024). Coincide con l’ordine di grandezza del limite teorico citato (176 kB/s). Resta da vedere se la fotocamera risolve quei quattro simboli: è il punto dei sei test in camera.
+La stessa cella a 4 QR resta a successo 100% in 15.0 ms. Due worker bastano, su questo PC e su questi frame puliti, a stare dietro a una camera da 30 FPS. Il tetto del modello a 24 FPS e perdita zero è 175.7 kB/s (171.6 KiB/s). Resta da vedere se la fotocamera risolve quei quattro simboli: è il punto dei sei test in camera.
 
 Configurazioni che su frame puliti non decodificano (successo 0), quindi da non inseguire senza un altro render:
 
@@ -149,7 +153,9 @@ Configurazioni che su frame puliti non decodificano (successo 0), quindi da non 
 - 2331 byte, ECC L, 3 QR, camera 1280
 - diversi 4 QR a 960 px sopra i 1200 byte
 
-Il modello, senza perdite, mette in cima 2900 byte, ECC L, 4 QR, 60 FPS: 675 kB/s. È il prodotto `txFps × griglia × payload utile` quando ogni simbolo arriva una volta. Non è un goodput atteso in camera e non cambia i default.
+Il modello, senza perdite, mette in cima 2900 byte, ECC L, 4 QR, 60 FPS: 691.2 kB/s (675 KiB/s). È il prodotto `txFps × griglia × payload utile` quando ogni simbolo arriva una volta. Non è un goodput atteso in camera e non cambia i default.
+
+Su 165 celle pulite a 30 FPS di camera, 159 sono già sature con 2 worker (il decode sta sotto i 67 ms). Le 6 in cui 4 worker alzano il tetto sono tutte a camera 2560 e guadagnano pochi decode al secondo (da circa 26–29 a 30). Non è un motivo per cambiare il default di 2 worker sul frame intero. Il caso in cui 4 worker contano è la ROI parallela, sotto.
 
 Risultati: `bench/results/screen.json`, `bench/results/model.json`.
 
@@ -168,11 +174,72 @@ Il grayscale PGM non è più veloce di `mem` su questi frame: la conversione com
 
 File: `bench/results/variants.json`. Camera reale: **non misurato**.
 
+## Acquisizione ottica
+
+Il decode sintetico ha margine. Questi esperimenti non toccano protocollo, fountain, formato dei pacchetti, né i default (24 FPS, 1850 byte, ECC L, camera 1280, 2 worker). Nessun altro profilo di decode è stato aggiunto.
+
+### Moduli interi
+
+Transfer, Diode e il modem scalano già con `Math.floor` e `imageSmoothingEnabled = false`: un modulo occupa un numero intero di pixel del canvas. `bench/optics.mjs` mette lo stesso raster nel sensore a 2, 3, 4 e 5 pixel per modulo, senza ricampionamento. Su contrasto pulito, 800 / 1200 / 1850 / 2331 byte a 1, 2 e 4 QR decodificano al 100% ogni volta che la griglia entra in 1280×960. A 2.5 pixel per modulo il campionamento lineare e quello nearest, su 1850 byte, sono entrambi al 100%: l’interpolazione non è il guasto, su questi frame.
+
+Non entrano nel fotogramma 1280×960, quindi non hanno un decode: 1850 byte a 4 QR oltre 3 px/modulo, 2331 byte a 4 QR oltre 2 px/modulo, 2331 byte a 2 QR oltre 3 px/modulo. Nello screening con proiezione prospettica (non a moduli interi) la stessa camera 1280 vede i 4 QR da 1850 byte a circa 2.11 px/modulo e li legge comunque, da puliti. Il margine che manca è quello che sopravvive a blur e movimento, non il decode del frame perfetto.
+
+### Motion blur e frame misti
+
+Sempre 1850 byte, 4 px/modulo, frame intero:
+
+| Disturbo | Successo | Tempo |
+|---|---:|---:|
+| Smear orizzontale 2 px | 100% | 16 ms |
+| Smear orizzontale 6 px | 0% | 65 ms |
+| Blend 50/50 di due simboli | 0% | 72 ms |
+| Rolling shutter a metà tra due simboli | 0% | 74 ms |
+
+Uno smear di 6 px è un modulo e mezzo di scia: il simbolo non si legge. Un fotogramma che integra due QR diversi non si legge neanche per metà. Il tempo di posa va tenuto sotto la durata del simbolo (a 24 FPS il simbolo resta circa 42 ms) e, se il dispositivo lo permette, molto sotto. È il motivo del flag di esposizione, non di un altro decoder.
+
+### Esposizione
+
+`exp` chiede `exposureMode: continuous` se le capability lo elencano. `exp:short` chiede un tempo di posa di al più 8 ms (1/125 s), agganciato al minimo del dispositivo se non può arrivare così in basso, e `exposureMode: manual` solo se quel modo esiste. Il vincolo viaggia nello stesso `applyConstraints` del fuoco, così un tentativo non cancella l’altro. Se il device rifiuta la posa corta, resta il fuoco. Spento di default: senza JSON di un telefono non c’è un prima/dopo. La HUD e il campo `exposure` del JSON riportano modo, tempo e se il vincolo è rimasto attaccato.
+
+### Payload a camera 1280, ECC L, proiezione dello screening
+
+| Byte | 1 QR | 2 QR | 4 QR |
+|---|---|---|---|
+| 800 | 6.40 px/mod, 12.7 ms, 100% | 6.40 px/mod, 14.5 ms, 100% | 3.08 px/mod, 11.6 ms, 100% |
+| 1200 | 5.38 px/mod, 13.6 ms, 100% | 5.38 px/mod, 15.6 ms, 100% | 2.58 px/mod, 13.4 ms, 100% |
+| 1850 | 4.39 px/mod, 15.2 ms, 100% | 4.39 px/mod, 20.4 ms, 100% | 2.11 px/mod, 15.0 ms, 100% |
+| 2331 | 3.98 px/mod, 24.1 ms, 100% | 3.98 px/mod, 28.1 ms, 100% | 1.91 px/mod, 19.1 ms, 100% |
+
+Quattro QR da 2331 byte stanno a meno di 2 pixel per modulo già nel render pulito. È il candidato più fragile appena la foto si sporca. I default non si spostano finché un JSON reale non lo conferma.
+
+### Pipeline ROI concorrente, 4 QR da 1850 byte a 3 px/modulo
+
+Copia dei pixel in Node, non un `getImageData` di telefono. `slowest` è il tempo di parete se ogni job ha un worker.
+
+| Worker liberi | Pixel copiati | Estrazione | Decode più lento |
+|---|---:|---:|---:|
+| Frame intero | 1.23 Mpx | 1.4 ms | 16.8 ms |
+| 1 (unione) | 0.89 Mpx | 1.4 ms | 15.0 ms |
+| 2 (due fasce) | 0.85 Mpx | 1.8 ms | 9.5 ms |
+| 4 (un QR ciascuno) | 0.81 Mpx | 0.6 ms | 4.2 ms |
+
+I quattro simboli riempiono quasi il fotogramma, quindi il risparmio di pixel è modesto. Il tempo che scende è il decode in parallelo. Sul telefono la voce da leggere nel JSON è `samples` fase `extract`: lì la copia da 5 MB può pesare più di questo 1 ms. Con `roi`, 2 o 3 worker liberi su 4 QR non lasciano più uno slot fermo: i riquadri si dividono in fasce, ognuna un’unione. Prima, meno worker dei QR significava una sola unione.
+
+### Optical Link Calibration, non collegata
+
+`receive/link-calibration.ts` calcola i pixel per modulo dal quad e confronta il risultato con l’ipotesi di 3 px/modulo (`low` / `ok` / `wide`). Nessun controller la chiama. La procedura futura, quando ci saranno i JSON:
+
+1. Il mittente tiene fermo un simbolo già previsto dal protocollo (come fa il video).
+2. Il ricevitore legge dal JSON quad, `exposure.timeS`, nitidezza, FPS osservati e `grabs`.
+3. Il consiglio resta a schermo. Non cambia FPS, payload né ECC.
+4. La soglia di 3 px/modulo si tiene o si butta solo dopo quelle misure.
+
+File: `bench/results/optics.json`. Camera reale: **non misurato**.
+
 ## Priorità ancora aperte
 
-1. Latest Frame Only (`sched:latest` contro `sched:pool`) se il tempo di inattività dei worker risulta rilevante nei JSON.
-2. BarcodeDetector resta sperimentale e rimandato: `rawValue` è una stringa e un solo test positivo non dimostra i payload binari.
+1. Leggere i JSON dei sei test, più `?wfopt=perf,exp` e `?wfopt=perf,exp:short` sullo stesso telefono.
+2. Latest Frame Only solo se `queue` nei JSON mostra worker fermi in attesa.
+3. BarcodeDetector resta rimandato: `rawValue` è una stringa.
 
-## Esperimenti successivi
-
-Combinazione delle migliori dopo i JSON dei sei test. Nessun default cambia senza un prima/dopo di camera.
+Nessun default cambia senza un prima/dopo di camera. Nessun altro intervento sul decoder prima di quei JSON.

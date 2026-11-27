@@ -17,7 +17,7 @@ import {
 } from "./camera.ts";
 import { sharpnessOfRgba } from "./sharpness.ts";
 import { workerPlanFields } from "./worker-plan.ts";
-import { RoiSession, type GrabJob } from "./roi.ts";
+import { jobLocalRects, RoiSession, type GrabJob } from "./roi.ts";
 import type { Quad, Rect } from "./decode-core.ts";
 
 /** Overhead tipico LT per stimare i frame ancora necessari (spesso si completa prima). */
@@ -399,8 +399,17 @@ async function applyQrFocus(
     const caps = readFocusCaps(track);
     focusSupported = hasFocusControl(caps);
     setFocusHintVisible(true);
-    const result = await applyQrFocusConstraints(track, caps, point, pref, kind);
-    if (getOptFlags().perf) {
+    const flags = getOptFlags();
+    const result = await applyQrFocusConstraints(track, caps, point, pref, kind, flags.exposure);
+    optTrace.noteExposure({
+      intent: flags.exposure,
+      applied: result.exposureApplied,
+      mode: result.settings.exposureMode ?? null,
+      timeS: result.settings.exposureTime ?? null,
+      compensation: result.settings.exposureCompensation ?? null,
+      modes: caps.exposureMode ?? [],
+    });
+    if (flags.perf) {
       optTrace.mark("capture", wallNow(), 0, `focus:${result.applied ? "ok" : "no"}:${result.settings.focusMode ?? "-"}`);
     }
     return result.applied;
@@ -699,11 +708,12 @@ async function start(): Promise<void> {
     const w = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     w.onmessage = (e: MessageEvent) => {
-      const { id, error, postedAt, doneAt, quads, passes, skipped } = e.data as {
+      const { id, error, postedAt, doneAt, startedAt, quads, passes, skipped } = e.data as {
         id: number;
         error?: string;
         postedAt?: number;
         doneAt?: number;
+        startedAt?: number;
         quads?: (Quad | null)[];
         passes?: { pass: string; ms: number }[];
         skipped?: number;
@@ -715,12 +725,14 @@ async function start(): Promise<void> {
       if (id === -1) return;
       busy[slot] = false;
       syncOptWorkers();
-      if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
-        optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
-      }
+      optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
       const grab = slotGrab[slot];
-      if (grab) roi.push(grab.gen, quads, grab.ox, grab.oy);
+      if (grab) {
+        const t0 = wallNow();
+        roi.push(grab.gen, quads, grab.ox, grab.oy);
+        optTrace.mark("aggregate", t0, wallNow() - t0);
+      }
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
     w.onerror = (event) => abortTransfer(`✗ ${t("receive.workerError", { msg: event.message })}`);
@@ -771,7 +783,7 @@ function readRegion(video: CanvasImageSource, rect: Rect, full: boolean): ImageD
   }, full ? "full" : "crop");
 }
 
-function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: number, planExtra: { expected: number; rects: Rect[] | null }): void {
+function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: number, expected: number): void {
   const img = readRegion(video, job.rect, job.full);
   const postedAt = wallNow();
   if (getOptFlags().perf && postedAt - lastSharpnessAt > 500) {
@@ -781,13 +793,7 @@ function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: numb
   busy[slot] = true;
   slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
   const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
-  const local = planExtra.rects?.map((r) => ({
-    x: r.x - job.rect.x,
-    y: r.y - job.rect.y,
-    w: r.w,
-    h: r.h,
-  }));
-  const plan = workerPlanFields(fps, job.full ? planExtra.expected : planExtra.rects ? planExtra.expected : 1, job.full ? planExtra.rects : local ?? null);
+  const plan = workerPlanFields(fps, job.full ? expected : Math.max(1, job.boxes.length), jobLocalRects(job));
   workers[slot]!.postMessage(
     { id: gen, buf: img.data.buffer, w: job.rect.w, h: job.rect.h, postedAt, ...plan },
     [img.data.buffer],
@@ -808,12 +814,12 @@ function captureFrame(): void {
   const flags = getOptFlags();
   const jobs = roi.jobs(vw, vh, free.length, flags.roi).slice(0, free.length);
   const gen = ++grabGen;
-  const boxes = roi.state.boxes.map((b) => b.rect);
   roi.begin(gen, jobs.length, jobs.every((j) => j.full), vw, vh);
+  let pixels = 0;
+  for (const job of jobs) pixels += job.rect.w * job.rect.h;
+  optTrace.noteGrab(jobs.length, pixels, jobs.some((j) => j.full));
   for (let i = 0; i < jobs.length; i++) {
-    const job = jobs[i]!;
-    const rects = job.full ? (flags.roi ? boxes : null) : jobs.length === 1 && boxes.length > 1 ? boxes : null;
-    postGrab(free[i]!, video, job, gen, { expected: roi.state.expected, rects });
+    postGrab(free[i]!, video, jobs[i]!, gen, roi.state.expected);
   }
   syncOptWorkers();
   optTrace.noteProcessed();

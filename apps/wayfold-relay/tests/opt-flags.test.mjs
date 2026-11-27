@@ -20,6 +20,13 @@ test("query tokens enable flags and budget", () => {
   assert.equal(f.schedule, "pool");
 });
 
+test("exp defaults off and exp:short is opt-in", () => {
+  assert.equal(parseOptList(null).exposure, "off");
+  assert.equal(parseOptList("exp").exposure, "continuous");
+  assert.equal(parseOptList("perf,exp:short").exposure, "short");
+  assert.equal(parseOptList("exp:short").perf, false);
+});
+
 test("latest alone selects grab-on-free schedule", () => {
   const f = parseOptList("latest,budget:2");
   assert.equal(f.latest, true);

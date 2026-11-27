@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createRoiState, expandRect, planGrabs, quadAabb, roiUpdate, RoiSession } from "../receive/roi.ts";
+import { createRoiState, expandRect, jobLocalRects, planGrabs, quadAabb, roiUpdate, RoiSession } from "../receive/roi.ts";
 
 function quad(x, y, s = 40) {
   return {
@@ -66,6 +66,27 @@ test("planGrabs uses one union when a single worker is free", () => {
   assert.ok(jobs[0].rect.w < 400);
   assert.ok(jobs[0].rect.x <= 10);
   assert.ok(jobs[0].rect.x + jobs[0].rect.w >= 120);
+});
+
+test("planGrabs splits four codes across the free workers", () => {
+  const boxes = [
+    { x: 10, y: 10, w: 80, h: 80 },
+    { x: 200, y: 10, w: 80, h: 80 },
+    { x: 10, y: 220, w: 80, h: 80 },
+    { x: 200, y: 220, w: 80, h: 80 },
+  ];
+  const two = planGrabs(true, false, boxes, 400, 400, 2);
+  assert.equal(two.length, 2);
+  assert.ok(two.every((j) => !j.full && j.boxes.length === 2));
+  const one = planGrabs(true, false, boxes, 400, 400, 1);
+  const twoPx = two.reduce((n, j) => n + j.rect.w * j.rect.h, 0);
+  assert.ok(twoPx < one[0].rect.w * one[0].rect.h);
+  const three = planGrabs(true, false, boxes, 400, 400, 3);
+  assert.equal(three.length, 3);
+  assert.equal(three.reduce((n, j) => n + j.boxes.length, 0), 4);
+  const local = jobLocalRects(two[0]);
+  assert.equal(local.length, 2);
+  assert.ok(local.every((r) => r.x >= 0 && r.y >= 0));
 });
 
 test("a batch of crops applies once, in camera coordinates", () => {

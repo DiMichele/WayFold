@@ -19,8 +19,8 @@ import {
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
-import { RoiSession, type GrabJob } from "../receive/roi.ts";
-import type { Quad, Rect } from "../receive/decode-core.ts";
+import { jobLocalRects, RoiSession } from "../receive/roi.ts";
+import type { Quad } from "../receive/decode-core.ts";
 import { ScreenWake, currentPolicy, el, formatBytes, logEvent, showBanner } from "./common.ts";
 import { decodeLiveRecord, isLiveMime, isNewerLive, type LiveRecord } from "./live.ts";
 import { acceptVideoPacket, renderVideoStats, resetVideoPlayback } from "./video-rx.ts";
@@ -265,7 +265,16 @@ async function focusAt(
     } catch {
       /* ignore */
     }
-    await applyQrFocusConstraints(track, caps, point, pref, kind);
+    const flags = getOptFlags();
+    const result = await applyQrFocusConstraints(track, caps, point, pref, kind, flags.exposure);
+    optTrace.noteExposure({
+      intent: flags.exposure,
+      applied: result.exposureApplied,
+      mode: result.settings.exposureMode ?? null,
+      timeS: result.settings.exposureTime ?? null,
+      compensation: result.settings.exposureCompensation ?? null,
+      modes: caps.exposureMode ?? [],
+    });
   } finally {
     focusBusy = false;
     const next = focusQueued;
@@ -372,8 +381,10 @@ function captureFrame(video: HTMLVideoElement): void {
   const flags = getOptFlags();
   const jobs = roi.jobs(vw, vh, free.length, flags.roi).slice(0, free.length);
   const gen = ++grabGen;
-  const boxes = roi.state.boxes.map((b) => b.rect);
   roi.begin(gen, jobs.length, jobs.every((j) => j.full), vw, vh);
+  let pixels = 0;
+  for (const job of jobs) pixels += job.rect.w * job.rect.h;
+  optTrace.noteGrab(jobs.length, pixels, jobs.some((j) => j.full));
   for (let i = 0; i < jobs.length; i++) {
     const job = jobs[i]!;
     const slot = free[i]!;
@@ -390,8 +401,8 @@ function captureFrame(video: HTMLVideoElement): void {
     busy[slot] = true;
     slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
     const fps = optTrace.observedFps() || optTrace.negotiatedFps || CAPTURE_FPS;
-    const rects = jobRects(job, jobs, boxes);
-    const plan = workerPlanFields(fps, rects ? roi.state.expected : 1, rects);
+    const rects = jobLocalRects(job);
+    const plan = workerPlanFields(fps, job.full ? roi.state.expected : Math.max(1, job.boxes.length), rects);
     workers[slot]!.postMessage(
       { id: gen, buf: img.data.buffer, w: job.rect.w, h: job.rect.h, postedAt: wallNow(), ...plan },
       [img.data.buffer],
@@ -401,24 +412,18 @@ function captureFrame(video: HTMLVideoElement): void {
   optTrace.noteProcessed();
 }
 
-function jobRects(job: GrabJob, jobs: GrabJob[], boxes: Rect[]): Rect[] | null {
-  if (job.full) return boxes.length ? boxes : null;
-  if (jobs.length === 1 && boxes.length > 1) {
-    return boxes.map((r) => ({ x: r.x - job.rect.x, y: r.y - job.rect.y, w: r.w, h: r.h }));
-  }
-  return null;
-}
 
 function startWorkers(): void {
   for (let i = 0; i < WORKER_COUNT; i++) {
     const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     worker.onmessage = (e: MessageEvent) => {
-      const { id, error, postedAt, doneAt, quads, passes, skipped } = e.data as {
+      const { id, error, postedAt, doneAt, startedAt, quads, passes, skipped } = e.data as {
         id: number;
         error?: string;
         postedAt?: number;
         doneAt?: number;
+        startedAt?: number;
         quads?: (Quad | null)[];
         passes?: { pass: string; ms: number }[];
         skipped?: number;
@@ -431,12 +436,14 @@ function startWorkers(): void {
       if (id === -1) return;
       busy[slot] = false;
       optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
-      if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
-        optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
-      }
+      optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
       const grabMeta = slotGrab[slot];
-      if (grabMeta) roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
+      if (grabMeta) {
+        const t0 = wallNow();
+        roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
+        optTrace.mark("aggregate", t0, wallNow() - t0);
+      }
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
     worker.onerror = (event) => {
