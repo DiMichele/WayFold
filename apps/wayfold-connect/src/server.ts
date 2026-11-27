@@ -50,8 +50,8 @@ function localOrigin(origin: string | undefined): boolean {
 
 class Rates {
   private last = { t: performance.now(), dataIn: 0, dataOut: 0, frames: 0 };
-  inKBs = 0;
-  outKBs = 0;
+  inBps = 0;
+  outBps = 0;
   framesPerSec = 0;
 
   update(dataIn: number, dataOut: number, frames: number): void {
@@ -59,8 +59,8 @@ class Rates {
     const dt = (now - this.last.t) / 1000;
     if (dt < 0.9) return;
     const d = (a: number, b: number) => Math.max(0, a - b);
-    this.inKBs = d(dataIn, this.last.dataIn) / 1024 / dt;
-    this.outKBs = d(dataOut, this.last.dataOut) / 1024 / dt;
+    this.inBps = d(dataIn, this.last.dataIn) / dt;
+    this.outBps = d(dataOut, this.last.dataOut) / dt;
     this.framesPerSec = d(frames, this.last.frames) / dt;
     this.last = { t: now, dataIn, dataOut, frames };
   }
@@ -80,7 +80,7 @@ export function startServer(opts: ServerOptions): Promise<{ close: () => void }>
     rates.update(s?.dataIn ?? 0, s?.dataOut ?? 0, peer.framesIn);
     return {
       ...st,
-      rates: { inKBs: rates.inKBs, outKBs: rates.outKBs, framesInPerSec: rates.framesPerSec },
+      rates: { inBps: rates.inBps, outBps: rates.outBps, framesInPerSec: rates.framesPerSec },
       modem: modem ? { ...modemInfo, ...modemStats } : null,
       log: peer.log.slice(-80),
       ...opts.extraStatus(),
@@ -151,8 +151,8 @@ export function startServer(opts: ServerOptions): Promise<{ close: () => void }>
           awaiting: "awaitingApproval" in st ? st.awaitingApproval : !!st.pending,
           linkUp: !!st.session?.linkUp,
           rttMs: st.session?.rttMs ?? 0,
-          inKBs: rates.inKBs,
-          outKBs: rates.outKBs,
+          inBps: rates.inBps,
+          outBps: rates.outBps,
         }),
       );
     }, STATUS_PUSH_MS);

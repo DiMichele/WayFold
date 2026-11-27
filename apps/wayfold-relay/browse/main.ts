@@ -1,4 +1,5 @@
 import { applyStatic, t } from "../shared/i18n.ts";
+import { formatBitrate } from "../shared/throughput.ts";
 import { NET_CHANNEL, type NetBroadcast } from "../net/channel.ts";
 
 interface UvConfig {
@@ -156,7 +157,7 @@ function renderStatus(): void {
   else [text, dot] = [t("browse.status.waiting"), "warn"];
   $("bz-state").textContent = text;
   $("bz-dot").className = `net-dot ${dot}`;
-  $("bz-rate").textContent = s?.state === "connected" && s.linkUp ? `↓ ${s.inKBs.toFixed(1)} · ↑ ${s.outKBs.toFixed(1)} KiB/s` : "";
+  $("bz-rate").textContent = s?.state === "connected" && s.linkUp ? `↓ ${formatBitrate(s.inBps)} · ↑ ${formatBitrate(s.outBps)}` : "";
   renderLoading();
   watchFrame();
 }

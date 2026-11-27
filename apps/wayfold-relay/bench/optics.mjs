@@ -138,7 +138,7 @@ if (quad && quadImg) {
 }
 
 writeFileSync(new URL("optics.json", RESULTS), JSON.stringify({
-  units: { "kB/s": "bytes/s / 1000", "KiB/s": "bytes/s / 1024" },
+  units: { "B/s": "bytes/s", "kB/s": "bytes/s / 1000" },
   note: "Synthetic sensor. Not a camera measurement. Defaults are unchanged.",
   rows, pipeline,
 }, null, 1));

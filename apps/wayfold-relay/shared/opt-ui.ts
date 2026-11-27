@@ -2,7 +2,7 @@
 
 import { getOptFlags } from "./opt-flags.ts";
 import { optTrace } from "./opt-trace.ts";
-import { formatKiBps } from "./throughput.ts";
+import { formatBitrate, formatKBps } from "./throughput.ts";
 
 export function ensureOptHud(host: HTMLElement | null): HTMLElement | null {
   if (!host || !getOptFlags().perf) return null;
@@ -21,16 +21,17 @@ export function ensureOptHud(host: HTMLElement | null): HTMLElement | null {
   return panel;
 }
 
-export function renderOptHud(host: HTMLElement | null): void {
+export function renderOptHud(host: HTMLElement | null, unit: "kB" | "bit" = "kB"): void {
   if (!getOptFlags().perf) return;
   const panel = ensureOptHud(host);
   const body = panel?.querySelector("[data-opt-body]");
   if (!body) return;
   const s = optTrace.snapshot();
+  const rate = unit === "bit" ? formatBitrate : formatKBps;
   const lines = [
     `cfg ${s.fps.configured.toFixed(0)} · neg ${s.fps.negotiated.toFixed(1)} · obs ${s.fps.observed.toFixed(1)} · proc ${s.fps.processed.toFixed(1)}`,
-    `QR/s ${s.goodput.uniqueQrPerSec.toFixed(1)} · ottico ${formatKiBps(s.goodput.opticalBps)} · fountain ${formatKiBps(s.goodput.fountainBps)}`,
-    `file ${formatKiBps(s.goodput.fileBps)} · worker ${s.busyWorkers}/${s.workerCount}` +
+    `QR/s ${s.goodput.uniqueQrPerSec.toFixed(1)} · ottico ${rate(s.goodput.opticalBps)} · fountain ${rate(s.goodput.fountainBps)}`,
+    `file ${rate(s.goodput.fileBps)} · worker ${s.busyWorkers}/${s.workerCount}` +
       (s.heapMiB != null ? ` · heap ${s.heapMiB.toFixed(0)} MiB` : "") +
       (s.sharpness != null ? ` · sharp ${s.sharpness.toFixed(0)}` : ""),
   ];

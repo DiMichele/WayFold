@@ -65,8 +65,8 @@
   <section class="card">
     <h2>Link ottico</h2>
     <div class="grid">
-      <div class="kv"><b id="m-down">–</b><span>KB/s ricevuti (dati)</span></div>
-      <div class="kv"><b id="m-up">–</b><span>KB/s inviati (dati)</span></div>
+      <div class="kv"><b id="m-down">–</b><span>ricevuti (dati)</span></div>
+      <div class="kv"><b id="m-up">–</b><span>inviati (dati)</span></div>
       <div class="kv"><b id="m-rtt">–</b><span>RTT ms</span></div>
       <div class="kv"><b id="m-fps">–</b><span>frame validi / s</span></div>
       <div class="kv"><b id="m-retx">–</b><span>ritrasmissioni</span></div>
@@ -102,6 +102,13 @@
 <script>
 const $ = (id) => document.getElementById(id);
 const kb = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`;
+const bitrate = (bytesPerSec) => {
+  if (!Number.isFinite(bytesPerSec) || bytesPerSec < 0) return "–";
+  const bits = bytesPerSec * 8;
+  if (bits < 1000) return `${Math.round(bits)} bit/s`;
+  if (bits < 1000000) return `${(bits / 1000).toFixed(1)} kbit/s`;
+  return `${(bits / 1000000).toFixed(2)} Mbit/s`;
+};
 const sec = (ms) => ms < 60000 ? `${Math.round(ms / 1000)} s` : `${Math.floor(ms / 60000)} min`;
 
 async function act(action) {
@@ -152,8 +159,8 @@ function render(s) {
   $("pairing-title").textContent = ses ? "Sessione" : "Abbinamento";
   $("peer-info").innerHTML = p ? `${gw ? "Client" : "Gateway"}: <b>${escape(p.name)}</b><br>Impronta: ${p.fingerprint}` : "";
 
-  $("m-down").textContent = s.rates ? s.rates.inKBs.toFixed(1) : "–";
-  $("m-up").textContent = s.rates ? s.rates.outKBs.toFixed(1) : "–";
+  $("m-down").textContent = s.rates ? bitrate(s.rates.inBps) : "–";
+  $("m-up").textContent = s.rates ? bitrate(s.rates.outBps) : "–";
   $("m-rtt").textContent = ses?.rttMs ? ses.rttMs : "–";
   $("m-fps").textContent = s.rates ? s.rates.framesInPerSec.toFixed(1) : "–";
   $("m-retx").textContent = ses ? ses.retransmits : "–";

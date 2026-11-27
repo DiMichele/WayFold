@@ -322,15 +322,15 @@ class WispEgress implements StreamHost {
 
 class Rates {
   private last = { t: performance.now(), dataIn: 0, dataOut: 0 };
-  inKBs = 0;
-  outKBs = 0;
+  inBps = 0;
+  outBps = 0;
 
   update(dataIn: number, dataOut: number): void {
     const now = performance.now();
     const dt = (now - this.last.t) / 1000;
     if (dt < 0.9) return;
-    this.inKBs = Math.max(0, dataIn - this.last.dataIn) / 1024 / dt;
-    this.outKBs = Math.max(0, dataOut - this.last.dataOut) / 1024 / dt;
+    this.inBps = Math.max(0, dataIn - this.last.dataIn) / dt;
+    this.outBps = Math.max(0, dataOut - this.last.dataOut) / dt;
     this.last = { t: now, dataIn, dataOut };
   }
 }
@@ -455,8 +455,8 @@ export class LocalLink implements ModemLink {
       awaiting: cl ? cl.awaitingApproval : !!gw?.pending,
       linkUp: p.linkUp(),
       rttMs: s ? Math.round(s.sender.srtt) : 0,
-      inKBs: this.rates.inKBs,
-      outKBs: this.rates.outKBs,
+      inBps: this.rates.inBps,
+      outBps: this.rates.outBps,
       inBytes: s?.mux.dataIn ?? 0,
       outBytes: s?.mux.dataOut ?? 0,
     };

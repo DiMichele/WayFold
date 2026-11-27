@@ -5,6 +5,7 @@ import { SESSION_STALL_TIMEOUT_MS, SOFT_ORIGINAL_LIMIT } from "../shared/limits.
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
 import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { formatKBps } from "../shared/throughput.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import { t, onLangChange } from "../shared/i18n.ts";
 import {
@@ -136,9 +137,7 @@ function updateProgressUi(pct: number, rate: string, eta: string, doneBytes: num
 }
 
 function formatRate(bytesPerSec: number): string {
-  if (!Number.isFinite(bytesPerSec) || bytesPerSec < 0) bytesPerSec = 0;
-  if (bytesPerSec < 1024) return `${Math.round(bytesPerSec)} B/s`;
-  return `${(bytesPerSec / 1024).toFixed(1)} KiB/s`;
+  return formatKBps(bytesPerSec);
 }
 
 function formatEta(seconds: number): string {

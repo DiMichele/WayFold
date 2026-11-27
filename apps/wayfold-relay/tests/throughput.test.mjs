@@ -1,13 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { linkHeadroom, pixelsPerModule } from "../receive/link-calibration.ts";
-import { formatKiBps, toKBps, toKiBps } from "../shared/throughput.ts";
+import { formatBitrate, formatKBps, toKBps } from "../shared/throughput.ts";
 
-test("kB/s divides by 1000 and KiB/s divides by 1024", () => {
+test("screen rates use kB/s, and the optical network uses bits", () => {
   const bytesPerSec = 4 * 1830 * 24;
   assert.equal(+(toKBps(bytesPerSec).toFixed(1)), 175.7);
-  assert.equal(+(toKiBps(bytesPerSec).toFixed(1)), 171.6);
-  assert.equal(formatKiBps(bytesPerSec), "171.6 KiB/s");
+  assert.equal(formatKBps(bytesPerSec), "175.7 kB/s");
+  assert.equal(formatKBps(400), "400 B/s");
+  assert.equal(formatBitrate(10_000), "80.0 kbit/s");
+  assert.equal(formatBitrate(bytesPerSec), "1.41 Mbit/s");
 });
 
 test("module span over the known module count is the calibration input", () => {

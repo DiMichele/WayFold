@@ -151,8 +151,8 @@ function modelRow(row, txFps, camFps, workers) {
     ...row, txFps, camFps, workers,
     decodesPerSec: round(decodesPerSec), delivery: +delivery.toFixed(3),
     opticalBps: round(opticalBps), fountainBps: round(fountainBps),
-    opticalKBps: round(opticalBps / 1000), opticalKiBps: round(opticalBps / 1024),
-    fountainKBps: round(fountainBps / 1000), fountainKiBps: round(fountainBps / 1024),
+    opticalKBps: round(opticalBps / 1000),
+    fountainKBps: round(fountainBps / 1000),
   };
 }
 
@@ -179,12 +179,12 @@ function model(rows = load("screen.json").rows) {
   const payloadCompare = rows.filter((r) => r.ecc === "L" && r.camW === 1280 && [1, 2, 4].includes(r.grid) && [800, 1200, 1850, 2331].includes(r.payload));
   const workersAt30 = workerSplit(rows);
   save("model.json", {
-    machine, units: { "kB/s": "bytes/s / 1000", "KiB/s": "bytes/s / 1024" },
+    machine, units: { "B/s": "bytes/s, JSON and internal counters", "kB/s": "bytes/s / 1000, benchmark figure" },
     cartesian: total, modelled: all.length, top: all.slice(0, 40), selected, defaults, payloadCompare, workersAt30,
   });
   console.log(`model: ${total} combinazioni nel prodotto, ${all.length} valutate, ${selected.length} selezionate`);
-  for (const r of selected) console.log(`  ${r.payload}B ${r.ecc} ${r.grid}x cam${r.camW} tx${r.txFps} cam${r.camFps}fps w${r.workers}: ${r.fountainKBps} kB/s (${r.fountainKiBps} KiB/s, decode ${r.ms} ms)`);
-  for (const r of defaults) console.log(`  default: ${r.fountainKBps} kB/s (${r.fountainKiBps} KiB/s)`);
+  for (const r of selected) console.log(`  ${r.payload}B ${r.ecc} ${r.grid}x cam${r.camW} tx${r.txFps} cam${r.camFps}fps w${r.workers}: ${r.fountainKBps} kB/s (decode ${r.ms} ms)`);
+  for (const r of defaults) console.log(`  default: ${r.fountainKBps} kB/s`);
   console.log(`  worker a 30 fps: ${workersAt30.twoFillsCamera}/${workersAt30.clean} celle già piene con 2 worker; 4 worker alzano il tetto in ${workersAt30.fourHelps}`);
 }
 

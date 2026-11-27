@@ -6,7 +6,7 @@ Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `
 
 ## Unità
 
-`kB/s` = byte/s ÷ 1000. `KiB/s` = byte/s ÷ 1024. I campi JSON `opticalBps`, `fountainBps` e `fileBps` sono byte al secondo, senza prefisso. La HUD li mostra in KiB/s. Il modello in `bench/results/model.json` riporta entrambe le colonne (`fountainKBps`, `fountainKiBps`).
+`kB/s` = byte/s ÷ 1000. Transfer e Optical Diode mostrano kB/s. Optical Network mostra kbit/s, oppure Mbit/s da 1 Mbit/s in su (`byte/s × 8`). Benchmark e questa pagina usano kB/s. I campi JSON `opticalBps`, `fountainBps` e `fileBps`, e i contatori interni (`inBps`, `outBps`, `rxBps`), restano byte al secondo.
 
 ## Criteri di accettazione
 
@@ -25,7 +25,7 @@ Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `
 | Observed FPS | Delta di `presentedFrames` / `mediaTime` da `requestVideoFrameCallback` |
 | Processed FPS | Frame consegnati ai worker |
 | Unique QR/s | Simboli con `seq` nuovo |
-| Ricostruiti | Crescita di `solvedCount * blockLen`, in byte/s (HUD: KiB/s) |
+| Ricostruiti | Crescita di `solvedCount * blockLen`, in byte/s (HUD Transfer e Diode: kB/s) |
 
 L’RTT ARQ (`sender.srtt` / `helper.rttMs`) si misura sul solo mittente tramite ACK. Non richiede orologi sincronizzati. È distinto dalla latenza unidirezionale ottica (coda TX, attesa RX, jitter tra simboli nuovi).
 
@@ -134,7 +134,7 @@ Nel JSON del ricevitore: `fps.negotiated` contro `fps.observed` e `fps.processed
 
 ## Simulazione, non benchmark
 
-A 24 FPS e 1830 byte utili per QR, `4 × 1830 × 24` fa 175.7 kB/s (171.6 KiB/s). Il 70% di quel tetto, per perdite, duplicati e ridondanza, è 123.0 kB/s. Non è una misura. Il goodput dichiarato della pipeline attuale, prima di questi flag, è circa 40 kB/s e non è stato rimisurato in questa sessione. Quattro QR simultanei raggiungerebbero 100 kB/s intorno al 57% di efficienza solo se la fotocamera risolve tutti i simboli a quella densità.
+A 24 FPS e 1830 byte utili per QR, `4 × 1830 × 24` fa 175.7 kB/s. Il 70% di quel tetto, per perdite, duplicati e ridondanza, è 123.0 kB/s. Non è una misura. Il goodput dichiarato della pipeline attuale, prima di questi flag, è circa 40 kB/s e non è stato rimisurato in questa sessione. Quattro QR simultanei raggiungerebbero 100 kB/s intorno al 57% di efficienza solo se la fotocamera risolve tutti i simboli a quella densità.
 
 ## Screening sintetico
 
@@ -142,9 +142,9 @@ Eseguito `node --experimental-strip-types bench/decode-bench.mjs screen` su Node
 
 Il prodotto completo è 13440 combinazioni. Lo screening ne ha decodificate 240 (payload × ECC × griglia × larghezza camera) e il modello ne ha valutate 9296 scartando i decode a successo zero. Il filtro di sopravvivenza chiede successo ≥ 95% e zero byte sbagliati: è più stretto del criterio di accettazione del prodotto, dove il fountain può assorbire simboli persi.
 
-Sulla cella di default (1850 byte, ECC L, 1 QR, camera 1280) il decode mediano è 15.2 ms e il modello, a 24 FPS di trasmissione e 30 FPS di camera con 2 worker, dà **43.9 kB/s (42.9 KiB/s)** di goodput fountain. È il tetto del modello a perdita zero, vicino ai 40 kB/s dichiarati per la pipeline attuale.
+Sulla cella di default (1850 byte, ECC L, 1 QR, camera 1280) il decode mediano è 15.2 ms e il modello, a 24 FPS di trasmissione e 30 FPS di camera con 2 worker, dà **43.9 kB/s** di goodput fountain. È il tetto del modello a perdita zero, vicino ai 40 kB/s dichiarati per la pipeline attuale.
 
-La stessa cella a 4 QR resta a successo 100% in 15.0 ms. Due worker bastano, su questo PC e su questi frame puliti, a stare dietro a una camera da 30 FPS. Il tetto del modello a 24 FPS e perdita zero è 175.7 kB/s (171.6 KiB/s). Resta da vedere se la fotocamera risolve quei quattro simboli: è il punto dei sei test in camera.
+La stessa cella a 4 QR resta a successo 100% in 15.0 ms. Due worker bastano, su questo PC e su questi frame puliti, a stare dietro a una camera da 30 FPS. Il tetto del modello a 24 FPS e perdita zero è 175.7 kB/s. Resta da vedere se la fotocamera risolve quei quattro simboli: è il punto dei sei test in camera.
 
 Configurazioni che su frame puliti non decodificano (successo 0), quindi da non inseguire senza un altro render:
 
@@ -153,7 +153,7 @@ Configurazioni che su frame puliti non decodificano (successo 0), quindi da non 
 - 2331 byte, ECC L, 3 QR, camera 1280
 - diversi 4 QR a 960 px sopra i 1200 byte
 
-Il modello, senza perdite, mette in cima 2900 byte, ECC L, 4 QR, 60 FPS: 691.2 kB/s (675 KiB/s). È il prodotto `txFps × griglia × payload utile` quando ogni simbolo arriva una volta. Non è un goodput atteso in camera e non cambia i default.
+Il modello, senza perdite, mette in cima 2900 byte, ECC L, 4 QR, 60 FPS: 691.2 kB/s. È il prodotto `txFps × griglia × payload utile` quando ogni simbolo arriva una volta. Non è un goodput atteso in camera e non cambia i default.
 
 Su 165 celle pulite a 30 FPS di camera, 159 sono già sature con 2 worker (il decode sta sotto i 67 ms). Le 6 in cui 4 worker alzano il tetto sono tutte a camera 2560 e guadagnano pochi decode al secondo (da circa 26–29 a 30). Non è un motivo per cambiare il default di 2 worker sul frame intero. Il caso in cui 4 worker contano è la ROI parallela, sotto.
 
@@ -288,7 +288,7 @@ Prima a 24 FPS, poi alla frequenza più alta del punto 1 che aveva `integerDivis
 | 2 | 1850 | 24, poi la frequenza scelta |
 | 4 | 1850 | 24, poi la frequenza scelta |
 
-Il goodput che conta è `fountainBps` (byte/s; in HUD è KiB/s), a file integro. Il tetto sintetico a 24 FPS e quattro QR da 1830 byte utili è 175.7 kB/s e non è il numero da battere qui: è il riferimento di un canale senza perdite. Il massimo sostenibile è il `fountainBps` più alto di questa tabella che non peggiora l’integrità del file e non alza `tx.late` né `tx.starved`.
+Il goodput che conta è `fountainBps` (byte/s; in HUD di Transfer e Diode è kB/s), a file integro. Il tetto sintetico a 24 FPS e quattro QR da 1830 byte utili è 175.7 kB/s e non è il numero da battere qui: è il riferimento di un canale senza perdite. Il massimo sostenibile è il `fountainBps` più alto di questa tabella che non peggiora l’integrità del file e non alza `tx.late` né `tx.starved`.
 
 ## Dopo i JSON
 

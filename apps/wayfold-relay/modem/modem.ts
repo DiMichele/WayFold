@@ -3,6 +3,7 @@ import { TxPaintClock } from "../shared/tx-paint.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
 import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { formatBitrate } from "../shared/throughput.ts";
 import {
   applyQrFocusConstraints,
   describeExposure,
@@ -73,8 +74,9 @@ export interface HelperStatus {
   awaiting: boolean;
   linkUp: boolean;
   rttMs: number;
-  inKBs: number;
-  outKBs: number;
+  /** Bytes per second. The screen converts this to kbit/s or Mbit/s. */
+  inBps: number;
+  outBps: number;
   inBytes: number;
   outBytes: number;
 }
@@ -627,7 +629,7 @@ export class Modem {
     }
     if (this.paintClock) {
       optTrace.noteTx(this.paintClock.snapshot());
-      renderOptHud(this.root);
+      renderOptHud(this.root, "bit");
     }
     this.requestNext();
   };
@@ -977,7 +979,7 @@ export class Modem {
       decodes: d("decodes"),
       symbols: d("symbols"),
       unique: d("unique"),
-      kbs: d("uniqueBytes") / 1024,
+      bps: d("uniqueBytes"),
       dropped: d("dropped"),
     };
     if (this.testWindow.length) {
@@ -991,14 +993,14 @@ export class Modem {
       this.ws.send(
         JSON.stringify({
           t: "stats",
-          stats: { camFps: this.rates.cam, decodesPerSec: this.rates.decodes, uniquePerSec: this.rates.unique, rxKBs: this.rates.kbs, txFps: this.rates.tx },
+          stats: { camFps: this.rates.cam, decodesPerSec: this.rates.decodes, uniquePerSec: this.rates.unique, rxBps: this.rates.bps, txFps: this.rates.tx },
         }),
       );
     }
     if (getOptFlags().perf) {
       const rtt = this.helper?.state === "connected" ? this.helper.rttMs : null;
       optTrace.setArqRtt(rtt);
-      renderOptHud(this.root);
+      renderOptHud(this.root, "bit");
     }
     this.renderSide();
   }
@@ -1028,10 +1030,10 @@ export class Modem {
     badge.className = `mdm-badge ${cls}`;
 
     const strip = this.r.strip!;
-    const capacity = (s.grid * s.fps * s.mtu / 1024).toFixed(0);
+    const capacityBps = s.grid * s.fps * s.mtu;
     strip.textContent = h
       ? `${this.opts.title} · ${h.name} · ${STATE_TEXT[h.state] ?? h.state}${h.code ? ` · codice ${h.code}` : ""}${h.state === "connected" ? ` · ${h.linkUp ? "link attivo" : "LINK INTERROTTO"} · RTT ${h.rttMs} ms` : ""}`
-      : `${this.opts.title} · ${s.grid} QR × ${s.fps} fps × ${s.mtu} B (max ${capacity} KiB/s)`;
+      : `${this.opts.title} · ${s.grid} QR × ${s.fps} fps × ${s.mtu} B (max ${formatBitrate(capacityBps)})`;
 
     const peer = this.r.peer!;
     if (h?.code && h.state !== "connected") {
@@ -1045,14 +1047,14 @@ export class Modem {
       ["Fotogrammi webcam/s", this.running ? (r.cam ?? 0).toFixed(1) : "–"],
       ["Decodifiche/s", this.running ? (r.decodes ?? 0).toFixed(1) : "–"],
       ["QR letti nuovi/s", this.running ? (r.unique ?? 0).toFixed(1) : "–"],
-      ["KiB/s ricevuti (grezzi)", this.running ? (r.kbs ?? 0).toFixed(1) : "–"],
+      ["Ricevuti (grezzi)", this.running ? formatBitrate(r.bps ?? 0) : "–"],
     ];
     if (r.loss !== undefined) rows.push(["Perdita (test)", `${(r.loss * 100).toFixed(0)}%`]);
     if (h?.state === "connected") {
-      rows.push(["Dati giù / su KiB/s", `${h.inKBs.toFixed(1)} / ${h.outKBs.toFixed(1)}`]);
+      rows.push(["Dati giù / su", `${formatBitrate(h.inBps)} / ${formatBitrate(h.outBps)}`]);
       rows.push(["RTT", `${h.rttMs} ms`]);
     }
-    rows.push(["Capacità TX teorica", `${capacity} KiB/s`]);
+    rows.push(["Capacità TX teorica", formatBitrate(capacityBps)]);
     this.r.stats!.replaceChildren(
       ...rows.flatMap(([k, v]) => {
         const dt = document.createElement("dt");

@@ -78,8 +78,8 @@ function publish(): void {
     role,
     state: h?.state ?? "",
     linkUp: !!h?.linkUp,
-    inKBs: h?.inKBs ?? 0,
-    outKBs: h?.outKBs ?? 0,
+    inBps: h?.inBps ?? 0,
+    outBps: h?.outBps ?? 0,
     inBytes: h?.inBytes ?? 0,
     outBytes: h?.outBytes ?? 0,
   });
