@@ -30,6 +30,19 @@ test("optTrace records unique optical and fountain growth separately", () => {
   setOptFlagsForTest(null);
 });
 
+test("decode passes are counted apart from the wasm sample", () => {
+  setOptFlagsForTest({ perf: true });
+  optTrace.reset();
+  optTrace.mark("wasm", wallNow(), 40);
+  optTrace.notePasses([{ pass: "hard", ms: 30 }, { pass: "crop", ms: 8 }], 1);
+  const snap = optTrace.snapshot();
+  assert.equal(snap.samples.filter((s) => s.phase === "wasm").length, 1);
+  assert.equal(snap.passes.hard.n, 1);
+  assert.equal(snap.passes.crop.ms, 8);
+  assert.equal(snap.skippedPasses, 1);
+  setOptFlagsForTest(null);
+});
+
 test("observed FPS comes from video metadata deltas", () => {
   setOptFlagsForTest({ perf: true });
   optTrace.reset();

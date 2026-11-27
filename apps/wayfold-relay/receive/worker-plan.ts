@@ -27,7 +27,10 @@ export function workerPlanFields(
   const period = observedFps > 1 ? 1000 / observedFps : 1000 / 30;
   const out: WorkerPlanFields = {};
   if (flags.fast) out.fast = true;
-  if (flags.mem) out.mem = true;
+  if (flags.mem) {
+    out.mem = true;
+    out.gray = true;
+  }
   if (flags.roi && rects && rects.length) {
     out.rects = rects;
     out.expected = expected > 0 ? expected : rects.length;

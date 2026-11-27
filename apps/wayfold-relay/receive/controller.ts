@@ -17,8 +17,8 @@ import {
 } from "./camera.ts";
 import { sharpnessOfRgba } from "./sharpness.ts";
 import { workerPlanFields } from "./worker-plan.ts";
-import { createRoiState, roiUpdate, type RoiState } from "./roi.ts";
-import type { Quad } from "./decode-core.ts";
+import { RoiSession, type GrabJob } from "./roi.ts";
+import type { Quad, Rect } from "./decode-core.ts";
 
 /** Overhead tipico LT per stimare i frame ancora necessari (spesso si completa prima). */
 const OVERHEAD_EST = 1.12;
@@ -57,19 +57,15 @@ let lastEtaLabel = "";
 let etaEmaSec = 0;
 const rejectedLargeSessions = new Set<string>();
 const grab = document.createElement("canvas");
-let frameId = 0;
 let focusTimer: number | null = null;
 let focusBusy = false;
 let focusQueued: { point: FocusPoint; pref: FocusModePref; kind: "startup" | "tap" } | null = null;
 let lastFocusPoint: FocusPoint = { x: 0.5, y: 0.5 };
 let lastSharpnessAt = 0;
 let focusSupported: boolean | null = null;
-let roiState: RoiState = createRoiState();
-let roiFullNext = true;
-let lastSentFull = true;
-let lastSentW = 0;
-let lastSentH = 0;
-let lastCropOrigin = { x: 0, y: 0 };
+const roi = new RoiSession();
+let grabGen = 0;
+const slotGrab: { gen: number; ox: number; oy: number }[] = [];
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${Math.max(0, Math.round(n))} B`;
@@ -648,10 +644,8 @@ async function start(): Promise<void> {
     optTrace.reset();
     optTrace.configuredFps = captureFps;
   }
-  roiState = createRoiState();
-  roiFullNext = true;
-  lastSentFull = true;
-  lastCropOrigin = { x: 0, y: 0 };
+  roi.reset();
+  grabGen = 0;
   settings.hidden = true;
   startBtn.hidden = true;
   setReceiveWaitVisible(false);
@@ -705,12 +699,14 @@ async function start(): Promise<void> {
     const w = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     w.onmessage = (e: MessageEvent) => {
-      const { id, error, postedAt, doneAt, quads } = e.data as {
+      const { id, error, postedAt, doneAt, quads, passes, skipped } = e.data as {
         id: number;
         error?: string;
         postedAt?: number;
         doneAt?: number;
         quads?: (Quad | null)[];
+        passes?: { pass: string; ms: number }[];
+        skipped?: number;
       };
       if (error) {
         abortTransfer(`✗ ${t("receive.workerError", { msg: error })}`);
@@ -722,20 +718,9 @@ async function start(): Promise<void> {
       if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
         optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
       }
-      if (getOptFlags().roi && lastSentW > 0) {
-        const shifted = (quads ?? []).map((q) =>
-          q
-            ? {
-                topLeft: { x: q.topLeft.x + lastCropOrigin.x, y: q.topLeft.y + lastCropOrigin.y },
-                topRight: { x: q.topRight.x + lastCropOrigin.x, y: q.topRight.y + lastCropOrigin.y },
-                bottomRight: { x: q.bottomRight.x + lastCropOrigin.x, y: q.bottomRight.y + lastCropOrigin.y },
-                bottomLeft: { x: q.bottomLeft.x + lastCropOrigin.x, y: q.bottomLeft.y + lastCropOrigin.y },
-              }
-            : null,
-        );
-        const next = roiUpdate(roiState, id, lastSentW, lastSentH, shifted, lastSentFull);
-        roiFullNext = next.fullNext;
-      }
+      optTrace.notePasses(passes, skipped ?? 0);
+      const grab = slotGrab[slot];
+      if (grab) roi.push(grab.gen, quads, grab.ox, grab.oy);
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
     w.onerror = (event) => abortTransfer(`✗ ${t("receive.workerError", { msg: event.message })}`);
@@ -773,6 +758,42 @@ function scheduleFrame(gen: number): void {
   else requestAnimationFrame(() => next());
 }
 
+function readRegion(video: CanvasImageSource, rect: Rect, full: boolean): ImageData {
+  if (grab.width !== rect.w || grab.height !== rect.h) {
+    grab.width = rect.w;
+    grab.height = rect.h;
+  }
+  return timed("extract", () => {
+    const ctx = grab.getContext("2d", { willReadFrequently: true })!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.drawImage(video, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
+    return ctx.getImageData(0, 0, rect.w, rect.h);
+  }, full ? "full" : "crop");
+}
+
+function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: number, planExtra: { expected: number; rects: Rect[] | null }): void {
+  const img = readRegion(video, job.rect, job.full);
+  const postedAt = wallNow();
+  if (getOptFlags().perf && postedAt - lastSharpnessAt > 500) {
+    lastSharpnessAt = postedAt;
+    optTrace.setSharpness(sharpnessOfRgba(img.data, job.rect.w, job.rect.h));
+  }
+  busy[slot] = true;
+  slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
+  const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
+  const local = planExtra.rects?.map((r) => ({
+    x: r.x - job.rect.x,
+    y: r.y - job.rect.y,
+    w: r.w,
+    h: r.h,
+  }));
+  const plan = workerPlanFields(fps, job.full ? planExtra.expected : planExtra.rects ? planExtra.expected : 1, job.full ? planExtra.rects : local ?? null);
+  workers[slot]!.postMessage(
+    { id: gen, buf: img.data.buffer, w: job.rect.w, h: job.rect.h, postedAt, ...plan },
+    [img.data.buffer],
+  );
+}
+
 function captureFrame(): void {
   if (paused) return;
   const video = el<HTMLVideoElement>("video");
@@ -781,45 +802,21 @@ function captureFrame(): void {
   const vh = video.videoHeight;
   if (!vw || !vh) return;
   captureTimes.push(performance.now());
-  const slot = busy.indexOf(false);
-  if (slot === -1) return;
-  const postedAt = wallNow();
+  const free: number[] = [];
+  for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
+  if (free.length === 0) return;
   const flags = getOptFlags();
-  const useRoi = flags.roi && !roiFullNext && roiState.boxes.length === 1;
-  const box = useRoi ? roiState.boxes[0]!.rect : null;
-  const sx = box ? Math.max(0, Math.min(vw - 1, box.x)) : 0;
-  const sy = box ? Math.max(0, Math.min(vh - 1, box.y)) : 0;
-  const sw = box ? Math.max(1, Math.min(vw - sx, box.w)) : vw;
-  const sh = box ? Math.max(1, Math.min(vh - sy, box.h)) : vh;
-  if (grab.width !== sw || grab.height !== sh) {
-    grab.width = sw;
-    grab.height = sh;
+  const jobs = roi.jobs(vw, vh, free.length, flags.roi).slice(0, free.length);
+  const gen = ++grabGen;
+  const boxes = roi.state.boxes.map((b) => b.rect);
+  roi.begin(gen, jobs.length, jobs.every((j) => j.full), vw, vh);
+  for (let i = 0; i < jobs.length; i++) {
+    const job = jobs[i]!;
+    const rects = job.full ? (flags.roi ? boxes : null) : jobs.length === 1 && boxes.length > 1 ? boxes : null;
+    postGrab(free[i]!, video, job, gen, { expected: roi.state.expected, rects });
   }
-  const img = timed("extract", () => {
-    const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-    if (box) ctx.drawImage(video, sx, sy, sw, sh, 0, 0, sw, sh);
-    else ctx.drawImage(video, 0, 0);
-    return ctx.getImageData(0, 0, sw, sh);
-  }, box ? "crop" : "full");
-  lastCropOrigin = { x: sx, y: sy };
-  lastSentFull = !box;
-  lastSentW = vw;
-  lastSentH = vh;
-  if (flags.perf && postedAt - lastSharpnessAt > 500) {
-    lastSharpnessAt = postedAt;
-    const sharp = sharpnessOfRgba(img.data, sw, sh);
-    optTrace.setSharpness(sharp);
-  }
-  busy[slot] = true;
   syncOptWorkers();
   optTrace.noteProcessed();
-  const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
-  const rects = flags.roi && !box ? roiState.boxes.map((b) => b.rect) : null;
-  const plan = workerPlanFields(fps, roiState.expected, rects);
-  workers[slot]!.postMessage(
-    { id: frameId++, buf: img.data.buffer, w: sw, h: sh, postedAt, ...plan },
-    [img.data.buffer],
-  );
 }
 
 function onDecoded(bytes: Uint8Array): void {

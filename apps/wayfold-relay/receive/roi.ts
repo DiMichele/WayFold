@@ -162,3 +162,112 @@ export function roiUpdate(
 export function offsetRects(rects: Rect[], ox: number, oy: number): Rect[] {
   return rects.map((r) => ({ x: r.x + ox, y: r.y + oy, w: r.w, h: r.h }));
 }
+
+export function unionRect(rects: Rect[]): Rect {
+  const x = Math.min(...rects.map((r) => r.x));
+  const y = Math.min(...rects.map((r) => r.y));
+  const x1 = Math.max(...rects.map((r) => r.x + r.w));
+  const y1 = Math.max(...rects.map((r) => r.y + r.h));
+  return { x, y, w: Math.max(1, x1 - x), h: Math.max(1, y1 - y) };
+}
+
+export function clampRect(rect: Rect, frameW: number, frameH: number): Rect {
+  const x = Math.max(0, Math.min(frameW - 1, Math.floor(rect.x)));
+  const y = Math.max(0, Math.min(frameH - 1, Math.floor(rect.y)));
+  return {
+    x,
+    y,
+    w: Math.max(1, Math.min(frameW - x, Math.floor(rect.w))),
+    h: Math.max(1, Math.min(frameH - y, Math.floor(rect.h))),
+  };
+}
+
+export interface GrabJob {
+  rect: Rect;
+  /** True when the job is the whole camera frame. */
+  full: boolean;
+}
+
+/**
+ * What to read from the camera. One job per free worker when each ROI fits
+ * its own slot; otherwise a single union, never the full frame, once a layout exists.
+ */
+export function planGrabs(
+  roi: boolean,
+  fullNext: boolean,
+  boxes: Rect[],
+  frameW: number,
+  frameH: number,
+  freeSlots: number,
+): GrabJob[] {
+  const full: GrabJob = { rect: { x: 0, y: 0, w: frameW, h: frameH }, full: true };
+  if (!roi || fullNext || boxes.length === 0 || freeSlots < 1) return [full];
+  const clamped = boxes.map((b) => clampRect(b, frameW, frameH));
+  if (freeSlots >= clamped.length) return clamped.map((rect) => ({ rect, full: false }));
+  return [{ rect: clampRect(unionRect(clamped), frameW, frameH), full: false }];
+}
+
+/** Expanded boxes for a set of finder quads. Used by the synthetic bench. */
+export function boxesFromQuads(quads: Quad[], frameW: number, frameH: number): Rect[] {
+  return quads.map((q) => expandRect(quadAabb(q), MARGIN_START, frameW, frameH));
+}
+
+interface GrabBatch {
+  left: number;
+  quads: (Quad | null)[];
+  full: boolean;
+  w: number;
+  h: number;
+}
+
+/** ROI state plus in-flight crops that share one camera-frame id. */
+export class RoiSession {
+  state: RoiState = createRoiState();
+  fullNext = true;
+  private readonly batches = new Map<number, GrabBatch>();
+
+  reset(): void {
+    this.state = createRoiState();
+    this.fullNext = true;
+    this.batches.clear();
+  }
+
+  jobs(frameW: number, frameH: number, freeSlots: number, roiOn: boolean): GrabJob[] {
+    return planGrabs(
+      roiOn,
+      this.fullNext,
+      this.state.boxes.map((b) => b.rect),
+      frameW,
+      frameH,
+      freeSlots,
+    );
+  }
+
+  begin(gen: number, count: number, full: boolean, w: number, h: number): void {
+    this.batches.set(gen, { left: count, quads: [], full, w, h });
+  }
+
+  /** Shift crop-space quads into the camera frame. Applies the layout when the batch completes. */
+  push(gen: number, quads: (Quad | null)[] | undefined, originX: number, originY: number): void {
+    const batch = this.batches.get(gen);
+    if (!batch) return;
+    for (const q of quads ?? []) {
+      batch.quads.push(
+        q
+          ? {
+              topLeft: { x: q.topLeft.x + originX, y: q.topLeft.y + originY },
+              topRight: { x: q.topRight.x + originX, y: q.topRight.y + originY },
+              bottomRight: { x: q.bottomRight.x + originX, y: q.bottomRight.y + originY },
+              bottomLeft: { x: q.bottomLeft.x + originX, y: q.bottomLeft.y + originY },
+            }
+          : null,
+      );
+    }
+    batch.left--;
+    if (batch.left > 0) return;
+    this.batches.delete(gen);
+    if (gen < this.state.lastFrameId) return;
+    const next = roiUpdate(this.state, gen, batch.w, batch.h, batch.quads, batch.full);
+    if (gen === this.state.lastFrameId) this.fullNext = next.fullNext;
+  }
+}

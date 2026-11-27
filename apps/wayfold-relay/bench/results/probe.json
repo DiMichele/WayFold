@@ -1,0 +1,8 @@
+{
+  "zxingWasm": "2.2.4",
+  "imageData": true,
+  "plainView": true,
+  "pgm": true,
+  "pgmCrop": true,
+  "note": "Bytes of one synthetic QR matched ImageData, a plain RGBA view, PGM and a PGM crop. Position was within about 2 px of the rendered quad. This does not measure speed."
+}

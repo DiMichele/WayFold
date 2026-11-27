@@ -58,6 +58,9 @@ export interface OptSnapshot {
   txWaitMs: number | null;
   rxWaitMs: number | null;
   jitterMs: number | null;
+  /** Decode passes actually run, and passes skipped because the budget was spent. */
+  passes: Record<string, { n: number; ms: number }>;
+  skippedPasses: number;
 }
 
 const RING = 512;
@@ -98,6 +101,8 @@ class OptTrace {
   private symbolGaps: number[] = [];
   private lastSymbolAt = 0;
 
+  private passCounts = new Map<string, { n: number; ms: number }>();
+  private skippedPasses = 0;
   private readonly windows: OptSnapshot["windows"] = [];
   private windowStarted = 0;
   private windowOptical = 0;
@@ -131,6 +136,8 @@ class OptTrace {
     this.sharpness = null;
     this.txWaitMs = null;
     this.rxWaitMs = null;
+    this.passCounts.clear();
+    this.skippedPasses = 0;
   }
 
   mark(phase: OptPhase, t0: number, dt: number, detail?: string): void {
@@ -162,6 +169,18 @@ class OptTrace {
     }
     if (typeof frames === "number") this.lastPresented = frames;
     if (typeof media === "number") this.lastMediaTime = media;
+  }
+
+  /** Counts decoder passes without adding them to the wasm ring (that ring is the whole worker turn). */
+  notePasses(passes: { pass: string; ms: number }[] | undefined, skipped = 0): void {
+    if (!this.enabled()) return;
+    for (const p of passes ?? []) {
+      const cur = this.passCounts.get(p.pass) ?? { n: 0, ms: 0 };
+      cur.n += 1;
+      cur.ms += p.ms;
+      this.passCounts.set(p.pass, cur);
+    }
+    this.skippedPasses += skipped;
   }
 
   noteProcessed(): void {
@@ -329,6 +348,8 @@ class OptTrace {
       txWaitMs: this.txWaitMs,
       rxWaitMs: this.rxWaitMs,
       jitterMs: this.jitterMs(),
+      passes: Object.fromEntries(this.passCounts),
+      skippedPasses: this.skippedPasses,
     };
   }
 

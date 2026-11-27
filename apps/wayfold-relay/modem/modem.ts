@@ -9,6 +9,8 @@ import {
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
+import { RoiSession, type GrabJob } from "../receive/roi.ts";
+import type { Quad, Rect } from "../receive/decode-core.ts";
 
 /**
  * Optical modem for Wayfold Connect. Knows nothing about the protocol: it
@@ -105,6 +107,14 @@ function defaultSettings(over: Partial<ModemSettings>): ModemSettings {
 function layout(n: number, landscape: boolean): { cols: number; rows: number } {
   const g = n === 4 ? { cols: 2, rows: 2 } : { cols: Math.max(1, Math.min(3, n)), rows: 1 };
   return landscape ? g : { cols: g.rows, rows: g.cols };
+}
+
+function modemJobRects(job: GrabJob, jobs: GrabJob[], boxes: Rect[]): Rect[] | null {
+  if (job.full) return boxes.length ? boxes : null;
+  if (jobs.length === 1 && boxes.length > 1) {
+    return boxes.map((r) => ({ x: r.x - job.rect.x, y: r.y - job.rect.y, w: r.w, h: r.h }));
+  }
+  return null;
 }
 
 function hexKey(b: Uint8Array): string {
@@ -360,6 +370,9 @@ export class Modem {
     });
   }
 
+  private readonly roi = new RoiSession();
+  private grabGen = 0;
+  private readonly slotGrab: { gen: number; ox: number; oy: number }[] = [];
   private focusBusy = false;
   private focusQueued: FocusPoint | null = null;
 
@@ -438,6 +451,8 @@ export class Modem {
       optTrace.reset();
       optTrace.configuredFps = this.settings.fps;
     }
+    this.roi.reset();
+    this.grabGen = 0;
     this.renderControls();
     this.qrWorker = new Worker(new URL("./qr-worker.ts", import.meta.url), { type: "module" });
     this.qrWorker.onmessage = (e) => this.onEncoded(e.data);
@@ -722,11 +737,14 @@ export class Modem {
       const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
       const slot = i;
       worker.onmessage = (e: MessageEvent) => {
-        const { id, error, postedAt, doneAt } = e.data as {
+        const { id, error, postedAt, doneAt, quads, passes, skipped } = e.data as {
           id: number;
           error?: string;
           postedAt?: number;
           doneAt?: number;
+          quads?: (Quad | null)[];
+          passes?: { pass: string; ms: number }[];
+          skipped?: number;
         };
         if (error) {
           this.error(`Decoder QR non disponibile: ${error}`, "decoder");
@@ -738,6 +756,9 @@ export class Modem {
         if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
           optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
         }
+        optTrace.notePasses(passes, skipped ?? 0);
+        const grabMeta = this.slotGrab[slot];
+        if (grabMeta) this.roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
         this.c.decodes++;
         for (const s of symbolsFromWorker(e.data)) this.onSymbol(s);
       };
@@ -837,45 +858,65 @@ export class Modem {
     const vh = video.videoHeight;
     if (!vw || !vh) return;
     this.c.cam++;
-    const slot = this.busy.indexOf(false);
-    if (slot === -1) {
+    const free: number[] = [];
+    for (let i = 0; i < this.busy.length; i++) if (!this.busy[i]) free.push(i);
+    if (free.length === 0) {
       this.c.dropped++;
       return;
     }
     const quarter = this.turn % 180 !== 0;
     const dw = quarter ? vh : vw;
     const dh = quarter ? vw : vh;
-    if (this.grab.width !== dw || this.grab.height !== dh) {
-      this.grab.width = dw;
-      this.grab.height = dh;
-    }
+    const flags = getOptFlags();
+    const jobs = this.roi.jobs(dw, dh, free.length, flags.roi).slice(0, free.length);
+    const gen = ++this.grabGen;
+    const boxes = this.roi.state.boxes.map((b) => b.rect);
+    this.roi.begin(gen, jobs.length, jobs.every((j) => j.full), dw, dh);
+    const rotated = this.turn !== 0;
     const ctx = this.grab.getContext("2d", { willReadFrequently: true })!;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    if (this.turn === 90) {
-      ctx.translate(vh, 0);
-      ctx.rotate(Math.PI / 2);
-    } else if (this.turn === 180) {
-      ctx.translate(vw, vh);
-      ctx.rotate(Math.PI);
-    } else if (this.turn === 270) {
-      ctx.translate(0, vw);
-      ctx.rotate(-Math.PI / 2);
-    }
-    const postedAt = wallNow();
-    const img = timed("extract", () => {
+    if (rotated) {
+      if (this.grab.width !== dw || this.grab.height !== dh) {
+        this.grab.width = dw;
+        this.grab.height = dh;
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      if (this.turn === 90) {
+        ctx.translate(vh, 0);
+        ctx.rotate(Math.PI / 2);
+      } else if (this.turn === 180) {
+        ctx.translate(vw, vh);
+        ctx.rotate(Math.PI);
+      } else if (this.turn === 270) {
+        ctx.translate(0, vw);
+        ctx.rotate(-Math.PI / 2);
+      }
       ctx.drawImage(video, 0, 0);
-      return ctx.getImageData(0, 0, dw, dh);
-    });
-    this.busy[slot] = true;
+    }
+    for (let i = 0; i < jobs.length; i++) {
+      const job = jobs[i]!;
+      const slot = free[i]!;
+      const img = timed("extract", () => {
+        if (rotated) return ctx.getImageData(job.rect.x, job.rect.y, job.rect.w, job.rect.h);
+        if (this.grab.width !== job.rect.w || this.grab.height !== job.rect.h) {
+          this.grab.width = job.rect.w;
+          this.grab.height = job.rect.h;
+        }
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.drawImage(video, job.rect.x, job.rect.y, job.rect.w, job.rect.h, 0, 0, job.rect.w, job.rect.h);
+        return ctx.getImageData(0, 0, job.rect.w, job.rect.h);
+      }, job.full ? "full" : "crop");
+      this.busy[slot] = true;
+      this.slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
+      const fps = optTrace.observedFps() || optTrace.negotiatedFps || this.settings.fps || 30;
+      const rects = modemJobRects(job, jobs, boxes);
+      const plan = workerPlanFields(fps, rects ? this.roi.state.expected : 1, rects);
+      this.workers[slot]!.postMessage(
+        { id: gen, buf: img.data.buffer, w: job.rect.w, h: job.rect.h, postedAt: wallNow(), ...plan },
+        [img.data.buffer],
+      );
+    }
     optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
     optTrace.noteProcessed();
-    const plan = workerPlanFields(
-      optTrace.observedFps() || optTrace.negotiatedFps || this.settings.fps || 30,
-    );
-    this.workers[slot]!.postMessage(
-      { id: this.c.cam, buf: img.data.buffer, w: dw, h: dh, postedAt, ...plan },
-      [img.data.buffer],
-    );
   }
 
   private onSymbol(bytes: Uint8Array): void {
