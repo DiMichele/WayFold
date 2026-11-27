@@ -8,9 +8,12 @@ import {
   qrFocusAdvanced,
   qrFocusConstraintFallbacks,
   tapPointFromEvent,
+  tapPointInVideoFrame,
   applyFirstSupportedConstraint,
+  hasFocusControl,
 } from "../receive/camera.ts";
 import { centerTileRects, cropRgbaCenter, cropRgbaRect, gridSliceRects } from "../receive/image-crop.ts";
+import { laplacianVariance, sharpnessOfRgba } from "../receive/sharpness.ts";
 
 test("clamp01 bounds and non-finite values", () => {
   assert.equal(clamp01(0.3), 0.3);
@@ -41,7 +44,7 @@ test("focus mode prefers continuous, then single-shot", () => {
   assert.equal(chooseFocusMode(["manual"], "auto"), undefined);
 });
 
-test("constraint fallbacks drop distance and zoom before giving up", () => {
+test("startup continuous omits fixed focusDistance", () => {
   const chain = qrFocusConstraintFallbacks(
     {
       focusMode: ["continuous", "single-shot"],
@@ -51,26 +54,63 @@ test("constraint fallbacks drop distance and zoom before giving up", () => {
     },
     { x: 0.4, y: 0.6 },
     "continuous",
+    "startup",
   );
-  assert.ok(chain.length >= 3);
+  assert.ok(chain.length >= 1);
   const first = chain[0].advanced[0];
   assert.equal(first.focusMode, "continuous");
   assert.equal(first.zoom, 1.35);
-  assert.equal(first.focusDistance, 0.28);
+  assert.equal(first.focusDistance, undefined);
   assert.deepEqual(first.pointsOfInterest, [{ x: 0.4, y: 0.6 }]);
-  const last = chain[chain.length - 1].advanced[0];
-  assert.deepEqual(last, { focusMode: "continuous" });
+});
+
+test("tap single-shot omits distance and zoom", () => {
+  const advanced = qrFocusAdvanced(
+    {
+      focusMode: ["continuous", "single-shot"],
+      focusDistance: { min: 0.1, max: 8 },
+      zoom: { min: 1, max: 5 },
+      pointsOfInterest: true,
+    },
+    { x: 0.2, y: 0.8 },
+    "single-shot",
+    "tap",
+  );
+  assert.equal(advanced.focusMode, "single-shot");
+  assert.equal(advanced.zoom, undefined);
+  assert.equal(advanced.focusDistance, undefined);
+  assert.deepEqual(advanced.pointsOfInterest, [{ x: 0.2, y: 0.8 }]);
+});
+
+test("manual-only lenses still get a close distance", () => {
+  const advanced = qrFocusAdvanced(
+    { focusMode: ["manual"], focusDistance: { min: 0.1, max: 8 } },
+    { x: 0.5, y: 0.5 },
+    "auto",
+    "startup",
+  );
+  assert.equal(advanced.focusMode, "manual");
+  assert.equal(advanced.focusDistance, 0.28);
 });
 
 test("no capabilities yields an empty constraint chain", () => {
   assert.deepEqual(qrFocusAdvanced({}), null);
   assert.deepEqual(qrFocusConstraintFallbacks({}), []);
+  assert.equal(hasFocusControl({}), false);
+  assert.equal(hasFocusControl({ focusMode: ["continuous"] }), true);
 });
 
 test("tap point is normalized to the preview rectangle", () => {
   const pt = tapPointFromEvent(30, 70, { left: 10, top: 10, width: 100, height: 200 });
   assert.equal(pt.x, 0.2);
   assert.equal(pt.y, 0.3);
+});
+
+test("tap point accounts for contain letterboxing", () => {
+  // Preview 200x100, video 100x100 → square centered with 50px side bars.
+  const pt = tapPointInVideoFrame(100, 50, { left: 0, top: 0, width: 200, height: 100 }, 100, 100, "contain");
+  assert.ok(Math.abs(pt.x - 0.5) < 0.02);
+  assert.ok(Math.abs(pt.y - 0.5) < 0.02);
 });
 
 test("applyFirstSupportedConstraint uses the first non-throwing set", async () => {
@@ -87,6 +127,28 @@ test("applyFirstSupportedConstraint uses the first non-throwing set", async () =
   ]);
   assert.equal(ok, true);
   assert.equal(tried.length, 2);
+});
+
+test("laplacian variance is higher on a sharp edge than a blur", () => {
+  const w = 32;
+  const h = 32;
+  const sharp = new Uint8ClampedArray(w * h * 4);
+  const soft = new Uint8ClampedArray(w * h * 4);
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * 4;
+      const v = x < w / 2 ? 0 : 255;
+      sharp[i] = sharp[i + 1] = sharp[i + 2] = v;
+      sharp[i + 3] = 255;
+      const softV = Math.round((x / (w - 1)) * 255);
+      soft[i] = soft[i + 1] = soft[i + 2] = softV;
+      soft[i + 3] = 255;
+    }
+  }
+  const a = sharpnessOfRgba(sharp, w, h);
+  const b = sharpnessOfRgba(soft, w, h);
+  assert.ok(a > b * 2, `expected sharp ${a} >> soft ${b}`);
+  assert.ok(laplacianVariance(new Uint8Array([0]), 1, 1) === 0);
 });
 
 test("center crop keeps the middle pixels", () => {

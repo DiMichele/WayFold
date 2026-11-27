@@ -8,11 +8,14 @@ import {
   SESSION_STALL_TIMEOUT_MS,
 } from "../shared/limits.ts";
 import { symbolsFromWorker } from "../shared/optical.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
+import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import {
-  applyFirstSupportedConstraint,
-  qrFocusConstraintFallbacks,
-  tapPointFromEvent,
+  applyQrFocusConstraints,
+  tapPointInVideoFrame,
+  type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { ScreenWake, currentPolicy, el, formatBytes, logEvent, showBanner } from "./common.ts";
@@ -89,7 +92,7 @@ function closeSession(s: OpenSession, reasonKey: string): void {
 
 function onDecoded(bytes: Uint8Array): void {
   if (!running) return;
-  const parsed = parseFrame(bytes);
+  const parsed = timed("parse", () => parseFrame(bytes));
   if (!parsed) return;
   const { header, block } = parsed;
   const key = sessionKey(header);
@@ -125,10 +128,17 @@ function onDecoded(bytes: Uint8Array): void {
   }
 
   const before = session.decoder.framesNew;
-  session.decoder.addFrame(header.seq, block);
+  const solvedBefore = session.decoder.solvedCount;
+  timed("fountain", () => {
+    session!.decoder.addFrame(header.seq, block);
+  });
   if (session.decoder.framesNew > before) {
     session.touchedAt = performance.now();
     lastKey = key;
+    optTrace.noteUniqueSymbol(block.length);
+  }
+  if (session.decoder.solvedCount > solvedBefore) {
+    optTrace.noteFountainGrowth((session.decoder.solvedCount - solvedBefore) * session.decoder.blockLen);
   }
 
   if (session.decoder.isComplete) {
@@ -178,6 +188,7 @@ async function complete(session: OpenSession, payload: Uint8Array): Promise<void
     renderStats();
     return;
   }
+  optTrace.noteFileComplete(parsed.file.length, Number(seconds) || 0.001);
   if (isLiveMime(parsed.mime)) {
     const record = decodeLiveRecord(parsed.file);
     if (!record || parsed.file.length > currentPolicy().maxBytes) {
@@ -226,16 +237,53 @@ function videoTrack(): MediaStreamTrack | null {
   return stream?.getVideoTracks()[0] ?? null;
 }
 
-async function focusAt(point: { x: number; y: number }, pref: "continuous" | "single-shot"): Promise<void> {
+let focusBusy = false;
+let focusQueued: { point: FocusPoint; pref: "continuous" | "single-shot"; kind: "startup" | "tap" } | null =
+  null;
+
+async function focusAt(
+  point: FocusPoint,
+  pref: "continuous" | "single-shot",
+  kind: "startup" | "tap" = "startup",
+): Promise<void> {
   const track = videoTrack();
   if (!track) return;
-  let caps: QrTrackCapabilities = {};
-  try {
-    caps = (track.getCapabilities?.() ?? {}) as QrTrackCapabilities;
-  } catch {
-    /* ignore */
+  if (focusBusy) {
+    focusQueued = { point, pref, kind };
+    return;
   }
-  await applyFirstSupportedConstraint(track, qrFocusConstraintFallbacks(caps, point, pref)).catch(() => false);
+  focusBusy = true;
+  try {
+    let caps: QrTrackCapabilities = {};
+    try {
+      caps = (track.getCapabilities?.() ?? {}) as QrTrackCapabilities;
+    } catch {
+      /* ignore */
+    }
+    await applyQrFocusConstraints(track, caps, point, pref, kind);
+  } finally {
+    focusBusy = false;
+    const next = focusQueued;
+    focusQueued = null;
+    if (next && running) void focusAt(next.point, next.pref, next.kind);
+  }
+}
+
+function showFocusReticle(point: FocusPoint): void {
+  const preview = el("dr-preview");
+  if (!preview) return;
+  let mark = preview.querySelector<HTMLElement>("[data-focus-reticle]");
+  if (!mark) {
+    mark = document.createElement("span");
+    mark.dataset.focusReticle = "1";
+    mark.className = "focus-reticle";
+    preview.append(mark);
+  }
+  mark.style.left = `${point.x * 100}%`;
+  mark.style.top = `${point.y * 100}%`;
+  mark.classList.remove("is-flash");
+  void mark.offsetWidth;
+  mark.classList.add("is-flash");
 }
 
 async function acquireCamera(): Promise<MediaStream> {
@@ -284,24 +332,29 @@ async function attachCamera(): Promise<boolean> {
   }
   video.srcObject = stream;
   await video.play().catch(() => undefined);
-  void focusAt({ x: 0.5, y: 0.5 }, "continuous");
+  void focusAt({ x: 0.5, y: 0.5 }, "continuous", "startup");
   scheduleFrame(captureGen);
   return true;
 }
 
-type VideoRVFC = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
+type VideoRVFC = HTMLVideoElement & {
+  requestVideoFrameCallback?: (
+    cb: (now: number, meta?: { presentedFrames?: number; mediaTime?: number }) => void,
+  ) => number;
+};
 
 function scheduleFrame(gen: number): void {
   if (!running || gen !== captureGen) return;
   const video = el<HTMLVideoElement>("dr-video") as VideoRVFC | null;
   if (!video) return;
-  const next = () => {
+  const next = (_now?: number, meta?: { presentedFrames?: number; mediaTime?: number }) => {
     if (!running || gen !== captureGen) return;
+    optTrace.noteVideoMeta(meta);
     if (!suspended) captureFrame(video);
     scheduleFrame(gen);
   };
   if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
-  else requestAnimationFrame(next);
+  else requestAnimationFrame(() => next());
 }
 
 function captureFrame(video: HTMLVideoElement): void {
@@ -314,11 +367,19 @@ function captureFrame(video: HTMLVideoElement): void {
     grab.width = vw;
     grab.height = vh;
   }
-  const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-  ctx.drawImage(video, 0, 0);
-  const img = ctx.getImageData(0, 0, vw, vh);
+  const postedAt = wallNow();
+  const img = timed("extract", () => {
+    const ctx = grab.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(video, 0, 0);
+    return ctx.getImageData(0, 0, vw, vh);
+  });
   busy[slot] = true;
-  workers[slot]!.postMessage({ id: frameId++, buf: img.data.buffer, w: vw, h: vh }, [img.data.buffer]);
+  optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
+  optTrace.noteProcessed();
+  workers[slot]!.postMessage(
+    { id: frameId++, buf: img.data.buffer, w: vw, h: vh, postedAt },
+    [img.data.buffer],
+  );
 }
 
 function startWorkers(): void {
@@ -326,7 +387,12 @@ function startWorkers(): void {
     const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     worker.onmessage = (e: MessageEvent) => {
-      const { id, error } = e.data as { id: number; error?: string };
+      const { id, error, postedAt, doneAt } = e.data as {
+        id: number;
+        error?: string;
+        postedAt?: number;
+        doneAt?: number;
+      };
       if (error) {
         showBanner("dr-error", t("receive.workerError", { msg: error }));
         logEvent("error", "diode.log.rxWorkerError", { msg: error });
@@ -334,6 +400,10 @@ function startWorkers(): void {
       }
       if (id === -1) return;
       busy[slot] = false;
+      optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
+      if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
+        optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
+      }
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
     worker.onerror = (event) => {
@@ -344,6 +414,7 @@ function startWorkers(): void {
     workers.push(worker);
     busy.push(false);
   }
+  optTrace.setWorkers(0, workers.length);
 }
 
 function stopWorkers(): void {
@@ -365,6 +436,10 @@ async function start(): Promise<void> {
   counts = { received: 0, rejected: 0, duplicates: 0 };
   open.clear();
   lastKey = null;
+  if (getOptFlags().perf) {
+    optTrace.reset();
+    optTrace.configuredFps = CAPTURE_FPS;
+  }
   renderControls();
   startWorkers();
   const ok = await attachCamera();
@@ -372,6 +447,15 @@ async function start(): Promise<void> {
   if (!ok) {
     stopRx(false);
     return;
+  }
+  if (getOptFlags().perf) {
+    try {
+      const settings = stream?.getVideoTracks()[0]?.getSettings?.() ?? {};
+      optTrace.negotiatedFps = Number(settings.frameRate) || 0;
+    } catch {
+      optTrace.negotiatedFps = 0;
+    }
+    ensureOptHud(el("dr-camera"));
   }
   wake.acquire();
   statsTimer = window.setInterval(() => {
@@ -399,6 +483,7 @@ export function stopRx(log = true): void {
   latest = "";
   draftText = "";
   resetVideoPlayback();
+  removeOptHud(el("dr-camera"));
   if (log) logEvent("info", "diode.log.rxStopped", { received: counts.received, rejected: counts.rejected });
   renderControls();
   renderLive();
@@ -437,13 +522,18 @@ function onVisibility(): void {
 function onPreviewPointer(ev: PointerEvent): void {
   if (!running || suspended) return;
   const preview = el("dr-preview");
-  if (!preview) return;
-  const point = tapPointFromEvent(ev.clientX, ev.clientY, preview.getBoundingClientRect());
-  void focusAt(point, "single-shot").then(() =>
-    window.setTimeout(() => {
-      if (running) void focusAt(point, "continuous");
-    }, 500),
+  const video = el<HTMLVideoElement>("dr-video");
+  if (!preview || !video) return;
+  const point = tapPointInVideoFrame(
+    ev.clientX,
+    ev.clientY,
+    preview.getBoundingClientRect(),
+    video.videoWidth,
+    video.videoHeight,
+    "contain",
   );
+  showFocusReticle(point);
+  void focusAt(point, "single-shot", "tap");
 }
 
 function renderControls(): void {
@@ -509,6 +599,7 @@ function renderStats(): void {
   set("dr-rejected", counts.rejected);
   set("dr-dupes", counts.duplicates);
   set("dr-open", open.size);
+  if (getOptFlags().perf) renderOptHud(el("dr-camera"));
 }
 
 function download(name: string, data: Blob): void {

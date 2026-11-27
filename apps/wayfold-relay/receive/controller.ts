@@ -2,16 +2,20 @@ import { LTDecoder } from "../shared/fountain.ts";
 import { parseEnvelope, PREVIEW_MIME_TYPES } from "../shared/envelope.ts";
 import { symbolsFromWorker } from "../shared/optical.ts";
 import { SESSION_STALL_TIMEOUT_MS, SOFT_ORIGINAL_LIMIT } from "../shared/limits.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
+import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import { t, onLangChange } from "../shared/i18n.ts";
 import {
-  applyFirstSupportedConstraint,
-  qrFocusConstraintFallbacks,
-  tapPointFromEvent,
+  applyQrFocusConstraints,
+  hasFocusControl,
+  tapPointInVideoFrame,
   type FocusModePref,
   type FocusPoint,
   type QrTrackCapabilities,
 } from "./camera.ts";
+import { sharpnessOfRgba } from "./sharpness.ts";
 
 /** Overhead tipico LT per stimare i frame ancora necessari (spesso si completa prima). */
 const OVERHEAD_EST = 1.12;
@@ -53,8 +57,10 @@ const grab = document.createElement("canvas");
 let frameId = 0;
 let focusTimer: number | null = null;
 let focusBusy = false;
+let focusQueued: { point: FocusPoint; pref: FocusModePref; kind: "startup" | "tap" } | null = null;
 let lastFocusPoint: FocusPoint = { x: 0.5, y: 0.5 };
-let focusLocked = false;
+let lastSharpnessAt = 0;
+let focusSupported: boolean | null = null;
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${Math.max(0, Math.round(n))} B`;
@@ -347,23 +353,59 @@ function readFocusCaps(track: MediaStreamTrack): QrTrackCapabilities {
 
 function setFocusHintVisible(visible: boolean): void {
   const hint = document.getElementById("focus-hint");
-  const preview = document.getElementById("preview");
-  if (hint) hint.hidden = !visible;
-  preview?.classList.toggle("is-locked", !visible);
+  if (!hint) return;
+  hint.hidden = !visible;
+  if (!visible) return;
+  if (focusSupported === false) hint.textContent = t("receive.focusUnsupported");
+  else hint.textContent = t("receive.tapToFocus");
 }
 
-async function applyQrFocus(point: FocusPoint, pref: FocusModePref = "auto"): Promise<boolean> {
+function showFocusReticle(point: FocusPoint): void {
+  const preview = document.getElementById("preview");
+  if (!preview) return;
+  let mark = preview.querySelector<HTMLElement>("[data-focus-reticle]");
+  if (!mark) {
+    mark = document.createElement("span");
+    mark.dataset.focusReticle = "1";
+    mark.className = "focus-reticle";
+    preview.append(mark);
+  }
+  mark.style.left = `${point.x * 100}%`;
+  mark.style.top = `${point.y * 100}%`;
+  mark.classList.remove("is-flash");
+  void mark.offsetWidth;
+  mark.classList.add("is-flash");
+}
+
+async function applyQrFocus(
+  point: FocusPoint,
+  pref: FocusModePref = "auto",
+  kind: "startup" | "tap" = "startup",
+): Promise<boolean> {
   const track = videoTrack();
-  if (!track || focusBusy) return false;
+  if (!track) return false;
+  if (focusBusy) {
+    focusQueued = { point, pref, kind };
+    return false;
+  }
   focusBusy = true;
   lastFocusPoint = point;
   try {
-    return await applyFirstSupportedConstraint(
-      track,
-      qrFocusConstraintFallbacks(readFocusCaps(track), point, pref),
-    );
+    const caps = readFocusCaps(track);
+    focusSupported = hasFocusControl(caps);
+    setFocusHintVisible(true);
+    const result = await applyQrFocusConstraints(track, caps, point, pref, kind);
+    if (getOptFlags().perf) {
+      optTrace.mark("capture", wallNow(), 0, `focus:${result.applied ? "ok" : "no"}:${result.settings.focusMode ?? "-"}`);
+    }
+    return result.applied;
   } finally {
     focusBusy = false;
+    const next = focusQueued;
+    focusQueued = null;
+    if (next && running && !paused && !done) {
+      void applyQrFocus(next.point, next.pref, next.kind);
+    }
   }
 }
 
@@ -376,49 +418,38 @@ function stopQrAutofocus(): void {
 
 function startQrAutofocus(): void {
   stopQrAutofocus();
-  focusLocked = false;
   lastFocusPoint = { x: 0.5, y: 0.5 };
+  focusSupported = null;
   setFocusHintVisible(true);
-  const kick = (pref: FocusModePref) => {
-    if (running && !paused && !done && !focusLocked) void applyQrFocus(lastFocusPoint, pref);
+  const kick = () => {
+    if (running && !paused && !done) void applyQrFocus(lastFocusPoint, "continuous", "startup");
   };
-  kick("continuous");
+  kick();
   // Some Android drivers ignore AF until the track is actually rendering.
-  window.setTimeout(() => kick("continuous"), 280);
-  // Older sensors park at infinity until a single-shot kick; repeat while hunting.
+  window.setTimeout(kick, 280);
+  // Keep continuous AF alive for the whole receive; do not lock on first QR.
   focusTimer = window.setInterval(() => {
     if (!running || paused || done) return;
-    if (decoder) {
-      lockQrFocus();
-      return;
-    }
-    void (async () => {
-      await applyQrFocus(lastFocusPoint, "single-shot");
-      window.setTimeout(() => kick("continuous"), 450);
-    })();
-  }, 1800);
-}
-
-function lockQrFocus(): void {
-  if (focusLocked) return;
-  focusLocked = true;
-  stopQrAutofocus();
-  setFocusHintVisible(false);
-  void applyQrFocus(lastFocusPoint, "continuous");
+    void applyQrFocus(lastFocusPoint, "continuous", "startup");
+  }, 4000);
 }
 
 function onPreviewPointer(ev: PointerEvent): void {
   if (!running || paused || done) return;
   const preview = document.getElementById("preview");
-  if (!preview) return;
+  const video = el<HTMLVideoElement>("video");
+  if (!preview || !video) return;
   const rect = preview.getBoundingClientRect();
-  const point = tapPointFromEvent(ev.clientX, ev.clientY, rect);
-  void (async () => {
-    await applyQrFocus(point, "single-shot");
-    window.setTimeout(() => {
-      if (running && !paused && !done) void applyQrFocus(point, "continuous");
-    }, 500);
-  })();
+  const point = tapPointInVideoFrame(
+    ev.clientX,
+    ev.clientY,
+    rect,
+    video.videoWidth,
+    video.videoHeight,
+    "contain",
+  );
+  showFocusReticle(point);
+  void applyQrFocus(point, "single-shot", "tap");
 }
 
 async function acquireCameraStream(captureWidth: number, captureFps: number): Promise<MediaStream> {
@@ -505,7 +536,13 @@ function cleanupResources(): void {
   const cancelBtn = el<HTMLButtonElement>("cancel");
   if (cameraPanel) cameraPanel.hidden = true;
   if (cancelBtn) cancelBtn.hidden = true;
+  removeOptHud(cameraPanel);
   void refreshPermHint();
+}
+
+function syncOptWorkers(): void {
+  if (!getOptFlags().perf) return;
+  optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
 }
 
 function clearTransferState(): void {
@@ -598,6 +635,10 @@ async function start(): Promise<void> {
   const captureWidth = Number(el<HTMLSelectElement>("cfg-width").value);
   const captureFps = Number(el<HTMLSelectElement>("cfg-capfps").value);
   const workerCount = Number(el<HTMLSelectElement>("cfg-workers").value);
+  if (getOptFlags().perf) {
+    optTrace.reset();
+    optTrace.configuredFps = captureFps;
+  }
   settings.hidden = true;
   startBtn.hidden = true;
   setReceiveWaitVisible(false);
@@ -626,6 +667,15 @@ async function start(): Promise<void> {
   }
   video.srcObject = stream;
   await video.play().catch(() => undefined);
+  if (getOptFlags().perf) {
+    try {
+      const settings = stream.getVideoTracks()[0]?.getSettings?.() ?? {};
+      optTrace.negotiatedFps = Number(settings.frameRate) || 0;
+    } catch {
+      optTrace.negotiatedFps = 0;
+    }
+    ensureOptHud(el("camera-panel"));
+  }
   startQrAutofocus();
   if (stats) {
     stats.hidden = true;
@@ -642,9 +692,11 @@ async function start(): Promise<void> {
     const w = new Worker(new URL("./worker.ts", import.meta.url), { type: "module" });
     const slot = i;
     w.onmessage = (e: MessageEvent) => {
-      const { id, error } = e.data as {
+      const { id, error, postedAt, doneAt } = e.data as {
         id: number;
         error?: string;
+        postedAt?: number;
+        doneAt?: number;
       };
       if (error) {
         abortTransfer(`✗ ${t("receive.workerError", { msg: error })}`);
@@ -652,12 +704,17 @@ async function start(): Promise<void> {
       }
       if (id === -1) return;
       busy[slot] = false;
+      syncOptWorkers();
+      if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
+        optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
+      }
       for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
     };
     w.onerror = (event) => abortTransfer(`✗ ${t("receive.workerError", { msg: event.message })}`);
     workers.push(w);
     busy.push(false);
   }
+  syncOptWorkers();
 
   captureGen++;
   scheduleFrame(captureGen);
@@ -667,20 +724,25 @@ async function start(): Promise<void> {
     .catch(() => undefined);
 }
 
-type VideoRVFC = HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
+type VideoRVFC = HTMLVideoElement & {
+  requestVideoFrameCallback?: (
+    cb: (now: number, meta?: { presentedFrames?: number; mediaTime?: number }) => void,
+  ) => number;
+};
 
 function scheduleFrame(gen: number): void {
   // Non interrompere il loop in pausa: altrimenti Riprendi non riparte in modo affidabile.
   if (done || gen !== captureGen || !running) return;
   const video = el<HTMLVideoElement>("video") as VideoRVFC;
   if (!video) return;
-  const next = () => {
+  const next = (_now?: number, meta?: { presentedFrames?: number; mediaTime?: number }) => {
     if (done || gen !== captureGen || !running) return;
+    optTrace.noteVideoMeta(meta);
     if (!paused) captureFrame();
     scheduleFrame(gen);
   };
   if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
-  else requestAnimationFrame(next);
+  else requestAnimationFrame(() => next());
 }
 
 function captureFrame(): void {
@@ -697,16 +759,29 @@ function captureFrame(): void {
     grab.width = vw;
     grab.height = vh;
   }
-  const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-  ctx.drawImage(video, 0, 0);
-  const img = ctx.getImageData(0, 0, vw, vh);
+  const postedAt = wallNow();
+  const img = timed("extract", () => {
+    const ctx = grab.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(video, 0, 0);
+    return ctx.getImageData(0, 0, vw, vh);
+  });
+  if (getOptFlags().perf && postedAt - lastSharpnessAt > 500) {
+    lastSharpnessAt = postedAt;
+    const sharp = sharpnessOfRgba(img.data, vw, vh);
+    optTrace.setSharpness(sharp);
+  }
   busy[slot] = true;
-  workers[slot]!.postMessage({ id: frameId++, buf: img.data.buffer, w: vw, h: vh }, [img.data.buffer]);
+  syncOptWorkers();
+  optTrace.noteProcessed();
+  workers[slot]!.postMessage(
+    { id: frameId++, buf: img.data.buffer, w: vw, h: vh, postedAt },
+    [img.data.buffer],
+  );
 }
 
 function onDecoded(bytes: Uint8Array): void {
   decodeTimes.push(performance.now());
-  const parsed = parseFrame(bytes);
+  const parsed = timed("parse", () => parseFrame(bytes));
   if (!parsed || done || !running) return;
   const { header, block } = parsed;
 
@@ -727,7 +802,6 @@ function onDecoded(bytes: Uint8Array): void {
     }
     decoder = new LTDecoder(header.k, header.blockLen, header.sessionId, header.totalLen);
     activeHeader = { ...header };
-    lockQrFocus();
     startTs = performance.now();
     lastProgressTs = startTs;
     resetProgressSamples();
@@ -740,7 +814,15 @@ function onDecoded(bytes: Uint8Array): void {
 
   const before = decoder.framesNew;
   const solvedBefore = decoder.solvedCount;
-  decoder.addFrame(header.seq, block);
+  timed("fountain", () => {
+    decoder!.addFrame(header.seq, block);
+  });
+  if (decoder.framesNew > before) {
+    optTrace.noteUniqueSymbol(block.length);
+  }
+  if (decoder.solvedCount > solvedBefore) {
+    optTrace.noteFountainGrowth((decoder.solvedCount - solvedBefore) * decoder.blockLen);
+  }
   if (decoder.framesNew > before || decoder.solvedCount > solvedBefore) {
     lastProgressTs = performance.now();
   }
@@ -767,6 +849,7 @@ async function finish(payload: Uint8Array, seconds: number, header: FrameHeader)
     showIntegrityError(t("receive.integrity.envelope"));
     return;
   }
+  optTrace.noteFileComplete(unpacked.file.length, seconds);
 
   updateProgressUi(100, lastRateLabel || "…", "0 s", unpacked.file.length, 0);
   syncStatsVisibility();
@@ -836,6 +919,7 @@ function updateStats(): void {
   if (decoder && activeHeader) refreshReceiveStats();
   else updateXferState();
   setText("stats", "");
+  if (getOptFlags().perf) renderOptHud(el("camera-panel"));
 }
 
 function onVisibility(): void {

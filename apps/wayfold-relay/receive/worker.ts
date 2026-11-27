@@ -81,8 +81,19 @@ async function decodeRects(
   return symbols;
 }
 
+function wallNow(): number {
+  return performance.timeOrigin + performance.now();
+}
+
 ctx.onmessage = async (e: MessageEvent) => {
-  const { id, buf, w, h } = e.data as { id: number; buf: ArrayBuffer; w: number; h: number };
+  const { id, buf, w, h, postedAt } = e.data as {
+    id: number;
+    buf: ArrayBuffer;
+    w: number;
+    h: number;
+    postedAt?: number;
+  };
+  const queueAt = typeof postedAt === "number" ? postedAt : wallNow();
   try {
     const pixels = new Uint8ClampedArray(buf);
     let symbols = await decodeQr(toImageData(pixels, w, h));
@@ -100,9 +111,9 @@ ctx.onmessage = async (e: MessageEvent) => {
     if (symbols.length === 0 && w >= 96 && h >= 96) {
       symbols = await decodeRects(pixels, w, h, gridSliceRects(w, h), TILE_OPTS);
     }
-    ctx.postMessage({ id, bytes: symbols[0] ?? null, symbols });
+    ctx.postMessage({ id, bytes: symbols[0] ?? null, symbols, postedAt: queueAt, doneAt: wallNow() });
   } catch {
-    ctx.postMessage({ id, bytes: null });
+    ctx.postMessage({ id, bytes: null, postedAt: queueAt, doneAt: wallNow() });
   }
 };
 

@@ -1,4 +1,13 @@
 import { QR_MARGIN, frameBytesForGrid, rasterizeQr, symbolsFromWorker, type EccLevel } from "../shared/optical.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
+import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import {
+  applyQrFocusConstraints,
+  tapPointInVideoFrame,
+  type FocusPoint,
+  type QrTrackCapabilities,
+} from "../receive/camera.ts";
 
 /**
  * Optical modem for Wayfold Connect. Knows nothing about the protocol: it
@@ -343,10 +352,72 @@ export class Modem {
       writeTurn(this.turn);
       this.applyTurn(this.r.video as HTMLVideoElement);
     });
+    this.r.preview?.addEventListener("pointerdown", (ev) => this.onPreviewPointer(ev as PointerEvent));
     new ResizeObserver(() => this.redraw()).observe(this.r.stage!);
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden && this.running) void this.acquireWake();
     });
+  }
+
+  private focusBusy = false;
+  private focusQueued: FocusPoint | null = null;
+
+  private onPreviewPointer(ev: PointerEvent): void {
+    if (!this.running || !this.stream) return;
+    const preview = this.r.preview as HTMLElement | undefined;
+    const video = this.r.video as HTMLVideoElement | undefined;
+    if (!preview || !video) return;
+    const point = tapPointInVideoFrame(
+      ev.clientX,
+      ev.clientY,
+      preview.getBoundingClientRect(),
+      video.videoWidth,
+      video.videoHeight,
+      "cover",
+    );
+    let mark = preview.querySelector<HTMLElement>("[data-focus-reticle]");
+    if (!mark) {
+      mark = document.createElement("span");
+      mark.dataset.focusReticle = "1";
+      mark.className = "focus-reticle";
+      preview.append(mark);
+    }
+    mark.style.left = `${point.x * 100}%`;
+    mark.style.top = `${point.y * 100}%`;
+    mark.classList.remove("is-flash");
+    void mark.offsetWidth;
+    mark.classList.add("is-flash");
+    void this.applyFocus(point, "tap");
+  }
+
+  private async applyFocus(point: FocusPoint, kind: "startup" | "tap"): Promise<void> {
+    const track = this.stream?.getVideoTracks()[0];
+    if (!track) return;
+    if (this.focusBusy) {
+      this.focusQueued = point;
+      return;
+    }
+    this.focusBusy = true;
+    try {
+      let caps: QrTrackCapabilities = {};
+      try {
+        caps = (track.getCapabilities?.() ?? {}) as QrTrackCapabilities;
+      } catch {
+        /* ignore */
+      }
+      await applyQrFocusConstraints(
+        track,
+        caps,
+        point,
+        kind === "tap" ? "single-shot" : "continuous",
+        kind,
+      );
+    } finally {
+      this.focusBusy = false;
+      const next = this.focusQueued;
+      this.focusQueued = null;
+      if (next && this.running) void this.applyFocus(next, "tap");
+    }
   }
 
   // --- lifecycle ----------------------------------------------------------
@@ -362,6 +433,10 @@ export class Modem {
     this.testRun = (Math.random() * 0xffffffff) >>> 0;
     this.testSeq = 0;
     this.testWindow = [];
+    if (getOptFlags().perf) {
+      optTrace.reset();
+      optTrace.configuredFps = this.settings.fps;
+    }
     this.renderControls();
     this.qrWorker = new Worker(new URL("./qr-worker.ts", import.meta.url), { type: "module" });
     this.qrWorker.onmessage = (e) => this.onEncoded(e.data);
@@ -375,6 +450,15 @@ export class Modem {
     void this.acquireWake();
     this.renderSide();
     const ok = await this.attachCamera();
+    if (this.running && getOptFlags().perf) {
+      try {
+        const settings = this.stream?.getVideoTracks()[0]?.getSettings?.() ?? {};
+        optTrace.negotiatedFps = Number(settings.frameRate) || 0;
+      } catch {
+        optTrace.negotiatedFps = 0;
+      }
+      ensureOptHud(this.root);
+    }
     if (this.running && !ok) this.stop();
   }
 
@@ -407,6 +491,7 @@ export class Modem {
     this.helper = null;
     void this.wake?.release().catch(() => undefined);
     this.wake = null;
+    removeOptHud(this.root);
     this.renderControls();
     this.renderSide();
     this.drawIdle("Fermo");
@@ -636,13 +721,22 @@ export class Modem {
       const worker = new Worker(new URL("../receive/worker.ts", import.meta.url), { type: "module" });
       const slot = i;
       worker.onmessage = (e: MessageEvent) => {
-        const { id, error } = e.data as { id: number; error?: string };
+        const { id, error, postedAt, doneAt } = e.data as {
+          id: number;
+          error?: string;
+          postedAt?: number;
+          doneAt?: number;
+        };
         if (error) {
           this.error(`Decoder QR non disponibile: ${error}`, "decoder");
           return;
         }
         if (id === -1) return;
         this.busy[slot] = false;
+        optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
+        if (getOptFlags().perf && typeof postedAt === "number" && typeof doneAt === "number") {
+          optTrace.mark("wasm", postedAt, Math.max(0, doneAt - postedAt));
+        }
         this.c.decodes++;
         for (const s of symbolsFromWorker(e.data)) this.onSymbol(s);
       };
@@ -652,6 +746,7 @@ export class Modem {
       this.workers.push(worker);
       this.busy.push(false);
     }
+    optTrace.setWorkers(0, this.workers.length);
   }
 
   private async attachCamera(): Promise<boolean> {
@@ -701,20 +796,26 @@ export class Modem {
     video.onloadedmetadata = () => this.applyTurn(video);
     this.applyTurn(video);
     void video.play().catch(() => undefined);
+    void this.applyFocus({ x: 0.5, y: 0.5 }, "startup");
     if (!this.opts.videoSource) void this.listCameras();
     this.scheduleCapture(gen);
     return true;
   }
 
   private scheduleCapture(gen: number): void {
-    const video = this.r.video as HTMLVideoElement & { requestVideoFrameCallback?: (cb: () => void) => number };
-    const next = () => {
+    const video = this.r.video as HTMLVideoElement & {
+      requestVideoFrameCallback?: (
+        cb: (now: number, meta?: { presentedFrames?: number; mediaTime?: number }) => void,
+      ) => number;
+    };
+    const next = (_now?: number, meta?: { presentedFrames?: number; mediaTime?: number }) => {
       if (!this.running || gen !== this.captureGen) return;
+      optTrace.noteVideoMeta(meta);
       this.capture(video);
       this.scheduleCapture(gen);
     };
     if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
-    else requestAnimationFrame(next);
+    else requestAnimationFrame(() => next());
   }
 
   private applyTurn(video: HTMLVideoElement): void {
@@ -759,10 +860,18 @@ export class Modem {
       ctx.translate(0, vw);
       ctx.rotate(-Math.PI / 2);
     }
-    ctx.drawImage(video, 0, 0);
-    const img = ctx.getImageData(0, 0, dw, dh);
+    const postedAt = wallNow();
+    const img = timed("extract", () => {
+      ctx.drawImage(video, 0, 0);
+      return ctx.getImageData(0, 0, dw, dh);
+    });
     this.busy[slot] = true;
-    this.workers[slot]!.postMessage({ id: this.c.cam, buf: img.data.buffer, w: dw, h: dh }, [img.data.buffer]);
+    optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
+    optTrace.noteProcessed();
+    this.workers[slot]!.postMessage(
+      { id: this.c.cam, buf: img.data.buffer, w: dw, h: dh, postedAt },
+      [img.data.buffer],
+    );
   }
 
   private onSymbol(bytes: Uint8Array): void {
@@ -774,6 +883,7 @@ export class Modem {
     if (this.recentOrder.length > RECENT_KEYS) this.recent.delete(this.recentOrder.shift()!);
     this.c.unique++;
     this.c.uniqueBytes += bytes.length;
+    optTrace.noteUniqueSymbol(bytes.length);
     if (bytes[0] === TEST_MAGIC0 && bytes[1] === TEST_MAGIC1 && bytes.length >= 10) {
       const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
       this.testWindow.push(dv.getUint32(6));
@@ -819,6 +929,11 @@ export class Modem {
           stats: { camFps: this.rates.cam, decodesPerSec: this.rates.decodes, uniquePerSec: this.rates.unique, rxKBs: this.rates.kbs, txFps: this.rates.tx },
         }),
       );
+    }
+    if (getOptFlags().perf) {
+      const rtt = this.helper?.state === "connected" ? this.helper.rttMs : null;
+      optTrace.setArqRtt(rtt);
+      renderOptHud(this.root);
     }
     this.renderSide();
   }
