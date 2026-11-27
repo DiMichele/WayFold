@@ -1,5 +1,5 @@
 import { DEFAULT_POLICY, type DiodePolicy } from "./policy.ts";
-import { appendLog, type LogLevel } from "./store.ts";
+import type { LogLevel } from "./store.ts";
 
 export const LOG_EVENT = "wf:diode-log";
 export const POLICY_EVENT = "wf:diode-policy";
@@ -32,12 +32,8 @@ export function showBanner(id: string, message: string | null): void {
   box.textContent = message ?? "";
 }
 
-/** Persists a local monitoring event; the log view listens for LOG_EVENT. */
-export function logEvent(level: LogLevel, key: string, params: Record<string, string | number> = {}): void {
-  void appendLog({ ts: Date.now(), level, key, params })
-    .catch(() => undefined)
-    .finally(() => window.dispatchEvent(new Event(LOG_EVENT)));
-}
+/** Transfers are not recorded. The signature stays so callers do not keep a side channel. */
+export function logEvent(_level: LogLevel, _key: string, _params: Record<string, string | number> = {}): void {}
 
 type WakeLockSentinelLike = { release(): Promise<void> };
 type WakeLockNavigator = Navigator & {

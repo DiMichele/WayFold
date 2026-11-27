@@ -291,15 +291,6 @@ function render(): void {
   el("net-code-value")!.textContent = view.code;
   renderActions(view.actions);
 
-  const connected = h?.state === "connected";
-  el("net-stats")!.hidden = !connected;
-  if (connected && h) {
-    el("net-down")!.textContent = `${h.inKBs.toFixed(1)} KB/s`;
-    el("net-up")!.textContent = `${h.outKBs.toFixed(1)} KB/s`;
-    el("net-rtt")!.textContent = h.rttMs ? `${h.rttMs} ms` : "–";
-    el("net-qr")!.textContent = (snapshot?.rates.unique ?? 0).toFixed(1);
-  }
-
   el("net-browse")!.hidden = !(running && role === "join");
 
   const err = errorText();

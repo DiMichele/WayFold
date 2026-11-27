@@ -15,14 +15,11 @@ import {
   tapPointFromEvent,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
-import { renderChat, type ChatLine } from "./chat.ts";
 import { ScreenWake, currentPolicy, el, formatBytes, logEvent, showBanner } from "./common.ts";
 import { decodeLiveRecord, isLiveMime, isNewerLive, type LiveRecord } from "./live.ts";
 import { acceptVideoPacket, renderVideoStats, resetVideoPlayback } from "./video-rx.ts";
 import { isVideoMime } from "./video-wire.ts";
-import { toHex } from "./inbox.ts";
 import { checkPolicy } from "./policy.ts";
-import { listInbox, putInbox, removeInbox, type InboxItem } from "./store.ts";
 
 const CAPTURE_WIDTH = 1280;
 const CAPTURE_FPS = 30;
@@ -58,11 +55,9 @@ const finished: string[] = [];
 const finishedSet = new Set<string>();
 let lastKey: string | null = null;
 let counts = { received: 0, rejected: 0, duplicates: 0 };
-const liveLines: ChatLine[] = [];
+let latest = "";
 let liveCursor: Pick<LiveRecord, "epoch" | "seq"> | null = null;
 let draftText = "";
-let linked = false;
-let inbox: InboxItem[] = [];
 const wake = new ScreenWake();
 
 function sessionKey(h: FrameHeader): string {
@@ -148,7 +143,6 @@ function onDecoded(bytes: Uint8Array): void {
 function acceptLive(record: LiveRecord, seconds: string): void {
   if (!isNewerLive(liveCursor, record)) return;
   if (!(record.epoch === 0 && record.seq === 0)) liveCursor = { epoch: record.epoch, seq: record.seq };
-  linked = true;
   if (record.kind === "beacon") {
     draftText = "";
     renderLive();
@@ -160,7 +154,7 @@ function acceptLive(record: LiveRecord, seconds: string): void {
     return;
   }
   draftText = "";
-  liveLines.push({ text: record.text, at: Date.now() });
+  latest = record.text;
   counts.received++;
   const preview = record.text.length > 80 ? `${record.text.slice(0, 77)}…` : record.text;
   logEvent("info", "diode.log.rxLive", { text: preview, sec: seconds });
@@ -215,32 +209,9 @@ async function complete(session: OpenSession, payload: Uint8Array): Promise<void
     renderStats();
     return;
   }
-  const item: InboxItem = {
-    sha: toHex(digest),
-    name: parsed.filename,
-    mime: parsed.mime,
-    size: parsed.file.length,
-    receivedAt: Date.now(),
-    data: new Blob([parsed.file as BlobPart], { type: parsed.mime }),
-  };
-  let stored = false;
-  try {
-    stored = await putInbox(item);
-  } catch (error) {
-    logEvent("error", "diode.log.rxStoreFailed", {
-      name: item.name,
-      msg: error instanceof Error ? error.message : String(error),
-    });
-    return;
-  }
-  if (stored) {
-    counts.received++;
-    logEvent("info", "diode.log.rxReceived", { name: item.name, size: formatBytes(item.size), sec: seconds });
-    await refreshInbox();
-  } else {
-    counts.duplicates++;
-    logEvent("info", "diode.log.rxDuplicate", { name: item.name });
-  }
+  counts.received++;
+  logEvent("info", "diode.log.rxReceived", { name: parsed.filename, size: formatBytes(parsed.file.length), sec: seconds });
+  download(parsed.filename, new Blob([parsed.file as BlobPart], { type: parsed.mime }));
   renderStats();
 }
 
@@ -425,7 +396,8 @@ export function stopRx(log = true): void {
     statsTimer = null;
   }
   for (const s of [...open.values()]) closeSession(s, "diode.log.rxAbandoned");
-  linked = false;
+  latest = "";
+  draftText = "";
   resetVideoPlayback();
   if (log) logEvent("info", "diode.log.rxStopped", { received: counts.received, rejected: counts.rejected });
   renderControls();
@@ -488,12 +460,10 @@ function renderControls(): void {
 }
 
 function renderLive(): void {
-  renderChat("dr-chat", "dr-chat-empty", liveLines);
-  const meta = el("dr-chat-meta");
-  if (meta) {
-    const count = liveLines.length ? String(liveLines.length) : "";
-    const link = running && linked ? t("diode.live.link") : "";
-    meta.textContent = link && count ? `${link} · ${count}` : link || count;
+  const now = el("dr-now");
+  if (now) {
+    now.hidden = !latest;
+    now.textContent = latest;
   }
   const draft = el("dr-draft");
   if (!draft) return;
@@ -541,72 +511,18 @@ function renderStats(): void {
   set("dr-open", open.size);
 }
 
-function download(item: InboxItem): void {
-  const url = URL.createObjectURL(new Blob([item.data], { type: "application/octet-stream" }));
+function download(name: string, data: Blob): void {
+  const url = URL.createObjectURL(data);
   const a = document.createElement("a");
   a.href = url;
-  a.download = item.name;
+  a.download = name;
   document.body.append(a);
   a.click();
   a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 30_000);
-}
-
-function renderInbox(): void {
-  const list = el("dr-inbox");
-  const empty = el("dr-inbox-empty");
-  if (!list) return;
-  if (empty) empty.hidden = inbox.length > 0;
-  const time = new Intl.DateTimeFormat(document.documentElement.lang || undefined, {
-    dateStyle: "short",
-    timeStyle: "medium",
-  });
-  list.replaceChildren(
-    ...inbox.map((item) => {
-      const li = document.createElement("li");
-      li.className = "diode-item";
-      const body = document.createElement("div");
-      body.className = "diode-item-body";
-      const name = document.createElement("span");
-      name.className = "diode-item-name";
-      name.textContent = item.name;
-      const meta = document.createElement("span");
-      meta.className = "diode-item-meta";
-      meta.textContent = `${formatBytes(item.size)} · ${time.format(item.receivedAt)}`;
-      meta.title = `SHA-256 ${item.sha}`;
-      body.append(name, meta);
-
-      const save = document.createElement("button");
-      save.type = "button";
-      save.className = "btn-secondary diode-item-btn";
-      save.textContent = t("diode.rx.save");
-      save.addEventListener("click", () => download(item));
-      const remove = document.createElement("button");
-      remove.type = "button";
-      remove.className = "btn-ghost diode-item-btn";
-      remove.textContent = t("diode.remove");
-      remove.addEventListener("click", () => {
-        void removeInbox(item.sha)
-          .catch(() => undefined)
-          .then(refreshInbox);
-      });
-      li.append(body, save, remove);
-      return li;
-    }),
-  );
-}
-
-async function refreshInbox(): Promise<void> {
-  try {
-    inbox = await listInbox();
-  } catch (error) {
-    showBanner("dr-error", t("diode.storeError", { msg: error instanceof Error ? error.message : String(error) }));
-  }
-  renderInbox();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
 export function refreshRxText(): void {
-  renderInbox();
   renderLive();
   renderStats();
   renderVideoStats();
@@ -630,7 +546,6 @@ export async function mountRx(): Promise<void> {
   renderControls();
   renderLive();
   renderStats();
-  await refreshInbox();
 }
 
 export function unmountRx(): void {

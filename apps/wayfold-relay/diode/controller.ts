@@ -1,5 +1,6 @@
 import { onLangChange } from "../shared/i18n.ts";
 import { el, setCurrentPolicy } from "./common.ts";
+import { forgetTransfers } from "./store.ts";
 import { AUTOMATIC_POLICY } from "./policy.ts";
 import { isRxRunning, mountRx, refreshRxText, stopRx, unmountRx } from "./rx-controller.ts";
 import { isTxRunning, mountTx, refreshTxText, stopTx, unmountTx } from "./tx-controller.ts";
@@ -108,6 +109,7 @@ export async function mountDiode(): Promise<void> {
   role = savedRole();
   syncRoleUi();
   setCurrentPolicy(AUTOMATIC_POLICY);
+  void forgetTransfers().catch(() => undefined);
   if (role === "tx") await mountTx();
   else await mountRx();
 }

@@ -36,15 +36,6 @@ const VIEW = `
       <div class="xfer-actions net-actions" id="net-actions"></div>
     </div>
 
-    <div class="net-modem" id="net-modem"></div>
-
-    <dl class="xfer-stats xfer-stats--row net-stats" id="net-stats" hidden>
-      <div><dt data-i18n="net.stat.down">Down</dt><dd id="net-down">–</dd></div>
-      <div><dt data-i18n="net.stat.up">Up</dt><dd id="net-up">–</dd></div>
-      <div><dt data-i18n="net.stat.rtt">RTT</dt><dd id="net-rtt">–</dd></div>
-      <div><dt data-i18n="net.stat.qr">QR read/s</dt><dd id="net-qr">–</dd></div>
-    </dl>
-
     <section class="net-browse card-inner" id="net-browse" hidden>
       <h2 data-i18n="net.browse.title">Browse from this PC</h2>
       <p data-i18n="net.browse.hint"></p>
@@ -53,6 +44,60 @@ const VIEW = `
       </div>
       <p class="net-small" data-i18n="net.browse.note"></p>
     </section>
+
+    <div class="diode-payload">
+      <h2 data-i18n="diode.pay.label">What to send</h2>
+      <div class="diode-pay" role="tablist" data-i18n-aria="diode.pay.label">
+        <button type="button" class="diode-pay-btn is-on" role="tab" data-net-pay="chat" aria-selected="true">
+          <span data-i18n="diode.live.title">Messages</span>
+        </button>
+        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="file" aria-selected="false">
+          <span data-i18n="diode.pay.file">File</span>
+        </button>
+        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="video" aria-selected="false">
+          <span data-i18n="diode.video.title">Video</span>
+        </button>
+      </div>
+      <section class="diode-block" data-net-panel="chat">
+        <form class="diode-live-form" id="net-live-form" autocomplete="off">
+          <input id="net-live-input" type="text" maxlength="400" data-i18n-placeholder="diode.live.placeholder" />
+          <button type="submit" class="btn-primary" data-i18n="diode.live.send">Send</button>
+        </form>
+        <p class="diode-now" id="net-now" hidden></p>
+      </section>
+      <section class="diode-block" data-net-panel="file" hidden>
+        <div class="drop-zone" id="net-drop">
+          <input id="net-desk-files" type="file" class="sr-only" multiple />
+          <div class="drop-zone-inner">
+            <label class="btn-outline" for="net-desk-files" data-i18n="diode.tx.addFiles">Add files</label>
+            <p class="drop-zone-hint" data-i18n="send.dropHint">or drag and drop here</p>
+          </div>
+        </div>
+      </section>
+      <section class="diode-block" data-net-panel="video" hidden>
+        <div class="diode-video-row">
+          <video id="net-video-preview" class="diode-video-preview" muted playsinline autoplay hidden></video>
+          <div class="diode-video-actions">
+            <label class="diode-fps" data-i18n-title="diode.video.fpsTip">
+              <select id="net-video-fps" data-i18n-aria="diode.video.fps">
+                <option value="1">1</option>
+                <option value="2" selected>2</option>
+                <option value="4">4</option>
+                <option value="8">8</option>
+              </select>
+              <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
+            </label>
+            <button type="button" id="net-video-start" class="btn-primary" data-i18n="diode.video.start">Start video</button>
+            <button type="button" id="net-video-flip" class="btn-secondary" hidden data-i18n="diode.video.flip">Flip camera</button>
+            <button type="button" id="net-video-stop" class="btn-ghost" hidden data-i18n="diode.video.stop">Stop video</button>
+          </div>
+        </div>
+        <div class="diode-video-stage">
+          <canvas id="net-video-out" width="176" height="144"></canvas>
+          <p class="diode-video-wait" id="net-video-wait" data-i18n="diode.video.waiting"></p>
+        </div>
+      </section>
+    </div>
 
     <div class="diode-screen-bar net-tools">
       <div class="diode-screen-group">
@@ -83,61 +128,7 @@ const VIEW = `
       </label>
     </div>
 
-    <div class="diode-payload">
-      <h2 data-i18n="diode.pay.label">What to send</h2>
-      <div class="diode-pay" role="tablist" data-i18n-aria="diode.pay.label">
-        <button type="button" class="diode-pay-btn is-on" role="tab" data-net-pay="chat" aria-selected="true">
-          <span data-i18n="diode.live.title">Messages</span>
-        </button>
-        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="file" aria-selected="false">
-          <span data-i18n="diode.pay.file">File</span>
-        </button>
-        <button type="button" class="diode-pay-btn" role="tab" data-net-pay="video" aria-selected="false">
-          <span data-i18n="diode.video.title">Video</span>
-        </button>
-      </div>
-      <section class="diode-block" data-net-panel="chat">
-        <form class="diode-live-form" id="net-live-form" autocomplete="off">
-          <input id="net-live-input" type="text" maxlength="400" data-i18n-placeholder="diode.live.placeholder" />
-          <button type="submit" class="btn-primary" data-i18n="diode.live.send">Send</button>
-        </form>
-        <ol class="diode-chat" id="net-chat" aria-live="polite"></ol>
-        <p class="diode-empty" id="net-chat-empty" data-i18n="diode.live.empty"></p>
-      </section>
-      <section class="diode-block" data-net-panel="file" hidden>
-        <div class="drop-zone" id="net-drop">
-          <input id="net-desk-files" type="file" class="sr-only" multiple />
-          <div class="drop-zone-inner">
-            <label class="btn-outline" for="net-desk-files" data-i18n="diode.tx.addFiles">Add files</label>
-            <p class="drop-zone-hint" data-i18n="send.dropHint">or drag and drop here</p>
-          </div>
-        </div>
-        <ul class="diode-list" id="net-files-in"></ul>
-      </section>
-      <section class="diode-block" data-net-panel="video" hidden>
-        <div class="diode-video-row">
-          <video id="net-video-preview" class="diode-video-preview" muted playsinline autoplay hidden></video>
-          <div class="diode-video-actions">
-            <label class="diode-fps" data-i18n-title="diode.video.fpsTip">
-              <select id="net-video-fps" data-i18n-aria="diode.video.fps">
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="4">4</option>
-                <option value="8">8</option>
-              </select>
-              <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
-            </label>
-            <button type="button" id="net-video-start" class="btn-primary" data-i18n="diode.video.start">Start video</button>
-            <button type="button" id="net-video-flip" class="btn-secondary" hidden data-i18n="diode.video.flip">Flip camera</button>
-            <button type="button" id="net-video-stop" class="btn-ghost" hidden data-i18n="diode.video.stop">Stop video</button>
-          </div>
-        </div>
-        <div class="diode-video-stage">
-          <canvas id="net-video-out" width="176" height="144"></canvas>
-          <p class="diode-video-wait" id="net-video-wait" data-i18n="diode.video.waiting"></p>
-        </div>
-      </section>
-    </div>
+    <div class="net-modem" id="net-modem"></div>
   </div>
 </section>
 `;

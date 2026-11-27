@@ -140,6 +140,19 @@ export async function clearLog(): Promise<void> {
   await done(tx);
 }
 
+export async function clearInbox(): Promise<void> {
+  const db = await open();
+  const tx = db.transaction("inbox", "readwrite");
+  tx.objectStore("inbox").clear();
+  await done(tx);
+}
+
+/** Drops any stored transfer history. Nothing sent or received is kept. */
+export async function forgetTransfers(): Promise<void> {
+  await clearLog();
+  await clearInbox();
+}
+
 export async function listInbox(): Promise<InboxItem[]> {
   const db = await open();
   const items = await promisify(db.transaction("inbox").objectStore("inbox").getAll() as IDBRequest<InboxItem[]>);

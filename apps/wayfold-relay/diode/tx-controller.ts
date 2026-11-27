@@ -15,7 +15,6 @@ import {
   rasterizeQr,
 } from "../shared/optical.ts";
 import { HEADER_LEN, createSessionId, fnv1a, packFrame, type FrameHeader } from "../shared/protocol.ts";
-import { renderChat, type ChatLine } from "./chat.ts";
 import { airBudget, carrierYieldsToFile, dwellFrames, nextOnAir } from "./carousel.ts";
 import {
   LIVE_FILENAME,
@@ -57,7 +56,6 @@ interface Frame {
 }
 
 let items: QueueItem[] = [];
-const sentLines: ChatLine[] = [];
 /** File interrupted by the live carrier; its turn resumes when the text yields. */
 let resumeFileId: string | null = null;
 /** One optical session. The beacon, the draft and the committed line share it. */
@@ -835,12 +833,6 @@ function onAirLabel(item: QueueItem): string {
   return item.name.length > 80 ? `${item.name.slice(0, 77)}…` : item.name;
 }
 
-function carrierLabel(): string {
-  if (!air || air.kind === "beacon") return t("diode.tx.carrier");
-  const text = air.text.trim();
-  return text.length > 80 ? `${text.slice(0, 77)}…` : text || t("diode.tx.carrier");
-}
-
 function commitLine(): void {
   if (videoOn) {
     showBanner("dx-error", t("diode.video.busy"));
@@ -851,11 +843,9 @@ function commitLine(): void {
   const text = input.value.slice(0, LIVE_MAX_CHARS).trim();
   if (!text) return;
   showBanner("dx-error", null);
-  sentLines.push({ text, at: Date.now() });
   input.value = "";
   const preview = text.length > 80 ? `${text.slice(0, 77)}…` : text;
   logEvent("info", "diode.log.txLive", { text: preview });
-  renderChat("dx-chat", "dx-chat-empty", sentLines);
   if (!running) start();
   void publish({ kind: "commit", text });
 }
@@ -930,7 +920,7 @@ function renderStatus(): void {
     if (!running) state.textContent = "";
     else if (paused) state.textContent = t("xfer.paused");
     else if (videoOn && onAirId === videoItemId) state.textContent = t("diode.video.onAir");
-    else if (showingCarrier) state.textContent = air!.kind === "beacon" ? t("diode.tx.carrier") : t("diode.tx.onAirName", { name: carrierLabel() });
+    else if (showingCarrier) state.textContent = t("diode.tx.carrier");
     else if (onAir) state.textContent = t("diode.tx.onAirName", { name: onAirLabel(onAir) });
     else state.textContent = t("diode.tx.arming");
   }
@@ -959,7 +949,6 @@ function renderControls(): void {
 export function refreshTxText(): void {
   renderQueue();
   renderStatus();
-  renderChat("dx-chat", "dx-chat-empty", sentLines);
   refreshVideoTx();
 }
 
@@ -1063,7 +1052,6 @@ export async function mountTx(): Promise<void> {
     }
   }
   renderQueue();
-  renderChat("dx-chat", "dx-chat-empty", sentLines);
   renderControls();
   renderStatus();
   setStage(running && onAirId !== null);

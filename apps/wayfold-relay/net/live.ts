@@ -1,4 +1,3 @@
-import { t } from "../shared/i18n.ts";
 import {
   VIDEO_BITRATE,
   VIDEO_FPS,
@@ -84,36 +83,23 @@ function setPay(next: Pay): void {
   });
 }
 
-function addLine(text: string, mine: boolean): void {
-  const list = el("net-chat");
-  const empty = el("net-chat-empty");
-  if (!list) return;
-  if (empty) empty.hidden = true;
-  const item = document.createElement("li");
-  if (mine) item.classList.add("is-mine");
-  const time = document.createElement("time");
-  time.textContent = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-  item.append(time, document.createTextNode(text));
-  list.append(item);
-  list.scrollTop = list.scrollHeight;
+function showNow(text: string): void {
+  const node = el("net-now");
+  if (!node) return;
+  node.hidden = !text;
+  node.textContent = text;
 }
 
 function saveFile(name: string, bytes: Uint8Array): void {
-  const list = el("net-files-in");
-  if (!list) return;
-  const item = document.createElement("li");
-  item.className = "diode-item";
-  const body = document.createElement("span");
-  body.className = "diode-item-name";
-  body.textContent = name;
-  const linkBtn = document.createElement("a");
-  linkBtn.className = "btn-outline diode-item-btn";
-  linkBtn.textContent = t("diode.rx.save");
   const blob = new Blob([bytes.slice()]);
-  linkBtn.href = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  const linkBtn = document.createElement("a");
+  linkBtn.href = url;
   linkBtn.download = name;
-  item.append(body, linkBtn);
-  list.append(item);
+  document.body.append(linkBtn);
+  linkBtn.click();
+  linkBtn.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_000);
 }
 
 function onFile(payload: Uint8Array): void {
@@ -206,7 +192,7 @@ function onDesk(msg: Uint8Array): void {
   if (!msg.length) return;
   const type = msg[0]!;
   const payload = msg.subarray(1);
-  if (type === CHAT) addLine(new TextDecoder().decode(payload), false);
+  if (type === CHAT) showNow(new TextDecoder().decode(payload));
   else if (type === FILE) onFile(payload);
   else if (type === VIDEO) onVideoPacket(payload);
 }
@@ -396,7 +382,6 @@ function wire(): void {
     const text = input?.value.trim() ?? "";
     if (!text) return;
     if (input) input.value = "";
-    addLine(text, true);
     emit(pack(CHAT, new TextEncoder().encode(text)));
   });
   const filesInput = el<HTMLInputElement>("net-desk-files");
@@ -427,6 +412,9 @@ export function syncDesk(next: LocalLink | null, up: boolean): void {
   link?.setDeskReceiver(onDesk);
   if (link) link.onDeskReady = flush;
   if (up && link?.role === "join") void link.ensureDesk();
-  if (!up) stopVideo();
+  if (!up) {
+    stopVideo();
+    showNow("");
+  }
   flush();
 }
