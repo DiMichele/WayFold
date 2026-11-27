@@ -7,22 +7,17 @@ const VIEW = `
       <div class="diode-roles" role="tablist" data-i18n-aria="diode.roles">
         <button type="button" class="diode-role" role="tab" data-diode-role="tx">
           <span class="diode-role-label" data-i18n="diode.roleTx">Transmit</span>
-          <span class="diode-role-hint" data-i18n="diode.roleTxHint">This screen shows the QR codes</span>
         </button>
         <button type="button" class="diode-role" role="tab" data-diode-role="rx">
           <span class="diode-role-label" data-i18n="diode.roleRx">Receive</span>
-          <span class="diode-role-hint" data-i18n="diode.roleRxHint">This camera reads them</span>
         </button>
       </div>
-      <p class="diode-note" data-i18n="diode.disclaimer"></p>
     </div>
 
     <div class="diode-panel" id="dx-panel" hidden>
       <div class="banner banner--error" id="dx-error" hidden role="alert"></div>
 
       <section class="diode-block diode-screen">
-        <h2 data-i18n="diode.screen.title">Screen</h2>
-        <p class="diode-hint" data-i18n="diode.screen.hint"></p>
         <div class="stage-wrap">
           <div class="stage" id="dx-stage" hidden>
             <canvas id="dx-qr" width="16" height="16"></canvas>
@@ -69,7 +64,6 @@ const VIEW = `
             </span>
           </label>
         </div>
-        <p class="layout-hint" data-i18n="send.layoutHint"></p>
         <div class="xfer-actions diode-transport">
           <button type="button" id="dx-start" class="btn-primary" data-i18n="diode.tx.start">Start transmitting</button>
           <button type="button" id="dx-pause" class="btn-secondary btn-icon-text" hidden>
@@ -102,7 +96,6 @@ const VIEW = `
         </div>
 
         <section class="diode-block" data-pay-panel="chat">
-          <p class="diode-hint" data-i18n="diode.live.hint"></p>
           <form class="diode-live-form" id="dx-live-form" autocomplete="off">
             <input id="dx-live-input" type="text" maxlength="400" data-i18n-placeholder="diode.live.placeholder" />
             <button type="submit" class="btn-primary" data-i18n="diode.live.send">Send</button>
@@ -112,7 +105,6 @@ const VIEW = `
         </section>
 
         <section class="diode-block" data-pay-panel="file" hidden>
-          <p class="diode-hint" data-i18n="diode.files.hint"></p>
           <div class="drop-zone" id="dx-drop">
             <input id="dx-files" type="file" class="sr-only" multiple />
             <div class="drop-zone-inner">
@@ -129,24 +121,20 @@ const VIEW = `
         </section>
 
         <section class="diode-block" data-pay-panel="video" hidden>
-          <label class="diode-screen-group">
-            <span class="layout-label" data-i18n="diode.video.fps" data-i18n-title="diode.video.fpsTip">Speed</span>
-            <span class="diode-fps">
-              <select id="dx-video-fps" data-i18n-aria="diode.video.fps">
-                <option value="1">1</option>
-                <option value="2" selected>2</option>
-                <option value="3">3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="8">8</option>
-              </select>
-              <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
-            </span>
-          </label>
-          <p class="diode-hint" data-i18n="diode.video.hint"></p>
           <div class="diode-video-row">
             <video id="dx-video-preview" class="diode-video-preview" muted playsinline autoplay hidden></video>
             <div class="diode-video-actions">
+              <label class="diode-fps" data-i18n-title="diode.video.fpsTip">
+                <select id="dx-video-fps" data-i18n-aria="diode.video.fps">
+                  <option value="1">1</option>
+                  <option value="2" selected>2</option>
+                  <option value="3">3</option>
+                  <option value="4">4</option>
+                  <option value="5">5</option>
+                  <option value="8">8</option>
+                </select>
+                <span class="diode-fps-unit" data-i18n="diode.tx.fpsUnit">fps</span>
+              </label>
               <button type="button" id="dx-video-start" class="btn-primary" data-i18n="diode.video.start">Start video</button>
               <button type="button" id="dx-video-flip" class="btn-secondary" hidden data-i18n="diode.video.flip">Flip camera</button>
               <button type="button" id="dx-video-stop" class="btn-ghost" hidden data-i18n="diode.video.stop">Stop video</button>
@@ -164,7 +152,6 @@ const VIEW = `
           <h2 data-i18n="diode.live.title">Messages</h2>
           <span class="diode-mono" id="dr-chat-meta"></span>
         </div>
-        <p class="diode-hint" id="dr-intro" data-i18n="diode.rx.intro"></p>
         <div class="toolbar">
           <button type="button" id="dr-start" class="btn-primary btn-primary--lg" data-i18n="diode.rx.start">Start listening</button>
           <button type="button" id="dr-resume" class="btn-primary" hidden data-i18n="diode.rx.resume">Turn camera back on</button>
@@ -179,7 +166,6 @@ const VIEW = `
         <div class="camera-panel">
           <div class="diode-video-live">
             <h2 data-i18n="diode.video.title">Video</h2>
-            <p class="diode-hint" data-i18n="diode.video.hintRx"></p>
             <div class="diode-video-stage">
               <canvas id="dr-video-out" width="176" height="144"></canvas>
               <p class="diode-video-wait" id="dr-video-wait" data-i18n="diode.video.waiting"></p>

@@ -95,14 +95,11 @@ function renderVideoStats(): void {
   const node = el("dx-video-stats");
   if (!node) return;
   if (!active && sent === 0 && dropped === 0) {
-    node.textContent = t("diode.video.statsPlan", {
-      w: VIDEO_WIDTH,
-      h: VIDEO_HEIGHT,
-      fps: videoFps(),
-      kbps: Math.round(videoBitrate() / 1000),
-    });
+    node.hidden = true;
+    node.textContent = "";
     return;
   }
+  node.hidden = false;
   node.textContent = t("diode.video.statsTx", {
     codec: codec || "H.264",
     fps: videoFps(),

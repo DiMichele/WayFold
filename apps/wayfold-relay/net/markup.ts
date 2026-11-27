@@ -57,7 +57,6 @@ const VIEW = `
           <button type="button" class="segmented-btn is-on" data-net-grid="2" aria-pressed="true">2</button>
           <button type="button" class="segmented-btn" data-net-grid="4" aria-pressed="false">4</button>
         </div>
-        <p class="layout-hint" data-i18n="send.layoutHint"></p>
       </div>
       <label class="diode-field diode-field--inline">
         <span data-i18n="net.camera">Camera</span>

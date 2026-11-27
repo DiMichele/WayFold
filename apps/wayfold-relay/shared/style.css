@@ -2099,9 +2099,10 @@ body.role-diode.diode-rx .btn-primary {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2px;
-  padding: 14px 12px;
-  min-height: 64px;
+  padding: 12px;
+  min-height: 48px;
   border-radius: var(--r-m);
   border: 1px solid var(--line2);
   background: var(--bg2);
@@ -2309,6 +2310,7 @@ body.role-diode.diode-rx .btn-primary {
 .diode-video-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 .diode-video-preview {
@@ -2520,18 +2522,35 @@ body.role-diode.diode-rx .btn-primary {
 .diode-fps {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding-right: 12px;
-  border-radius: 12px;
+  height: 36px;
+  padding: 0 14px 0 2px;
+  border-radius: 999px;
   border: 1px solid var(--line2);
   background: var(--srf);
+  color: var(--ink);
+  cursor: pointer;
 }
-.diode-field .diode-fps select {
+.diode-fps select {
+  appearance: none;
+  -webkit-appearance: none;
   width: auto;
-  min-width: 72px;
+  min-width: 58px;
+  height: 34px;
+  margin: 0;
+  padding: 0 16px 0 14px;
   border: 0;
-  background: transparent;
+  border-radius: 999px;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238a9690' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  background-size: 12px 12px;
   box-shadow: none;
+  font: inherit;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: inherit;
+  cursor: pointer;
 }
 .diode-fps:focus-within {
   outline: 2px solid var(--role-acc);
@@ -2539,10 +2558,23 @@ body.role-diode.diode-rx .btn-primary {
 }
 .diode-fps-unit {
   font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 650;
+  font-size: 11px;
+  font-weight: 500;
   letter-spacing: 0.04em;
   color: var(--mut);
+  pointer-events: none;
+}
+.diode-screen-group .layout-label {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+.diode-screen .btn-primary,
+.diode-video-actions .btn-primary {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 .diode-transport .btn-icon-text {
   flex: 0 0 auto;
