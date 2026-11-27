@@ -40,17 +40,24 @@ export function renderOptHud(host: HTMLElement | null): void {
       `grab ${s.grabs.last.full ? "full" : "crop"} ×${s.grabs.last.jobs} · media ${(mean / 1e6).toFixed(2)} Mpx · full ${s.grabs.fullFrames}/${s.grabs.frames}`,
     );
   }
-  if (s.exposure && (s.exposure.intent !== "off" || s.exposure.mode)) {
+  if (s.exposure && (s.exposure.intent !== "off" || s.exposure.mode || s.exposure.timeS != null)) {
     const time = s.exposure.timeS != null ? ` ${(s.exposure.timeS * 1000).toFixed(1)} ms` : "";
-    lines.push(
-      `exp ${s.exposure.intent} · ${s.exposure.mode ?? "n/d"}${time}` +
-        (s.exposure.applied ? "" : " · non applicata"),
-    );
+    const mark =
+      s.exposure.intent === "off"
+        ? ""
+        : s.exposure.detected
+          ? " · rilevata"
+          : s.exposure.fallback
+            ? " · fallback"
+            : s.exposure.accepted
+              ? " · non confermata"
+              : " · non accettata";
+    lines.push(`exp ${s.exposure.intent} · ${s.exposure.mode ?? "n/d"}${time}${mark}`);
   }
   if (s.tx) {
-    const div = s.tx.integerDivisor == null ? "refresh n/d" : s.tx.integerDivisor ? "divisore sì" : "divisore no";
+    const div = s.tx.integerDivisor == null ? "rAF n/d" : s.tx.integerDivisor ? "divisore rAF sì" : "divisore rAF no";
     lines.push(
-      `tx ${s.tx.configuredFps} fps · ${s.tx.refreshHz ?? "–"} Hz · ${div} · gap ${s.tx.medianGapMs ?? "–"} ms · late ${s.tx.late} · hold ${s.tx.starved} · skip ${s.tx.skipped}`,
+      `tx ${s.tx.configuredFps} fps · rAF ${s.tx.rafHz ?? "–"} Hz · pannello n/d · ${div} · gap ${s.tx.medianGapMs ?? "–"} ms · late ${s.tx.late} · hold ${s.tx.starved} · skip ${s.tx.skipped}`,
     );
   }
   if (s.arqRttMs != null) {

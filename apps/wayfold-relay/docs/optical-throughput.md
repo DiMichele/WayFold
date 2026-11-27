@@ -118,7 +118,7 @@ Ogni URL va tenuto abbastanza a lungo da riempire almeno una finestra da 10 s ne
 | 5 Budget aggressivo | `?wfopt=perf,fast,roi,budget:0.5` |
 | 6 Budget permissivo | `?wfopt=perf,fast,roi,budget:2` |
 
-Nel JSON del ricevitore: `fps.negotiated` contro `fps.observed` e `fps.processed`; `samples` con fase `extract`, `queue`, `wasm`, `aggregate`; `passes` / `skippedPasses`; `grabs`; `exposure`; `goodput` in byte/s; `windows`; `busyWorkers`. Nel JSON del trasmettitore, con lo stesso `?wfopt=perf`, il campo `tx` è l’orologio di disegno: refresh stimato dai `requestAnimationFrame`, se il FPS scelto ne è un divisore intero, gap mediano e p95, ritardi (`late`), simboli tenuti perché la coda era vuota (`starved`), intervalli saltati (`skipped`), refresh extra (`extraRefreshes`).
+Nel JSON del ricevitore: `fps.negotiated` contro `fps.observed` e `fps.processed`; `samples` con fase `extract`, `queue`, `wasm`, `aggregate`; `passes` / `skippedPasses`; `grabs`; `exposure`; `goodput` in byte/s; `windows`; `busyWorkers`. Nel JSON del trasmettitore, con lo stesso `?wfopt=perf`, il campo `tx` è l’orologio di disegno: `rafHz` è la mediana dei `requestAnimationFrame`, non il refresh del pannello (`panelHz` resta null). `integerDivisor` usa `rafHz`. Poi gap mediano e p95, ritardi (`late`), simboli tenuti perché la coda era vuota (`starved`), intervalli saltati (`skipped`), periodi rAF oltre la quantizzazione (`extraRefreshes`).
 
 | Risultato osservato | Collo di bottiglia probabile |
 |---|---|
@@ -244,13 +244,13 @@ Stesso file incomprimibile, stessa distanza, stesso telefono, luce della stanza 
 
 ### 1. Frequenze che dividono il refresh
 
-Il selettore ha già 10, 15, 20, 24, 30 e 60. Non se ne aggiungono. 24 FPS non divide un pannello a 60 Hz: il simbolo resta alternativamente 2 o 3 refresh (circa 33 ms e 50 ms) intorno ai 42 ms. Divide 120 Hz (5 refresh) e 144 Hz (6). Il JSON del trasmettitore dice il refresh stimato e `tx.integerDivisor`.
+Il selettore ha già 10, 15, 20, 24, 30 e 60. Non se ne aggiungono. 24 FPS non divide un rAF a 60 Hz: il simbolo resta alternativamente 2 o 3 frame (circa 33 ms e 50 ms) intorno ai 42 ms. Divide 120 Hz (5 frame) e 144 Hz (6). Il JSON dice `tx.rafHz` e `tx.integerDivisor`. `tx.panelHz` non si compila: il refresh fisico del pannello non si legge dai `requestAnimationFrame`.
 
 Si provano, a 1 QR e 1850 byte, tutte le voci del selettore per cui `tx.integerDivisor` è vero, più 24 anche quando non lo è: è il riferimento, non un candidato da promuovere. Si scarta una frequenza se `tx.late` o `tx.skipped` crescono mentre il goodput non sale, o se `tx.starved` non è zero.
 
 ### 2. Intervalli reali di disegno
 
-`tx.medianGapMs` va letto accanto a `tx.intervalMs`. Un gap di 33 o 50 ms a 24 FPS su 60 Hz è la quantizzazione del pannello (`onTime`), non un ritardo. È un ritardo quando `late` sale, cioè il simbolo è rimasto su più a lungo di un intervallo più un refresh. `extraRefreshes` conta quei refresh in più. `skipped` è lo scheduler che ha buttato uno o più intervalli per rimettersi in pari. `starved` è la coda vuota: il QR precedente resta su perché il successivo non era pronto. Il disegno in sé non è stato modificato; con `perf` spento il contatore non esiste e il tick è quello di prima.
+`tx.medianGapMs` va letto accanto a `tx.intervalMs`. Un gap di 33 o 50 ms a 24 FPS con `rafHz` intorno a 60 è la quantizzazione (`onTime`), non un ritardo: `late` resta 0 e `extraRefreshes` non cresce. Lo stesso vale se `rafHz` è 59.94 e non 60. `extraRefreshes` conta solo i periodi rAF oltre il lato lungo di quella alternanza (3 frame, in quel caso). È un ritardo quando il simbolo resta su più a lungo di quello slot e `late` sale. `skipped` è lo scheduler che ha buttato uno o più intervalli per rimettersi in pari. `starved` è la coda vuota: il QR precedente resta su perché il successivo non era pronto. Il disegno in sé non è stato modificato; con `perf` spento il contatore non esiste e il tick è quello di prima.
 
 ### 3. Esposizione automatica e manuale
 
@@ -258,17 +258,17 @@ Fisso il caso di riferimento del punto 1 (di default 24 FPS, 1 QR, 1850 byte) e 
 
 | Riga | Query | Cosa ci si aspetta dal JSON |
 |---|---|---|
-| Automatica, dispositivo lasciato com’è | `?wfopt=perf` | `exposure.intent` = `off`. Tempo e modo sono quelli che il telefono già usa |
-| Continua, se esiste | `?wfopt=perf,exp` | `exposure.applied` vero solo se `exposureMode` continuous è stato accettato |
-| Manuale 4 ms | `?wfopt=perf,exp:4` | `exposure.timeS` vicino a 0.004, oppure il minimo del dispositivo se non ci arriva |
-| Manuale 8 ms | `?wfopt=perf,exp:8` | come sopra, verso 0.008 |
-| Manuale 16 ms | `?wfopt=perf,exp:16` | come sopra, verso 0.016 |
+| Automatica, dispositivo lasciato com’è | `?wfopt=perf` | `exposure.intent` = `off`. `timeS`, se c’è, è `getSettings().exposureTime` convertito in secondi (l’API parla in unità da 100 µs) |
+| Continua, se esiste | `?wfopt=perf,exp` | `hardware` vero se il modo continuous c’è. `detected` vero solo se `getSettings` riporta continuous. `accepted` è solo la Promise risolta |
+| Manuale 4 ms | `?wfopt=perf,exp:4` | `requestedTimeS` = 0.004. Il vincolo inviato è 40. `detected` se `timeS` è circa 0.004 |
+| Manuale 8 ms | `?wfopt=perf,exp:8` | vincolo 80, `timeS` circa 0.008 |
+| Manuale 16 ms | `?wfopt=perf,exp:16` | vincolo 160, `timeS` circa 0.016 |
 
-Una posa corta che abbassa `sharpness` e insieme `goodput.fountainBps` è sottoesposizione. Non si tiene. Se `exposure.applied` è falso, quella riga non esiste su quel telefono e non si insiste.
+`accepted` senza `detected` non conta come posa applicata: la Promise può risolversi e `getSettings` restare altrove. Se il minimo hardware è più lungo dei 4 ms, `timeS` è quel minimo in secondi, `fallback` è vero e `detected` è falso. Una posa corta che abbassa `sharpness` e insieme `goodput.fountainBps` è sottoesposizione. Non si tiene. Se `hardware` è falso, quella riga non esiste su quel telefono e non si insiste.
 
 ### 4. Pixel per modulo, posa, rolling shutter, simboli buoni
 
-Dai JSON del punto 3 e del punto 5 si compila una riga per condizione: payload, griglia, FPS, `tx.refreshHz`, `tx.integerDivisor`, `exposure.timeS`, `sharpness`, `goodput.uniqueQrPerSec`, `goodput.opticalBps`, `goodput.fountainBps`, `tx.late`. Lo span in pixel del simbolo, quando il worker restituisce i quad (`roi` acceso), diviso i moduli ECC L qui sotto dà i pixel per modulo. Quella riga con `roi` è separata e non entra nel goodput di confronto.
+Dai JSON del punto 3 e del punto 5 si compila una riga per condizione: payload, griglia, FPS, `tx.rafHz`, `tx.integerDivisor`, `exposure.timeS`, `exposure.detected`, `sharpness`, `goodput.uniqueQrPerSec`, `goodput.opticalBps`, `goodput.fountainBps`, `tx.late`. Lo span in pixel del simbolo, quando il worker restituisce i quad (`roi` acceso), diviso i moduli ECC L qui sotto dà i pixel per modulo. Quella riga con `roi` è separata e non entra nel goodput di confronto.
 
 | Payload ECC L | Moduli del QR (senza quiet zone) |
 |---|---:|

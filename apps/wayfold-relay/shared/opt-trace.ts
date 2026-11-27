@@ -63,10 +63,17 @@ export interface OptSnapshot {
   /** Decode passes actually run, and passes skipped because the budget was spent. */
   passes: Record<string, { n: number; ms: number }>;
   skippedPasses: number;
-  /** What the camera reported for exposure, and whether an experiment constraint stuck. */
+  /**
+   * Exposure experiment. `accepted` is only the resolved constraint.
+   * `detected` is getSettings. `timeS` is seconds.
+   */
   exposure: {
     intent: ExposureIntent;
-    applied: boolean;
+    requestedTimeS: number | null;
+    hardware: boolean;
+    accepted: boolean;
+    detected: boolean;
+    fallback: boolean;
     mode: string | null;
     timeS: number | null;
     compensation: number | null;

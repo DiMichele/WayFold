@@ -14,6 +14,7 @@ import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import {
   applyQrFocusConstraints,
+  describeExposure,
   tapPointInVideoFrame,
   type FocusPoint,
   type QrTrackCapabilities,
@@ -267,14 +268,13 @@ async function focusAt(
     }
     const flags = getOptFlags();
     const result = await applyQrFocusConstraints(track, caps, point, pref, kind, flags.exposure);
-    optTrace.noteExposure({
+    optTrace.noteExposure(describeExposure({
       intent: flags.exposure,
-      applied: result.exposureApplied,
-      mode: result.settings.exposureMode ?? null,
-      timeS: result.settings.exposureTime ?? null,
-      compensation: result.settings.exposureCompensation ?? null,
-      modes: caps.exposureMode ?? [],
-    });
+      caps,
+      sent: result.exposureSent,
+      accepted: result.exposureAccepted,
+      settings: result.settings,
+    }));
   } finally {
     focusBusy = false;
     const next = focusQueued;

@@ -5,6 +5,7 @@ import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
 import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import {
   applyQrFocusConstraints,
+  describeExposure,
   tapPointInVideoFrame,
   type FocusPoint,
   type QrTrackCapabilities,
@@ -422,14 +423,13 @@ export class Modem {
         kind,
         flags.exposure,
       );
-      optTrace.noteExposure({
+      optTrace.noteExposure(describeExposure({
         intent: flags.exposure,
-        applied: result.exposureApplied,
-        mode: result.settings.exposureMode ?? null,
-        timeS: result.settings.exposureTime ?? null,
-        compensation: result.settings.exposureCompensation ?? null,
-        modes: caps.exposureMode ?? [],
-      });
+        caps,
+        sent: result.exposureSent,
+        accepted: result.exposureAccepted,
+        settings: result.settings,
+      }));
     } finally {
       this.focusBusy = false;
       const next = this.focusQueued;

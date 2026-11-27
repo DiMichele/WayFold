@@ -10,8 +10,12 @@ import {
   tapPointFromEvent,
   tapPointInVideoFrame,
   applyFirstSupportedConstraint,
+  applyQrFocusConstraints,
+  describeExposure,
   exposureAdvanced,
+  exposureApiToSeconds,
   exposureCapSeconds,
+  exposureSecondsToApi,
   hasFocusControl,
   shortestExposure,
   SHORT_EXPOSURE_S,
@@ -97,34 +101,149 @@ test("manual-only lenses still get a close distance", () => {
   assert.equal(advanced.focusDistance, 0.28);
 });
 
-test("short exposure stays inside the device range and caps at 8 ms", () => {
-  assert.equal(shortestExposure({ min: 0.02, max: 0.1 }), 0.02);
-  assert.equal(shortestExposure({ min: 0.001, max: 0.05 }), SHORT_EXPOSURE_S);
+const W3C_EXPOSURE = { min: 1, max: 10000, step: 1 };
+
+test("short exposure stays inside a W3C 100 µs range and caps at 8 ms", () => {
+  assert.equal(exposureSecondsToApi(SHORT_EXPOSURE_S), 80);
+  assert.equal(shortestExposure({ min: 200, max: 1000 }), 200);
+  assert.equal(shortestExposure(W3C_EXPOSURE), 80);
 });
 
 test("continuous exposure does not set a shutter time", () => {
   const adv = exposureAdvanced(
-    { exposureMode: ["continuous", "manual"], exposureTime: { min: 0.001, max: 0.05 } },
+    { exposureMode: ["continuous", "manual"], exposureTime: W3C_EXPOSURE },
     "continuous",
   );
   assert.deepEqual(adv, { exposureMode: "continuous" });
   assert.equal(exposureAdvanced({ exposureMode: ["continuous"] }, "off"), null);
 });
 
-test("short exposure asks for manual time when that mode exists", () => {
-  const adv = exposureAdvanced({ exposureMode: ["manual"], exposureTime: { min: 0.001, max: 0.05 } }, "short");
+test("short exposure asks for manual time in 100 µs units", () => {
+  const adv = exposureAdvanced({ exposureMode: ["manual"], exposureTime: W3C_EXPOSURE }, "short");
   assert.equal(adv.exposureMode, "manual");
-  assert.ok(adv.exposureTime <= SHORT_EXPOSURE_S);
+  assert.equal(adv.exposureTime, 80);
 });
 
-test("manual shutters of 4, 8 and 16 ms stay inside the device range", () => {
-  const caps = { exposureMode: ["manual", "continuous"], exposureTime: { min: 0.001, max: 0.05 } };
+test("manual shutters of 4, 8 and 16 ms are 40, 80 and 160 units", () => {
+  const caps = { exposureMode: ["manual", "continuous"], exposureTime: W3C_EXPOSURE };
   assert.equal(exposureCapSeconds(4), 0.004);
-  assert.equal(exposureAdvanced(caps, 4).exposureTime, 0.004);
-  assert.equal(exposureAdvanced(caps, 8).exposureTime, 0.008);
-  assert.equal(exposureAdvanced(caps, 16).exposureTime, 0.016);
-  const slow = { exposureMode: ["manual"], exposureTime: { min: 0.01, max: 0.05 } };
-  assert.equal(exposureAdvanced(slow, 4).exposureTime, 0.01);
+  assert.equal(exposureSecondsToApi(0.004), 40);
+  assert.equal(exposureAdvanced(caps, 4).exposureTime, 40);
+  assert.equal(exposureAdvanced(caps, 8).exposureTime, 80);
+  assert.equal(exposureAdvanced(caps, 16).exposureTime, 160);
+  assert.equal(exposureApiToSeconds(40), 0.004);
+  const slow = { exposureMode: ["manual"], exposureTime: { min: 100, max: 10000, step: 1 } };
+  const sent = exposureAdvanced(slow, 4);
+  assert.equal(sent.exposureTime, 100);
+  const clamped = describeExposure({
+    intent: 4,
+    caps: slow,
+    sent,
+    accepted: true,
+    settings: { exposureMode: "manual", exposureTime: 100 },
+  });
+  assert.equal(clamped.hardware, true);
+  assert.equal(clamped.accepted, true);
+  assert.equal(clamped.detected, false);
+  assert.equal(clamped.fallback, true);
+  assert.equal(clamped.timeS, 0.01);
+});
+
+test("a resolved constraint is not proof until getSettings matches", async () => {
+  const caps = {
+    focusMode: ["continuous"],
+    exposureMode: ["manual", "continuous"],
+    exposureTime: W3C_EXPOSURE,
+  };
+  const point = { x: 0.5, y: 0.5 };
+  const stuck = {
+    async applyConstraints() {},
+    getSettings() {
+      return { exposureMode: "manual", exposureTime: 40, exposureCompensation: 0 };
+    },
+  };
+  const applied = await applyQrFocusConstraints(stuck, caps, point, "continuous", "startup", 4);
+  assert.equal(applied.exposureAccepted, true);
+  assert.equal(applied.settings.exposureTime, 40);
+  const confirmed = describeExposure({
+    intent: 4,
+    caps,
+    sent: applied.exposureSent,
+    accepted: applied.exposureAccepted,
+    settings: applied.settings,
+  });
+  assert.equal(confirmed.requestedTimeS, 0.004);
+  assert.equal(confirmed.hardware, true);
+  assert.equal(confirmed.accepted, true);
+  assert.equal(confirmed.detected, true);
+  assert.equal(confirmed.fallback, false);
+  assert.equal(confirmed.timeS, 0.004);
+
+  const ignored = {
+    async applyConstraints() {},
+    getSettings() {
+      return { exposureMode: "continuous", exposureTime: 333 };
+    },
+  };
+  const lied = await applyQrFocusConstraints(ignored, caps, point, "continuous", "startup", 4);
+  const report = describeExposure({
+    intent: 4,
+    caps,
+    sent: lied.exposureSent,
+    accepted: lied.exposureAccepted,
+    settings: lied.settings,
+  });
+  assert.equal(report.accepted, true);
+  assert.equal(report.detected, false);
+  assert.equal(report.fallback, true);
+  assert.equal(report.timeS, exposureApiToSeconds(333));
+
+  let throws = 0;
+  const rejected = {
+    async applyConstraints(c) {
+      const adv = c.advanced?.[0];
+      if (adv && ("exposureTime" in adv || adv.exposureMode === "manual")) {
+        throws += 1;
+        throw new Error("overconstrained");
+      }
+    },
+    getSettings() {
+      return { focusMode: "continuous", exposureMode: "continuous", exposureTime: 333 };
+    },
+  };
+  const missed = await applyQrFocusConstraints(rejected, caps, point, "continuous", "startup", 4);
+  assert.ok(throws >= 1);
+  assert.equal(missed.exposureAccepted, false);
+  assert.equal(missed.applied, true);
+  const denied = describeExposure({
+    intent: 4,
+    caps,
+    sent: missed.exposureSent,
+    accepted: missed.exposureAccepted,
+    settings: missed.settings,
+  });
+  assert.equal(denied.accepted, false);
+  assert.equal(denied.detected, false);
+  assert.equal(denied.fallback, true);
+  assert.equal(denied.timeS, exposureApiToSeconds(333));
+});
+
+test("continuous-only hardware is a fallback, not a 4 ms detection", () => {
+  const caps = { exposureMode: ["continuous"], exposureTime: W3C_EXPOSURE };
+  const sent = exposureAdvanced(caps, 4);
+  assert.deepEqual(sent, { exposureMode: "continuous" });
+  const report = describeExposure({
+    intent: 4,
+    caps,
+    sent,
+    accepted: true,
+    settings: { exposureMode: "continuous", exposureTime: 333 },
+  });
+  assert.equal(report.hardware, false);
+  assert.equal(report.accepted, true);
+  assert.equal(report.detected, false);
+  assert.equal(report.fallback, true);
+  assert.equal(report.timeS, exposureApiToSeconds(333));
 });
 
 test("no capabilities yields an empty constraint chain", () => {

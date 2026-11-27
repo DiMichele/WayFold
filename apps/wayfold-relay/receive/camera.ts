@@ -6,6 +6,10 @@ export type QrTrackCapabilities = {
   pointsOfInterest?: boolean;
   exposureMode?: string[];
   exposureCompensation?: { min: number; max: number; step?: number };
+  /**
+   * W3C MediaStream Image Capture: min, max and step are in units of 100 µs.
+   * 1 unit = 0.0001 s. 4 ms is 40, 8 ms is 80, 16 ms is 160.
+   */
   exposureTime?: { min: number; max: number; step?: number };
 };
 
@@ -19,6 +23,9 @@ export type FocusApplyKind = "startup" | "tap";
 /** Opt-in exposure experiment. These shutters are hypotheses for the validation matrix, not defaults. */
 export const SHORT_EXPOSURE_S = 1 / 125;
 
+/** W3C exposureTime unit. Multiply seconds by this to get the browser value. */
+export const EXPOSURE_API_PER_SECOND = 10_000;
+
 export type ExposureIntent = "off" | "continuous" | "short" | 4 | 8 | 16;
 
 export function exposureCapSeconds(intent: ExposureIntent): number | null {
@@ -27,15 +34,40 @@ export function exposureCapSeconds(intent: ExposureIntent): number | null {
   return null;
 }
 
+/** Seconds → W3C exposureTime (100 µs units). */
+export function exposureSecondsToApi(seconds: number): number {
+  return seconds * EXPOSURE_API_PER_SECOND;
+}
+
+/** W3C exposureTime → seconds. Null when the camera did not report a number. */
+export function exposureApiToSeconds(units: number | null | undefined): number | null {
+  if (typeof units !== "number" || !Number.isFinite(units)) return null;
+  return units / EXPOSURE_API_PER_SECOND;
+}
+
+/**
+ * Shortest value inside `range` that does not exceed `cap`.
+ * `range` and `cap` are the same unit. Callers that talk to the browser pass 100 µs units.
+ */
 export function shortestExposure(
   range: { min: number; max: number },
-  cap = SHORT_EXPOSURE_S,
+  cap = exposureSecondsToApi(SHORT_EXPOSURE_S),
 ): number | null {
   const min = range.min;
   const max = range.max;
   if (!(max > min) || !(cap > 0)) return null;
   if (min >= cap) return min;
   return Math.min(cap, max);
+}
+
+/** True when the capability list can express the intent, before any fallback. */
+export function exposureHardware(caps: QrTrackCapabilities, intent: ExposureIntent): boolean {
+  if (intent === "off") return false;
+  const modes = caps.exposureMode ?? [];
+  if (intent === "continuous") return modes.includes("continuous");
+  const range = caps.exposureTime;
+  if (!range || !(range.max > range.min)) return false;
+  return modes.length === 0 || modes.includes("manual");
 }
 
 /** Constraint fields for the exposure experiment. Null when the device cannot express the intent. */
@@ -50,13 +82,91 @@ export function exposureAdvanced(
   }
   const cap = exposureCapSeconds(intent);
   if (cap != null && caps.exposureTime && (modes.length === 0 || modes.includes("manual"))) {
-    const time = shortestExposure(caps.exposureTime, cap);
+    const time = shortestExposure(caps.exposureTime, exposureSecondsToApi(cap));
     if (time == null) return null;
     const out: Record<string, unknown> = { exposureTime: time };
     if (modes.includes("manual")) out.exposureMode = "manual";
     return out;
   }
   return modes.includes("continuous") ? { exposureMode: "continuous" } : null;
+}
+
+export type ExposureTelemetry = {
+  intent: ExposureIntent;
+  /** Seconds asked for. Null for off and for continuous. */
+  requestedTimeS: number | null;
+  /** Capabilities can express the intent. False when only a fallback mode exists. */
+  hardware: boolean;
+  /** applyConstraints resolved for a constraint that included exposure. Not proof it stuck. */
+  accepted: boolean;
+  /** getSettings matches the request. A resolved promise alone does not set this. */
+  detected: boolean;
+  /** A different shutter was sent, the constraint was rejected, or getSettings disagrees. */
+  fallback: boolean;
+  mode: string | null;
+  /** Seconds, converted from getSettings().exposureTime. */
+  timeS: number | null;
+  compensation: number | null;
+  modes: string[];
+};
+
+function exposureTimesClose(actualS: number, requestedS: number): boolean {
+  const oneUnit = 1 / EXPOSURE_API_PER_SECOND;
+  const tol = Math.max(oneUnit, Math.abs(requestedS) * 0.05);
+  return Math.abs(actualS - requestedS) <= tol;
+}
+
+function sentMatchesRequest(
+  intent: ExposureIntent,
+  sent: Record<string, unknown> | null,
+  requestedTimeS: number | null,
+): boolean {
+  if (!sent) return false;
+  if (intent === "continuous") return sent.exposureMode === "continuous" && sent.exposureTime == null;
+  if (requestedTimeS == null) return false;
+  const sentS = exposureApiToSeconds(typeof sent.exposureTime === "number" ? sent.exposureTime : null);
+  const modeOk = sent.exposureMode == null || sent.exposureMode === "manual";
+  return modeOk && sentS != null && exposureTimesClose(sentS, requestedTimeS);
+}
+
+/**
+ * Split a camera attempt into request, hardware, accepted constraint, and the
+ * shutter getSettings actually reports. `settings.exposureTime` is still in
+ * 100 µs units; `timeS` is seconds.
+ */
+export function describeExposure(input: {
+  intent: ExposureIntent;
+  caps: QrTrackCapabilities;
+  sent: Record<string, unknown> | null;
+  accepted: boolean;
+  settings: { exposureMode?: string; exposureTime?: number; exposureCompensation?: number };
+}): ExposureTelemetry {
+  const requestedTimeS = exposureCapSeconds(input.intent);
+  const hardware = exposureHardware(input.caps, input.intent);
+  const mode = typeof input.settings.exposureMode === "string" ? input.settings.exposureMode : null;
+  const timeS = exposureApiToSeconds(input.settings.exposureTime);
+  const compensation =
+    typeof input.settings.exposureCompensation === "number" ? input.settings.exposureCompensation : null;
+  let detected = false;
+  if (input.intent === "continuous") detected = mode === "continuous";
+  else if (requestedTimeS != null && timeS != null) detected = exposureTimesClose(timeS, requestedTimeS);
+  const sentOk = sentMatchesRequest(input.intent, input.sent, requestedTimeS);
+  const attempted = input.intent !== "off";
+  const fallback =
+    attempted &&
+    ((input.sent != null && !sentOk) || (input.accepted && !detected) || (sentOk && !input.accepted));
+  return {
+    intent: input.intent,
+    requestedTimeS,
+    hardware,
+    accepted: input.accepted,
+    detected,
+    fallback,
+    mode,
+    timeS,
+    compensation,
+    modes: input.caps.exposureMode ?? [],
+  };
 }
 
 export function clamp01(n: number): number {
@@ -232,12 +342,15 @@ export async function applyFirstSupportedConstraint(
 export type FocusApplyResult = {
   applied: boolean;
   supported: boolean;
-  /** True when the constraint that stuck included an exposure field. */
-  exposureApplied: boolean;
+  /** Constraint submitted for the exposure experiment, or null when nothing was sent. Values are W3C units. */
+  exposureSent: Record<string, unknown> | null;
+  /** The resolved constraint included exposure fields. getSettings is still required to confirm it. */
+  exposureAccepted: boolean;
   settings: {
     focusMode?: string;
     focusDistance?: number;
     exposureMode?: string;
+    /** Raw getSettings().exposureTime, in units of 100 µs. */
     exposureTime?: number;
     exposureCompensation?: number;
   };
@@ -268,13 +381,13 @@ export async function applyQrFocusConstraints(
   }
   chain.push(...focusChain);
   let applied = false;
-  let exposureApplied = false;
+  let exposureAccepted = false;
   for (const constraints of chain) {
     try {
       await track.applyConstraints(constraints);
       applied = true;
       const adv = (constraints as { advanced?: Record<string, unknown>[] }).advanced?.[0];
-      exposureApplied = !!adv && ("exposureMode" in adv || "exposureTime" in adv);
+      exposureAccepted = !!exp && !!adv && ("exposureMode" in adv || "exposureTime" in adv);
       break;
     } catch {
       /* device rejected this combination — try a simpler one */
@@ -293,5 +406,5 @@ export async function applyQrFocusConstraints(
   } catch {
     /* ignore */
   }
-  return { applied, supported, exposureApplied, settings };
+  return { applied, supported, exposureSent: exp, exposureAccepted, settings };
 }

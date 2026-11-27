@@ -9,6 +9,7 @@ import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import { t, onLangChange } from "../shared/i18n.ts";
 import {
   applyQrFocusConstraints,
+  describeExposure,
   hasFocusControl,
   tapPointInVideoFrame,
   type FocusModePref,
@@ -401,14 +402,13 @@ async function applyQrFocus(
     setFocusHintVisible(true);
     const flags = getOptFlags();
     const result = await applyQrFocusConstraints(track, caps, point, pref, kind, flags.exposure);
-    optTrace.noteExposure({
+    optTrace.noteExposure(describeExposure({
       intent: flags.exposure,
-      applied: result.exposureApplied,
-      mode: result.settings.exposureMode ?? null,
-      timeS: result.settings.exposureTime ?? null,
-      compensation: result.settings.exposureCompensation ?? null,
-      modes: caps.exposureMode ?? [],
-    });
+      caps,
+      sent: result.exposureSent,
+      accepted: result.exposureAccepted,
+      settings: result.settings,
+    }));
     if (flags.perf) {
       optTrace.mark("capture", wallNow(), 0, `focus:${result.applied ? "ok" : "no"}:${result.settings.focusMode ?? "-"}`);
     }
