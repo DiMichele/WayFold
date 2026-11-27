@@ -13,7 +13,6 @@ import {
 import {
   VIDEO_BITRATE,
   VIDEO_FPS,
-  VIDEO_GOP,
   VIDEO_HEIGHT,
   VIDEO_WIDTH,
   encodeConfigPacket,
@@ -46,9 +45,25 @@ let sent = 0;
 let dropped = 0;
 let timer = 0;
 let startedAt = 0;
+let encoderConfig: VideoEncoderConfig | null = null;
+const VIDEO_FPS_KEY = "wf-diode-video-fps";
 const scratch = document.createElement("canvas");
 scratch.width = VIDEO_WIDTH;
 scratch.height = VIDEO_HEIGHT;
+
+function videoFps(): number {
+  const value = Number(el<HTMLSelectElement>("dx-video-fps")?.value);
+  return value >= 1 && value <= 30 ? value : VIDEO_FPS;
+}
+
+/** 16 kbps at 2 fps is the tuned point. Higher rates stay capped so a keyframe still fits a QR. */
+function videoBitrate(): number {
+  return Math.min(24_000, Math.round(VIDEO_BITRATE * (videoFps() / VIDEO_FPS)));
+}
+
+function videoGop(): number {
+  return Math.max(2, videoFps() * 2);
+}
 
 function payloadMax(): number {
   return maxVideoPayloadBytes(diodeBlockLen());
@@ -73,6 +88,7 @@ function renderVideoControls(): void {
   if (startBtn) startBtn.hidden = active || starting;
   if (stopBtn) stopBtn.hidden = !active && !starting;
   if (flipBtn) flipBtn.hidden = !active;
+  document.querySelector("[data-diode-pay='video']")?.classList.toggle("is-live", active);
 }
 
 function renderVideoStats(): void {
@@ -82,15 +98,15 @@ function renderVideoStats(): void {
     node.textContent = t("diode.video.statsPlan", {
       w: VIDEO_WIDTH,
       h: VIDEO_HEIGHT,
-      fps: VIDEO_FPS,
-      kbps: Math.round(VIDEO_BITRATE / 1000),
+      fps: videoFps(),
+      kbps: Math.round(videoBitrate() / 1000),
     });
     return;
   }
   node.textContent = t("diode.video.statsTx", {
     codec: codec || "H.264",
-    fps: VIDEO_FPS,
-    kbps: Math.round(VIDEO_BITRATE / 1000),
+    fps: videoFps(),
+    kbps: Math.round(videoBitrate() / 1000),
     queue: videoQueueDepth(),
     sent: videoPacketsOnAir(),
     dropped,
@@ -210,8 +226,8 @@ async function openEncoder(): Promise<void> {
       codec: name,
       width: VIDEO_WIDTH,
       height: VIDEO_HEIGHT,
-      bitrate: VIDEO_BITRATE,
-      framerate: VIDEO_FPS,
+      bitrate: videoBitrate(),
+      framerate: videoFps(),
       latencyMode: "realtime",
       bitrateMode: "constant",
       hardwareAcceleration: "prefer-software",
@@ -221,8 +237,8 @@ async function openEncoder(): Promise<void> {
       codec: name,
       width: VIDEO_WIDTH,
       height: VIDEO_HEIGHT,
-      bitrate: VIDEO_BITRATE,
-      framerate: VIDEO_FPS,
+      bitrate: videoBitrate(),
+      framerate: videoFps(),
       latencyMode: "realtime",
       bitrateMode: "constant",
       hardwareAcceleration: "prefer-hardware",
@@ -232,8 +248,8 @@ async function openEncoder(): Promise<void> {
       codec: name,
       width: VIDEO_WIDTH,
       height: VIDEO_HEIGHT,
-      bitrate: VIDEO_BITRATE,
-      framerate: VIDEO_FPS,
+      bitrate: videoBitrate(),
+      framerate: videoFps(),
       latencyMode: "realtime",
       avc: { format: "avc" },
     }),
@@ -249,6 +265,7 @@ async function openEncoder(): Promise<void> {
         created = new VideoEncoder({ output: onEncoded, error: onEncoderError });
         created.configure(support.config ?? config);
         encoder = created;
+        encoderConfig = support.config ?? config;
         codec = support.config?.codec || name;
         return;
       } catch (error) {
@@ -289,9 +306,9 @@ function tick(): void {
       const timestamp = Math.max(0, Math.round((performance.now() - startedAt) * 1000));
       const frame = new VideoFrame(scratch, {
         timestamp,
-        duration: Math.round(1_000_000 / VIDEO_FPS),
+        duration: Math.round(1_000_000 / videoFps()),
       });
-      const key = needKey || frameIndex % VIDEO_GOP === 0;
+      const key = needKey || frameIndex % videoGop() === 0;
       needKey = false;
       frameIndex++;
       try {
@@ -306,7 +323,24 @@ function tick(): void {
     }
   }
   renderVideoStats();
-  timer = window.setTimeout(tick, Math.round(1000 / VIDEO_FPS));
+  timer = window.setTimeout(tick, Math.round(1000 / videoFps()));
+}
+
+function applyLiveFps(): void {
+  renderVideoStats();
+  if (encoder && encoder.state === "configured" && encoderConfig) {
+    const next = { ...encoderConfig, framerate: videoFps(), bitrate: videoBitrate() };
+    try {
+      encoder.configure(next);
+      encoderConfig = next;
+      needKey = true;
+    } catch {
+      /* keep the encoder on the previous rate */
+    }
+  }
+  if (!active) return;
+  if (timer) window.clearTimeout(timer);
+  timer = window.setTimeout(tick, Math.round(1000 / videoFps()));
 }
 
 export async function startVideo(): Promise<void> {
@@ -365,7 +399,7 @@ export async function startVideo(): Promise<void> {
   description = null;
   startedAt = performance.now();
   startVideoCarrier();
-  logEvent("info", "diode.log.txVideo", { codec, kbps: Math.round(VIDEO_BITRATE / 1000) });
+  logEvent("info", "diode.log.txVideo", { codec, kbps: Math.round(videoBitrate() / 1000) });
   renderVideoControls();
   renderVideoStats();
   tick();
@@ -388,6 +422,7 @@ export function stopVideoCapture(): void {
     }
   }
   encoder = null;
+  encoderConfig = null;
   stream?.getTracks().forEach((track) => track.stop());
   stream = null;
   const preview = el<HTMLVideoElement>("dx-video-preview");
@@ -424,7 +459,28 @@ async function flipCamera(): Promise<void> {
   }
 }
 
+function bindVideoFps(): void {
+  const select = el<HTMLSelectElement>("dx-video-fps");
+  if (!select || select.dataset.bound === "1") return;
+  select.dataset.bound = "1";
+  try {
+    const saved = localStorage.getItem(VIDEO_FPS_KEY);
+    if (saved && [...select.options].some((option) => option.value === saved)) select.value = saved;
+  } catch {
+    /* ignore */
+  }
+  select.addEventListener("change", () => {
+    try {
+      localStorage.setItem(VIDEO_FPS_KEY, select.value);
+    } catch {
+      /* ignore */
+    }
+    applyLiveFps();
+  });
+}
+
 export function wireVideoTx(): void {
+  bindVideoFps();
   el("dx-video-start")?.addEventListener("click", () => void startVideo());
   el("dx-video-stop")?.addEventListener("click", () => stopVideoCapture());
   el("dx-video-flip")?.addEventListener("click", () => void flipCamera());

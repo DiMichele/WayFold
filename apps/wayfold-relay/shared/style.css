@@ -311,19 +311,23 @@ summary,
 
 .mode-nav {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 3px;
   padding: 3px;
-  border-radius: 999px;
+  border-radius: 18px;
   background: color-mix(in srgb, var(--srf) 88%, transparent);
   border: 1px solid var(--line);
   box-shadow: var(--sh-s);
   justify-self: center;
+  max-width: 100%;
 }
 .mode-btn {
   font: inherit;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 600;
-  padding: 8px 16px;
+  line-height: 1.25;
+  padding: 8px 14px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -332,7 +336,33 @@ summary,
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  text-align: center;
   transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.dir-switch {
+  display: flex;
+  width: fit-content;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--srf) 88%, transparent);
+  border: 1px solid var(--line);
+}
+.dir-switch-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 8px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+}
+.dir-switch-btn.is-active {
+  background: var(--srf);
+  color: var(--acc);
+  box-shadow: var(--sh-s);
 }
 .mode-btn:focus {
   outline: none;
@@ -498,6 +528,50 @@ body.role-home .mode-btn.is-active {
   .choice-list {
     grid-template-columns: 1fr 1fr;
     gap: 18px;
+  }
+}
+.choice--files {
+  grid-column: 1 / -1;
+  cursor: default;
+}
+.choice--files:hover {
+  transform: none;
+}
+.choice-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 8px;
+}
+.choice-action {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--bg2);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.18s, background 0.18s;
+}
+.choice-action:hover {
+  border-color: var(--acc);
+  background: color-mix(in srgb, var(--acc) 8%, var(--srf));
+}
+.choice-action strong {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.choice-action span {
+  font-size: 12.5px;
+  color: var(--mut);
+  line-height: 1.35;
+}
+@media (max-width: 520px) {
+  .choice-actions {
+    grid-template-columns: 1fr;
   }
 }
 .choice {
@@ -2357,6 +2431,77 @@ body.role-diode.diode-rx .btn-primary {
   font-size: 13px;
   color: var(--mut);
 }
+.diode-screen .xfer-actions {
+  border-top: 0;
+  padding-top: 0;
+}
+.diode-screen-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px 28px;
+}
+.diode-screen-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+.diode-payload {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.diode-payload > h2 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--mut);
+}
+.diode-pay {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+  padding: 4px;
+  border-radius: 14px;
+  background: var(--bg2);
+  border: 1px solid var(--line);
+}
+.diode-pay-btn {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  padding: 10px 8px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+}
+.diode-pay-btn.is-on {
+  background: var(--srf);
+  color: var(--ink);
+  box-shadow: var(--sh-s);
+}
+.diode-pay-btn.is-live::after {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--acc);
+  vertical-align: 1px;
+}
+.diode-pay-btn:focus-visible {
+  outline: 2px solid var(--acc);
+  outline-offset: 2px;
+}
 .diode-controls {
   display: flex;
   flex-direction: column;
@@ -2554,7 +2699,7 @@ body.role-diode.diode-rx .btn-primary {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 1100px) {
   .topbar {
     grid-template-columns: 1fr auto;
     grid-template-areas:
@@ -2574,6 +2719,8 @@ body.role-diode.diode-rx .btn-primary {
   .mode-btn {
     flex: 1;
   }
+}
+@media (max-width: 640px) {
   .brand-tagline {
     font-size: 8px;
     letter-spacing: 0.1em;

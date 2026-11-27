@@ -94,8 +94,10 @@ function syncChrome(): void {
   showView(document.getElementById("view-net"), mode === "net");
 
   document.querySelectorAll<HTMLElement>("[data-mode-btn]").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.modeBtn === mode);
-    btn.setAttribute("aria-pressed", btn.dataset.modeBtn === mode ? "true" : "false");
+    const active =
+      btn.dataset.modeFamily === "files" ? mode === "send" || mode === "receive" : btn.dataset.modeBtn === mode;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
   const modeNav = document.getElementById("mode-nav");
@@ -173,6 +175,7 @@ function bindUi(): void {
       e.preventDefault();
       (e.currentTarget as HTMLElement).blur();
       const next = btn.dataset.modeBtn;
+      if (btn.dataset.modeFamily === "files" && (mode === "send" || mode === "receive")) return;
       if (isMode(next)) setMode(next);
     });
   });

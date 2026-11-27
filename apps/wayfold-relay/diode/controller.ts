@@ -7,6 +7,9 @@ import { isTxRunning, mountTx, refreshTxText, stopTx, unmountTx } from "./tx-con
 type Role = "tx" | "rx";
 
 const ROLE_KEY = "wf-diode-role";
+const PAY_KEY = "wf-diode-pay";
+
+type Pay = "chat" | "file" | "video";
 
 let role: Role = "tx";
 let wired = false;
@@ -53,12 +56,45 @@ function syncRoleUi(): void {
   document.body.classList.toggle("diode-rx", role === "rx");
 }
 
+function savedPay(): Pay {
+  try {
+    const value = localStorage.getItem(PAY_KEY);
+    if (value === "file" || value === "video" || value === "chat") return value;
+  } catch {
+    /* ignore */
+  }
+  return "chat";
+}
+
+function setPay(next: Pay): void {
+  try {
+    localStorage.setItem(PAY_KEY, next);
+  } catch {
+    /* ignore */
+  }
+  document.querySelectorAll<HTMLButtonElement>("[data-diode-pay]").forEach((btn) => {
+    const active = btn.dataset.diodePay === next;
+    btn.classList.toggle("is-on", active);
+    btn.setAttribute("aria-selected", active ? "true" : "false");
+  });
+  document.querySelectorAll<HTMLElement>("[data-pay-panel]").forEach((panel) => {
+    panel.hidden = panel.dataset.payPanel !== next;
+  });
+}
+
 function wireOnce(): void {
   if (wired) return;
   wired = true;
   document.querySelectorAll<HTMLButtonElement>("[data-diode-role]").forEach((btn) => {
     btn.addEventListener("click", () => setRole(btn.dataset.diodeRole === "rx" ? "rx" : "tx"));
   });
+  document.querySelectorAll<HTMLButtonElement>("[data-diode-pay]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const next = btn.dataset.diodePay;
+      if (next === "chat" || next === "file" || next === "video") setPay(next);
+    });
+  });
+  setPay(savedPay());
   onLangChange(() => {
     if (!mounted) return;
     refreshTxText();

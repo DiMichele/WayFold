@@ -72,10 +72,9 @@
       </a>
 
       <nav class="mode-nav" id="mode-nav" aria-label="Mode">
-        <button type="button" class="mode-btn is-active" data-mode-btn="send" data-i18n="nav.send">Send</button>
-        <button type="button" class="mode-btn" data-mode-btn="receive" data-i18n="nav.receive">Receive</button>
-        <button type="button" class="mode-btn" data-mode-btn="diode" data-i18n="nav.diode">Diode</button>
-        <button type="button" class="mode-btn" data-mode-btn="net" data-i18n="nav.net">Network</button>
+        <button type="button" class="mode-btn is-active" data-mode-btn="send" data-mode-family="files" data-i18n="nav.files">File transfer</button>
+        <button type="button" class="mode-btn" data-mode-btn="diode" data-i18n="nav.diode">One-way link</button>
+        <button type="button" class="mode-btn" data-mode-btn="net" data-i18n="nav.net">Two-way link</button>
       </nav>
 
       <div class="tb-actions">
@@ -145,26 +144,25 @@
         </div>
 
         <div class="choice-list">
-          <a class="choice choice--send" href="../send/" data-mode-link="send">
+          <div class="choice choice--send choice--files">
             <span class="choice-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M12 16V4m0 0 4 4m-4-4-4 4"/><path d="M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4"/></svg>
+              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg>
             </span>
             <span class="choice-body">
-              <span class="choice-kicker" data-i18n="nav.send">Send</span>
-              <span class="choice-hint" data-i18n="home.sendHint"></span>
-              <span class="choice-step" data-i18n="home.stepSend">On this device</span>
+              <span class="choice-kicker" data-i18n="nav.files">File transfer</span>
+              <span class="choice-hint" data-i18n="home.filesHint"></span>
+              <span class="choice-actions">
+                <a class="choice-action" href="../send/" data-mode-link="send">
+                  <strong data-i18n="nav.send">Send</strong>
+                  <span data-i18n="home.stepSend">On this device</span>
+                </a>
+                <a class="choice-action" href="../receive/" data-mode-link="receive">
+                  <strong data-i18n="nav.receive">Receive</strong>
+                  <span data-i18n="home.stepRecv">On the other device</span>
+                </a>
+              </span>
             </span>
-          </a>
-          <a class="choice choice--receive" href="../receive/" data-mode-link="receive">
-            <span class="choice-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-            </span>
-            <span class="choice-body">
-              <span class="choice-kicker" data-i18n="nav.receive">Receive</span>
-              <span class="choice-hint" data-i18n="home.receiveHint"></span>
-              <span class="choice-step" data-i18n="home.stepRecv">On the other device</span>
-            </span>
-          </a>
+          </div>
           <a class="choice choice--diode" href="../#diode" data-mode-link="diode">
             <span class="choice-icon" aria-hidden="true">
               <svg viewBox="0 0 24 24"><path d="M4 12h12m0 0-4-4m4 4-4 4"/><path d="M20 5v14"/></svg>
@@ -189,6 +187,10 @@
       </section>
 
       <section id="view-send" class="view">
+        <div class="dir-switch" role="tablist" data-i18n-aria="nav.files">
+          <button type="button" class="dir-switch-btn" data-mode-btn="send" data-i18n="nav.send">Send</button>
+          <button type="button" class="dir-switch-btn" data-mode-btn="receive" data-i18n="nav.receive">Receive</button>
+        </div>
         <div class="card workspace">
           <div class="drop-zone" id="drop-zone">
             <input id="cfg-payload" type="file" class="sr-only" multiple />
@@ -251,6 +253,10 @@
       </section>
 
       <section id="view-receive" class="view" hidden>
+        <div class="dir-switch" role="tablist" data-i18n-aria="nav.files">
+          <button type="button" class="dir-switch-btn" data-mode-btn="send" data-i18n="nav.send">Send</button>
+          <button type="button" class="dir-switch-btn" data-mode-btn="receive" data-i18n="nav.receive">Receive</button>
+        </div>
         <div class="card workspace">
           <div class="receive-wait card-inner" id="receive-wait">
             <div class="placeholder-frame" aria-hidden="true">
