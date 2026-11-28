@@ -2626,6 +2626,30 @@ body.role-diode.diode-rx .btn-primary {
   text-transform: uppercase;
   color: var(--mut);
 }
+.diode-screen-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  height: 36px;
+  max-width: min(280px, 100%);
+  margin: 0;
+  padding: 0 32px 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--line2);
+  background-color: var(--srf);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%238a9690' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 12px 12px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.diode-screen-group select:focus-visible {
+  outline: 2px solid var(--role-acc);
+  outline-offset: 2px;
+}
 .diode-screen .btn-primary,
 .diode-video-actions .btn-primary {
   flex: 0 0 auto;
