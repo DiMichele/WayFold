@@ -79,4 +79,34 @@ test("a camera-style split lets ZXing read Color 2 and RGB 3 without the frame l
   await roundtrip("rgb3", rgb3, painted3);
   await roundtrip("color2", color2, dim(painted2));
   await roundtrip("rgb3", rgb3, keystone(painted3));
+  await roundtrip("color2", color2, cameraTint(painted2));
 });
+
+function cameraTint(src) {
+  const data = new Uint8ClampedArray(src.data);
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    if (max < 40) {
+      data[i] = 42;
+      data[i + 1] = 36;
+      data[i + 2] = 34;
+    } else if (max - min < 25) {
+      data[i] = 251;
+      data[i + 1] = 218;
+      data[i + 2] = 182;
+    } else if (r > b + 40 && r > g + 40) {
+      data[i] = 176;
+      data[i + 1] = 68;
+      data[i + 2] = 70;
+    } else if (b > r + 40 && b > g + 20) {
+      data[i] = 72;
+      data[i + 1] = 64;
+      data[i + 2] = 148;
+    }
+  }
+  return { data, width: src.width, height: src.height };
+}

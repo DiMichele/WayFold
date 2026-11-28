@@ -8,6 +8,24 @@ import { opticalProfile, type OpticalProfileId } from "./profile.ts";
  * Neutral pixels (the screen's black and white) set every channel together,
  * so a phone can read the code without first finding the thin color frame.
  */
+export function frameLooksColored(raster: Raster): boolean {
+  const { data, width, height } = raster;
+  const step = Math.max(1, Math.floor(Math.min(width, height) / 24));
+  let sat = 0;
+  let n = 0;
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const i = (y * width + x) * 4;
+      const r = data[i]!;
+      const g = data[i + 1]!;
+      const b = data[i + 2]!;
+      sat += Math.max(r, g, b) - Math.min(r, g, b);
+      n++;
+    }
+  }
+  return n > 0 && sat / n > 18;
+}
+
 export function directChannelImages(raster: Raster, profile: OpticalProfileId, paletteId?: string): Raster[] {
   const spec = opticalProfile(profile, paletteId);
   if (spec.channels < 2) return [];
@@ -32,7 +50,11 @@ export function directChannelImages(raster: Raster, profile: OpticalProfileId, p
 function inkBits(r: number, g: number, b: number, channels: number, paletteId: string): number {
   const max = Math.max(r, g, b);
   const min = Math.min(r, g, b);
-  if (max - min < 42) return (r + g + b) / 3 < 140 ? (1 << channels) - 1 : 0;
+  const sat = max - min;
+  const all = (1 << channels) - 1;
+  // A phone photographing a monitor turns white warm and black soft.
+  if (max <= 96) return all;
+  if ((sat <= 48 && min >= 105) || (max >= 160 && min >= max * 0.55 && sat <= 115)) return 0;
   if (channels === 2 && paletteId !== "rgb") return pairBits(r, g, b, paletteId);
   let bits = 0;
   if (r >= 70 && r >= max - 60) bits |= 1;
