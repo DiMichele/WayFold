@@ -975,6 +975,18 @@ export class Modem {
     const captured = planColorCapture(img, this.colorProfile, free.length, "budget", this.colorPhase, this.workers.length);
     this.colorPhase = captured.plan.nextPhase;
     const gen = ++this.grabGen;
+    if (captured.readable.length) {
+      const images = captured.readable;
+      const first = images[0]!;
+      const extras = images.slice(1).map((image) => ({ buf: image.data.buffer, w: image.width, h: image.height }));
+      const slot = free[0]!;
+      this.busy[slot] = true;
+      this.slotGrab[slot] = { gen, ox: 0, oy: 0, color: true };
+      this.workers[slot]!.postMessage(
+        { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+        [first.data.buffer, ...extras.map((extra) => extra.buf)],
+      );
+    }
     if (!captured.found.length) {
       this.colorMisses++;
       if (this.colorMisses >= 2) this.colorRect = null;

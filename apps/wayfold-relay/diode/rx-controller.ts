@@ -394,6 +394,17 @@ function captureDiodeColor(video: HTMLVideoElement, vw: number, vh: number): voi
   const captured = captureColor(img, lockedProfile("dx-color"), free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
   const gen = ++grabGen;
+  if (captured.readable.length) {
+    const images = captured.readable;
+    const first = images[0]!;
+    const extras = images.slice(1).map((image) => ({ buf: image.data.buffer, w: image.width, h: image.height }));
+    busy[free[0]!] = true;
+    slotGrab[free[0]!] = { gen, ox: 0, oy: 0, color: true };
+    workers[free[0]!]!.postMessage(
+      { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+      [first.data.buffer, ...extras.map((extra) => extra.buf)],
+    );
+  }
   if (!captured.found.length) {
     colorMisses++;
     if (colorMisses >= 2) colorRect = null;

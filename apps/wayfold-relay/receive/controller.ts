@@ -853,6 +853,7 @@ function captureColorFrame(video: HTMLVideoElement): void {
   const captured = captureColor(img, profile, free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
   const gen = ++grabGen;
+  if (captured.readable.length) postColorBatch(free[0]!, captured.readable, gen);
   if (!captured.found.length) {
     colorMisses++;
     if (colorMisses >= 2) colorRect = null;
@@ -861,6 +862,7 @@ function captureColorFrame(video: HTMLVideoElement): void {
       captured.monoLike ? t("color.mismatchMono") : null,
     );
     optTrace.noteCapture(gen);
+    syncOptWorkers();
     return;
   }
   colorMisses = 0;
@@ -878,8 +880,10 @@ function captureColorFrame(video: HTMLVideoElement): void {
   }
   let pixels = 0;
   for (const batch of captured.plan.batches) for (const item of batch) pixels += item.payload.width * item.payload.height;
-  optTrace.noteGrab(captured.plan.batches.length, pixels, !colorRect);
-  captured.plan.batches.forEach((batch, i) => postColorBatch(free[i]!, batch.map((item) => item.payload), gen));
+  optTrace.noteGrab(captured.readable.length || captured.plan.batches.length, pixels, !colorRect);
+  if (!captured.readable.length) {
+    captured.plan.batches.forEach((batch, i) => postColorBatch(free[i]!, batch.map((item) => item.payload), gen));
+  }
   syncOptWorkers();
   optTrace.noteCapture(gen);
 }
