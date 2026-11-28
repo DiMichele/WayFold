@@ -1,5 +1,8 @@
 /** Shared optical knobs. Transfer and Diode both read these so the two modes stay in step. */
 
+import { MAX_BLOCKS } from "./limits.ts";
+import { HEADER_LEN } from "./protocol.ts";
+
 export const QR_MARGIN = 4;
 
 /** 24 fps leaves two refresh cycles on a 60 Hz panel. 60 fps tears on those screens. */
@@ -125,6 +128,19 @@ export function colorFrameBytes(requested: number, cellCss: number, ecc: EccLeve
   const cap = table[maxVersion] ?? 78;
   const asked = Number.isFinite(requested) && requested > 0 ? requested : cap;
   return Math.max(21, Math.min(asked, cap));
+}
+
+/**
+ * A readable color grid can shrink a frame until a normal file needs more
+ * fountain blocks than the receiver accepts. Raise the frame just enough to fit.
+ */
+export function frameBytesToFit(payloadLen: number, proposed: number, ecc: EccLevel = "L"): number {
+  const len = Math.max(1, Math.floor(payloadLen));
+  const minFrame = HEADER_LEN + Math.ceil(len / MAX_BLOCKS);
+  const table = ecc === "H" ? BYTE_CAPACITY_H : ecc === "Q" ? BYTE_CAPACITY_Q : ecc === "M" ? BYTE_CAPACITY_M : GRID_BYTE_CAPACITY;
+  const maxFrame = table[40] ?? minFrame;
+  const asked = Number.isFinite(proposed) && proposed > 0 ? proposed : minFrame;
+  return Math.max(21, Math.min(maxFrame, Math.max(asked, minFrame)));
 }
 
 /** One QR matrix, quiet zone included, black modules on white. */

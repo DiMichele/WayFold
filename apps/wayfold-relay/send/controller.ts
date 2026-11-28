@@ -15,6 +15,7 @@ import {
   QR_MARGIN,
   frameBytesForGrid,
   colorFrameBytes,
+  frameBytesToFit,
   gridDims,
   gridHoldMs,
   normalizeGrid,
@@ -349,6 +350,7 @@ async function startStream(): Promise<void> {
     const cell = Math.min(fitW / gridCols, fitH / gridRows);
     frameBytes = colorFrameBytes(frameBytes, cell, ecc);
   }
+  frameBytes = frameBytesToFit(payload.length, frameBytes, ecc);
 
   const sessionId = createSessionId();
   const blockLen = frameBytes - HEADER_LEN;
@@ -444,7 +446,11 @@ async function startStream(): Promise<void> {
       return;
     }
     if (colorChannels > 1) {
-      const next = colorFrameBytes(Number(cfgBytes.value), colorShownSide(), ecc);
+      const next = frameBytesToFit(
+        payload.length,
+        colorFrameBytes(Number(cfgBytes.value), colorShownSide(), ecc),
+        ecc,
+      );
       if (next !== frameBytes) {
         document.removeEventListener("fullscreenchange", onFullscreen);
         void startStream();

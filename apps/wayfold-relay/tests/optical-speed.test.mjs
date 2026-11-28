@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { isPrecompressedType, packEnvelope, parseEnvelope } from "../shared/envelope.ts";
 import { LTDecoder, LTEncoder, frameComposition } from "../shared/fountain.ts";
-import { frameBytesForGrid, colorFrameBytes, gridDims, gridHoldMs, normalizeGrid, symbolsFromWorker } from "../shared/optical.ts";
+import { frameBytesForGrid, colorFrameBytes, frameBytesToFit, gridDims, gridHoldMs, normalizeGrid, symbolsFromWorker } from "../shared/optical.ts";
 
 test("a clean sweep finishes in exactly k systematic frames", () => {
   const payload = new Uint8Array(5000);
@@ -54,6 +54,16 @@ test("grid choices stay on the layouts the receiver can scan", () => {
   assert.equal(colorFrameBytes(100, 360, "M"), 100);
   const four = frameBytesForGrid(1850, 4, 1000, 720);
   assert.ok((4 * four) / gridHoldMs(24, 4) > 1850 / gridHoldMs(24, 1));
+});
+
+test("a color grid grows the frame until the file fits in the block cap", () => {
+  const payload = 3_807_559;
+  const tiny = colorFrameBytes(1850, 320, "L");
+  const fit = frameBytesToFit(payload, tiny, "L");
+  assert.ok(tiny < 116);
+  assert.ok(fit >= 116);
+  assert.ok(Math.ceil(payload / (fit - 20)) <= 40_000);
+  assert.equal(frameBytesToFit(1000, 1850, "L"), 1850);
 });
 
 test("worker messages expose every symbol, and fall back to the first", () => {
