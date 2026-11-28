@@ -325,7 +325,6 @@ async function startStream(): Promise<void> {
   const displayPx = Number(cfgSize.value);
   const colorProfile: OpticalProfileId = lockProfileSelect("cfg-color");
   const colorChannels = profileChannels(colorProfile);
-  const colorEcc: EccLevel = colorChannels > 1 && ecc === "L" ? "M" : ecc;
   const gridCodes = normalizeGrid(Number((document.getElementById("cfg-grid") as HTMLSelectElement | null)?.value));
   const viewport = Math.min(window.innerWidth, window.innerHeight);
   const singleBudget = colorChannels > 1
@@ -343,7 +342,7 @@ async function startStream(): Promise<void> {
   );
   if (colorChannels > 1) {
     const cell = Math.min(fitW / gridCols, fitH / gridRows);
-    frameBytes = colorFrameBytes(frameBytes, cell, colorEcc);
+    frameBytes = colorFrameBytes(frameBytes, cell, ecc);
   }
 
   const sessionId = createSessionId();
@@ -446,7 +445,7 @@ async function startStream(): Promise<void> {
         payloads.push(packFrame({ ...header, seq: nextSeq }, encoder.encode(nextSeq)));
         nextSeq++;
       }
-      const encoded = encodePayloads(payloads, colorEcc, colorProfile);
+      const encoded = encodePayloads(payloads, ecc, colorProfile);
       noteGeometry(encoded.aligned.version, encoded.qrSize, encoded.modules);
       return new ImageData(new Uint8ClampedArray(encoded.data), encoded.width, encoded.height);
     }

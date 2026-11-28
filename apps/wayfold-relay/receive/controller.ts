@@ -848,6 +848,16 @@ function postColorBatch(
   );
 }
 
+function postColorImages(free: number[], images: Raster[], gen: number): void {
+  const slots = Math.min(free.length, images.length);
+  if (!slots) return;
+  const start = gen % images.length;
+  for (let i = 0; i < slots; i++) {
+    const image = images[(start + i) % images.length];
+    if (image) postColorBatch(free[i]!, [image], gen);
+  }
+}
+
 function captureColorFrame(video: HTMLVideoElement): void {
   const profile = lockedProfile("cfg-color-rx");
   const vw0 = video.videoWidth;
@@ -868,7 +878,7 @@ function captureColorFrame(video: HTMLVideoElement): void {
   const captured = captureColor(img, profile, free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
   const gen = ++grabGen;
-  if (captured.readable.length) postColorBatch(free[0]!, captured.readable, gen);
+  if (captured.readable.length) postColorImages(free, captured.readable, gen);
   if (!captured.found.length) {
     colorMisses++;
     if (colorMisses >= 2) colorRect = null;
