@@ -65,6 +65,7 @@ type WorkerReq = {
   expected?: number;
   rects?: Rect[] | null;
   budgetMs?: number;
+  extras?: { buf: ArrayBuffer; w: number; h: number }[];
 };
 
 ctx.onmessage = async (e: MessageEvent) => {
@@ -110,6 +111,10 @@ ctx.onmessage = async (e: MessageEvent) => {
       skipped = out.skipped;
     } else {
       symbols = await legacyDecode(read, pixels, w, h);
+    }
+    for (const extra of req.extras ?? []) {
+      const more = await legacyDecode(read, new Uint8ClampedArray(extra.buf), extra.w, extra.h);
+      symbols.push(...more);
     }
 
     ctx.postMessage({

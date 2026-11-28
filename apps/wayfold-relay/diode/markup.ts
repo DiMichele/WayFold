@@ -81,6 +81,16 @@ const VIEW = `
               <button type="button" class="segmented-btn" data-diode-grid="2" aria-pressed="false">2</button>
               <button type="button" class="segmented-btn" data-diode-grid="4" aria-pressed="false">4</button>
             </div>
+            <label class="diode-screen-group">
+              <span class="layout-label" data-i18n="color.profile">Optical profile</span>
+              <select id="dx-color">
+                <option value="mono" selected data-i18n="color.mono">Mono</option>
+                <option value="color2" data-i18n="color.color2">Color 2 (experimental)</option>
+                <option value="rgb3" data-i18n="color.rgb3">RGB 3 (experimental)</option>
+              </select>
+              <span id="dx-color-status" class="layout-hint"></span>
+            </label>
+            <p id="color-hint-diode" class="layout-hint" hidden></p>
             <select id="dx-grid" hidden>
               <option value="1" selected>1</option>
               <option value="2">2</option>

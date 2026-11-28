@@ -14,6 +14,9 @@ import {
   normalizeGrid,
   rasterizeQr,
 } from "../shared/optical.ts";
+import { encodePayloads } from "../color/engine.ts";
+import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
+import type { OpticalProfileId } from "../color/profile.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
 import { beginOptSession, endOptSession, ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
@@ -57,6 +60,7 @@ type ItemState = "preparing" | "ready" | "blocked" | "failed";
 interface Frame {
   id: string;
   img: ImageData;
+  bytes: Uint8Array;
 }
 
 let items: QueueItem[] = [];
@@ -106,7 +110,8 @@ let videoHoldUntil = 0;
 let videoTimer = 0;
 let videoAired = 0;
 let videoItemId: string | null = null;
-let videoStill: { id: string; img: ImageData } | null = null;
+let videoStill: { id: string; img: ImageData; bytes: Uint8Array } | null = null;
+let diodeColor: OpticalProfileId = "mono";
 let tearingDown = false;
 let videoQueue: Uint8Array[] = [];
 
@@ -378,16 +383,18 @@ function makeFrame(): Frame | null {
   // A video packet is one fountain block. Repeating the same symbol keeps the QR
   // still for the camera; a new seq would redraw it every frame and none would freeze.
   if (isVideoId(currentId)) {
+    const still = packFrame({ ...p.header, seq: 0 }, p.encoder.encode(0));
     if (videoStill?.id !== currentId) {
-      videoStill = { id: currentId, img: qrImage(packFrame({ ...p.header, seq: 0 }, p.encoder.encode(0))) };
+      videoStill = { id: currentId, img: qrImage(still), bytes: still };
     }
     framesLeft--;
-    return { id: currentId, img: videoStill.img };
+    return { id: currentId, img: videoStill.img, bytes: videoStill.bytes };
   }
   const seq = p.nextSeq;
   p.nextSeq = (p.nextSeq + 1) >>> 0;
   framesLeft--;
-  return { id: currentId, img: qrImage(packFrame({ ...p.header, seq }, p.encoder.encode(seq))) };
+  const bytes = packFrame({ ...p.header, seq }, p.encoder.encode(seq));
+  return { id: currentId, img: qrImage(bytes), bytes };
 }
 
 function setStage(onAir: boolean): void {
@@ -437,6 +444,27 @@ function paint(
   ctx.drawImage(staging, 0, 0, canvas.width, canvas.height);
 }
 
+function paintColor(
+  canvas: HTMLCanvasElement,
+  staging: HTMLCanvasElement,
+  frames: Frame[],
+  channels: number,
+): void {
+  const grid = gridCount();
+  const cells: ImageData[] = [];
+  for (let i = 0; i + channels <= frames.length && cells.length < grid; i += channels) {
+    const payloads = frames.slice(i, i + channels).map((frame) => frame.bytes);
+    try {
+      const encoded = encodePayloads(payloads, ECC, diodeColor);
+      cells.push(new ImageData(new Uint8ClampedArray(encoded.data), encoded.width, encoded.height));
+    } catch {
+      return;
+    }
+  }
+  if (!cells.length) return;
+  paint(canvas, staging, cells.map((img, i) => ({ id: frames[i * channels]?.id ?? "", img, bytes: frames[i * channels]!.bytes })));
+}
+
 function run(): void {
   const gen = ++generation;
   const canvas = el<HTMLCanvasElement>("dx-qr");
@@ -446,7 +474,8 @@ function run(): void {
   const fill = () => {
     if (gen !== generation || paused) return;
     try {
-      while (lookahead.length < LOOKAHEAD * gridCount()) {
+      const depth = gridCount() * Math.max(1, profileChannels(diodeColor));
+      while (lookahead.length < LOOKAHEAD * depth) {
         if (lookahead.some((frame) => isVideoId(frame.id))) break;
         const frame = makeFrame();
         if (!frame) break;
@@ -460,7 +489,8 @@ function run(): void {
   const pump = () => {
     if (gen !== generation) return;
     fill();
-    const need = lookahead.some((frame) => isVideoId(frame.id)) ? 1 : LOOKAHEAD * gridCount();
+    const depth = gridCount() * Math.max(1, profileChannels(diodeColor));
+    const need = lookahead.some((frame) => isVideoId(frame.id)) ? 1 : LOOKAHEAD * depth;
     window.setTimeout(pump, lookahead.length < need ? 0 : 32);
   };
   pump();
@@ -497,9 +527,29 @@ function run(): void {
       nextAt = now + interval;
       return;
     }
+    const channels = profileChannels(diodeColor);
     const batch = [frame];
-    if (isVideoId(frame.id)) {
+    if (channels > 1 && !isVideoId(frame.id)) {
+      while (batch.length < gridCount() * channels) {
+        const next = lookahead.shift();
+        if (!next || next.id !== frame.id) {
+          if (next) lookahead.unshift(next);
+          break;
+        }
+        batch.push(next);
+      }
+      if (batch.length < channels) {
+        for (let i = batch.length - 1; i >= 0; i--) lookahead.unshift(batch[i]!);
+        paintClock?.noteStarved();
+        publishPaint();
+        nextAt = now + interval;
+        return;
+      }
+      paintColor(canvas, staging, batch, channels);
+    } else if (isVideoId(frame.id)) {
       while (batch.length < gridCount()) batch.push(frame);
+      if (channels > 1) paintColor(canvas, staging, Array.from({ length: gridCount() * channels }, () => frame), channels);
+      else paint(canvas, staging, batch);
     } else {
       while (batch.length < gridCount()) {
         const next = lookahead.shift();
@@ -510,8 +560,8 @@ function run(): void {
         }
         batch.push(next);
       }
+      paint(canvas, staging, batch);
     }
-    paint(canvas, staging, batch);
     fill();
     framesSent += isVideoId(frame.id) ? 1 : batch.length;
     if (onAirId !== frame.id) {
@@ -535,6 +585,7 @@ function run(): void {
 
 function start(): void {
   if (running) return;
+  diodeColor = lockProfileSelect("dx-color");
   beginOptSession(fps());
   running = true;
   paused = false;
@@ -692,6 +743,8 @@ export function stopVideoCarrier(): void {
 }
 
 export function stopTx(): void {
+  unlockProfileSelect("dx-color");
+  diodeColor = "mono";
   tearingDown = true;
   stopVideoCapture();
   if (!running) {

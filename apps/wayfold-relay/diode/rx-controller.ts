@@ -20,6 +20,7 @@ import {
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { readVideoRegion } from "../receive/frame-grab.ts";
+import { captureColor, lockProfileSelect, lockedProfile, setColorHint, unlockProfileSelect } from "../color/live.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
@@ -60,7 +61,10 @@ const busy: boolean[] = [];
 const grab = document.createElement("canvas");
 const roi = new RoiSession();
 let grabGen = 0;
-const slotGrab: { gen: number; ox: number; oy: number }[] = [];
+const slotGrab: { gen: number; ox: number; oy: number; color?: boolean }[] = [];
+let colorRect: { x: number; y: number; w: number; h: number } | null = null;
+let colorMisses = 0;
+let colorPhase = 0;
 const open = new Map<string, OpenSession>();
 const finished: string[] = [];
 const finishedSet = new Set<string>();
@@ -373,10 +377,55 @@ function scheduleFrame(gen: number): void {
   else requestAnimationFrame(() => next());
 }
 
+function captureDiodeColor(video: HTMLVideoElement, vw: number, vh: number): void {
+  const free: number[] = [];
+  for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
+  if (!free.length) return;
+  const source = colorRect && colorMisses < 2 ? colorRect : { x: 0, y: 0, w: vw, h: vh };
+  const img = readVideoRegion(grab, video, source);
+  const captured = captureColor(img, lockedProfile("dx-color"), free.length, "adaptive", colorPhase);
+  colorPhase = captured.plan.nextPhase;
+  const gen = ++grabGen;
+  if (!captured.found.length) {
+    colorMisses++;
+    if (colorMisses >= 2) colorRect = null;
+    setColorHint("color-hint-diode", captured.monoLike ? t("color.mismatchMono") : null);
+    optTrace.noteCapture(gen);
+    return;
+  }
+  colorMisses = 0;
+  setColorHint("color-hint-diode", null);
+  if (captured.bounds) {
+    colorRect = {
+      x: source.x + captured.bounds.x,
+      y: source.y + captured.bounds.y,
+      w: Math.min(vw, captured.bounds.w),
+      h: Math.min(vh, captured.bounds.h),
+    };
+  }
+  captured.plan.batches.forEach((batch, i) => {
+    const images = batch.map((item) => item.payload);
+    const first = images[0];
+    if (!first) return;
+    const extras = images.slice(1).map((image) => ({ buf: image.data.buffer, w: image.width, h: image.height }));
+    busy[free[i]!] = true;
+    slotGrab[free[i]!] = { gen, ox: 0, oy: 0, color: true };
+    workers[free[i]!]!.postMessage(
+      { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+      [first.data.buffer, ...extras.map((extra) => extra.buf)],
+    );
+  });
+  optTrace.noteCapture(gen);
+}
+
 function captureFrame(video: HTMLVideoElement): void {
   const vw = video.videoWidth;
   const vh = video.videoHeight;
   if (!vw || !vh) return;
+  if (lockedProfile("dx-color") !== "mono") {
+    captureDiodeColor(video, vw, vh);
+    return;
+  }
   const free: number[] = [];
   for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
   if (free.length === 0) return;
@@ -439,7 +488,7 @@ function startWorkers(): void {
       optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
       optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
-      if (grabMeta) {
+      if (grabMeta && !grabMeta.color) {
         const t0 = wallNow();
         roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
         optTrace.mark("aggregate", t0, wallNow() - t0);
@@ -476,6 +525,10 @@ async function start(): Promise<void> {
     return;
   }
   running = true;
+  lockProfileSelect("dx-color");
+  colorRect = null;
+  colorMisses = 0;
+  colorPhase = 0;
   suspended = false;
   resetVideoPlayback();
   counts = { received: 0, rejected: 0, duplicates: 0 };
@@ -513,6 +566,8 @@ async function start(): Promise<void> {
 
 export function stopRx(log = true): void {
   if (!running) return;
+  unlockProfileSelect("dx-color");
+  colorRect = null;
   running = false;
   suspended = false;
   captureGen++;

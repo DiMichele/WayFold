@@ -109,6 +109,16 @@ const VIEW = `
         </div>
       </div>
       <label class="diode-screen-group">
+        <span class="layout-label" data-i18n="color.profile">Optical profile</span>
+        <select id="net-color">
+          <option value="mono" selected data-i18n="color.mono">Mono</option>
+          <option value="color2" data-i18n="color.color2">Color 2 (experimental)</option>
+          <option value="rgb3" data-i18n="color.rgb3">RGB 3 (experimental)</option>
+        </select>
+        <span id="net-color-status" class="layout-hint"></span>
+      </label>
+      <p id="color-hint-net" class="layout-hint" hidden></p>
+      <label class="diode-screen-group">
         <span class="layout-label" data-i18n="diode.tx.fps" data-i18n-title="diode.tx.fpsTip">Speed</span>
         <span class="diode-fps">
           <select id="net-fps" data-i18n-aria="diode.tx.fps">

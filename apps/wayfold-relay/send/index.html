@@ -218,6 +218,15 @@
               </div>
             </div>
             <label class="diode-screen-group">
+              <span class="layout-label" data-i18n="color.profile">Optical profile</span>
+              <select id="cfg-color">
+                <option value="mono" selected data-i18n="color.mono">Mono</option>
+                <option value="color2" data-i18n="color.color2">Color 2 (experimental)</option>
+                <option value="rgb3" data-i18n="color.rgb3">RGB 3 (experimental)</option>
+              </select>
+              <span id="cfg-color-status" class="layout-hint"></span>
+            </label>
+            <label class="diode-screen-group">
               <span class="layout-label" data-i18n="diode.tx.fps" data-i18n-title="diode.tx.fpsTip">Speed</span>
               <span class="diode-fps">
                 <select id="cfg-fps" data-i18n-aria="diode.tx.fps">
@@ -272,6 +281,16 @@
               <svg viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
             </div>
             <p class="receive-wait-lead" data-i18n="receive.introLead">Point your camera at the sender screen to receive the file.</p>
+            <label class="diode-screen-group">
+              <span class="layout-label" data-i18n="color.profile">Optical profile</span>
+              <select id="cfg-color-rx">
+                <option value="mono" selected data-i18n="color.mono">Mono</option>
+                <option value="color2" data-i18n="color.color2">Color 2 (experimental)</option>
+                <option value="rgb3" data-i18n="color.rgb3">RGB 3 (experimental)</option>
+              </select>
+              <span id="cfg-color-rx-status" class="layout-hint"></span>
+            </label>
+            <p id="color-hint-rx" class="layout-hint" hidden></p>
             <ul class="tip-list">
               <li data-i18n="receive.tipLight">Good lighting, avoid screen glare</li>
               <li data-i18n="receive.tipDistance">Hold 20–40 cm from the screen</li>

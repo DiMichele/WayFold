@@ -18,6 +18,8 @@ import {
   type QrTrackCapabilities,
 } from "./camera.ts";
 import { readVideoRegion } from "./frame-grab.ts";
+import { captureColor, lockProfileSelect, lockedProfile, setColorHint, unlockProfileSelect } from "../color/live.ts";
+import type { Raster } from "../color/composite.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "./optics-metrics.ts";
 import { workerPlanFields } from "./worker-plan.ts";
 import { jobLocalRects, RoiSession, type GrabJob } from "./roi.ts";
@@ -67,7 +69,10 @@ let lastFocusPoint: FocusPoint = { x: 0.5, y: 0.5 };
 let focusSupported: boolean | null = null;
 const roi = new RoiSession();
 let grabGen = 0;
-const slotGrab: { gen: number; ox: number; oy: number }[] = [];
+const slotGrab: { gen: number; ox: number; oy: number; color?: boolean }[] = [];
+let colorRect: { x: number; y: number; w: number; h: number } | null = null;
+let colorMisses = 0;
+let colorPhase = 0;
 
 function formatBytes(n: number): string {
   if (n < 1024) return `${Math.max(0, Math.round(n))} B`;
@@ -550,6 +555,8 @@ function cleanupResources(): void {
   if (cameraPanel) cameraPanel.hidden = true;
   if (cancelBtn) cancelBtn.hidden = true;
   removeOptHud(cameraPanel);
+  unlockProfileSelect("cfg-color-rx");
+  colorRect = null;
   void refreshPermHint();
 }
 
@@ -645,6 +652,10 @@ async function start(): Promise<void> {
   bgPaused = false;
   showRecvError(null, false);
   el("result")?.replaceChildren();
+  lockProfileSelect("cfg-color-rx");
+  colorRect = null;
+  colorMisses = 0;
+  colorPhase = 0;
   const captureWidth = Number(el<HTMLSelectElement>("cfg-width").value);
   const captureFps = Number(el<HTMLSelectElement>("cfg-capfps").value);
   const workerCount = Number(el<HTMLSelectElement>("cfg-workers").value);
@@ -725,7 +736,7 @@ async function start(): Promise<void> {
       syncOptWorkers();
       optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
-      if (grab) {
+      if (grab && !grab.color) {
         const t0 = wallNow();
         roi.push(grab.gen, quads, grab.ox, grab.oy);
         optTrace.mark("aggregate", t0, wallNow() - t0);
@@ -792,10 +803,74 @@ function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: numb
   );
 }
 
+function postColorBatch(
+  slot: number,
+  images: Raster[],
+  gen: number,
+): void {
+  const first = images[0];
+  if (!first) return;
+  const extras = images.slice(1).map((img) => ({ buf: img.data.buffer, w: img.width, h: img.height }));
+  const transfers: Transferable[] = [first.data.buffer, ...extras.map((extra) => extra.buf)];
+  busy[slot] = true;
+  slotGrab[slot] = { gen, ox: 0, oy: 0, color: true };
+  workers[slot]!.postMessage(
+    { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+    transfers,
+  );
+}
+
+function captureColorFrame(video: HTMLVideoElement): void {
+  const profile = lockedProfile("cfg-color-rx");
+  const vw0 = video.videoWidth;
+  const vh0 = video.videoHeight;
+  if (!vw0 || !vh0) return;
+  const free: number[] = [];
+  for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
+  if (free.length === 0) return;
+  const vw = video.videoWidth;
+  const vh = video.videoHeight;
+  const source = colorRect && colorMisses < 2 ? colorRect : { x: 0, y: 0, w: vw, h: vh };
+  const img = readVideoRegion(grab, video, source);
+  const captured = captureColor(img, profile, free.length, "adaptive", colorPhase);
+  colorPhase = captured.plan.nextPhase;
+  const gen = ++grabGen;
+  if (!captured.found.length) {
+    colorMisses++;
+    if (colorMisses >= 2) colorRect = null;
+    setColorHint(
+      "color-hint-rx",
+      captured.monoLike ? t("color.mismatchMono") : null,
+    );
+    optTrace.noteCapture(gen);
+    return;
+  }
+  colorMisses = 0;
+  setColorHint("color-hint-rx", null);
+  if (captured.bounds) {
+    colorRect = {
+      x: source.x + captured.bounds.x,
+      y: source.y + captured.bounds.y,
+      w: captured.bounds.w,
+      h: captured.bounds.h,
+    };
+  }
+  let pixels = 0;
+  for (const batch of captured.plan.batches) for (const item of batch) pixels += item.payload.width * item.payload.height;
+  optTrace.noteGrab(captured.plan.batches.length, pixels, !colorRect);
+  captured.plan.batches.forEach((batch, i) => postColorBatch(free[i]!, batch.map((item) => item.payload), gen));
+  syncOptWorkers();
+  optTrace.noteCapture(gen);
+}
+
 function captureFrame(): void {
   if (paused) return;
   const video = el<HTMLVideoElement>("video");
   if (!video) return;
+  if (lockedProfile("cfg-color-rx") !== "mono") {
+    captureColorFrame(video);
+    return;
+  }
   const vw = video.videoWidth;
   const vh = video.videoHeight;
   if (!vw || !vh) return;

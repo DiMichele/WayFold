@@ -19,6 +19,9 @@ import {
   normalizeGrid,
   rasterizeQr,
 } from "../shared/optical.ts";
+import { encodePayloads } from "../color/engine.ts";
+import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
+import type { OpticalProfileId } from "../color/profile.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
 import { beginOptSession, endOptSession, ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
@@ -230,6 +233,7 @@ function cancelStream(): void {
   generation++;
   navSuspended = false;
   pausedBeforeNav = false;
+  unlockProfileSelect("cfg-color");
   endOptSession();
   removeOptHud(el("send-xfer"));
   const cfgPayload = el<HTMLInputElement>("cfg-payload");
@@ -317,6 +321,8 @@ async function startStream(): Promise<void> {
   const txFps = Number(cfgFps.value) || DEFAULT_TX_FPS;
   const ecc = cfgEcc.value as "L" | "M" | "Q" | "H";
   const displayPx = Number(cfgSize.value);
+  const colorProfile: OpticalProfileId = lockProfileSelect("cfg-color");
+  const colorChannels = profileChannels(colorProfile);
   const gridCodes = normalizeGrid(Number((document.getElementById("cfg-grid") as HTMLSelectElement | null)?.value));
   const singleBudget = Math.min(displayPx, 0.9 * Math.min(window.innerWidth, window.innerHeight), 360);
   const fitW = gridCodes > 1 ? Math.min(displayPx, 0.96 * window.innerWidth) : singleBudget;
@@ -334,6 +340,7 @@ async function startStream(): Promise<void> {
   const blockLen = frameBytes - HEADER_LEN;
   const encoder = new LTEncoder(payload, blockLen, sessionId);
   if (encoder.k > MAX_BLOCKS) {
+    unlockProfileSelect("cfg-color");
     lastStatusParams = null;
     const msg = t("send.blocksError", { k: encoder.k, max: MAX_BLOCKS });
     showSendError(msg);
@@ -352,6 +359,7 @@ async function startStream(): Promise<void> {
 
   let version: number | undefined;
   let modules = 0;
+  let cellSpan = 0;
   let scale = 1;
   let gutter = 0;
   const staging = document.createElement("canvas");
@@ -364,9 +372,28 @@ async function startStream(): Promise<void> {
     y: Math.floor(index / gridCols) * (cell + gutter),
   });
 
+  const openStream = () => {
+    if (streamActive) return;
+    const saved = packed.originalLen - packed.wireFileLen;
+    const compression =
+      packed.compressed && saved > 0
+        ? t("send.compression.gzip", { pct: ((saved / packed.originalLen) * 100).toFixed(1) })
+        : t("send.compression.raw");
+    setStreamingStatus({
+      fps: txFps,
+      fileMiB: (packed.originalLen / 1024 / 1024).toFixed(2),
+      compression,
+      payloadKiB: Math.ceil(payload.length / 1024),
+      codes: gridCodes * colorChannels,
+    });
+    streamActive = true;
+    setXferChrome(true);
+    updateSendXferUi();
+  };
+
   const sizeCanvas = () => {
     const dpr = window.devicePixelRatio || 1;
-    const cell = modules + 2 * QR_MARGIN;
+    const cell = cellSpan || modules + 2 * QR_MARGIN;
     gutter = gridCodes > 1 ? Math.max(4, Math.round(cell * 0.08)) : 0;
     const totalW = cell * gridCols + gutter * Math.max(0, gridCols - 1);
     const totalH = cell * gridRows + gutter * Math.max(0, gridRows - 1);
@@ -393,7 +420,26 @@ async function startStream(): Promise<void> {
     ctx.drawImage(staging, 0, 0, canvas.width, canvas.height);
   };
 
+  const noteGeometry = (qrVersion: number, qrSize: number, span: number) => {
+    if (version !== undefined) return;
+    version = qrVersion;
+    modules = qrSize;
+    cellSpan = span;
+    sizeCanvas();
+    openStream();
+  };
+
   const makeFrame = (): ImageData => {
+    if (colorChannels > 1) {
+      const payloads: Uint8Array[] = [];
+      for (let i = 0; i < colorChannels; i++) {
+        payloads.push(packFrame({ ...header, seq: nextSeq }, encoder.encode(nextSeq)));
+        nextSeq++;
+      }
+      const encoded = encodePayloads(payloads, ecc, colorProfile);
+      noteGeometry(encoded.aligned.version, encoded.qrSize, encoded.modules);
+      return new ImageData(new Uint8ClampedArray(encoded.data), encoded.width, encoded.height);
+    }
     const bytes = packFrame({ ...header, seq: nextSeq }, encoder.encode(nextSeq));
     nextSeq++;
     const qr = QRCode.create([{ data: bytes, mode: "byte" } as unknown as QRCode.QRCodeSegment], {
@@ -404,22 +450,9 @@ async function startStream(): Promise<void> {
     if (version === undefined) {
       version = qr.version;
       modules = qr.modules.size;
+      cellSpan = modules + 2 * QR_MARGIN;
       sizeCanvas();
-      const saved = packed.originalLen - packed.wireFileLen;
-      const compression =
-        packed.compressed && saved > 0
-          ? t("send.compression.gzip", { pct: ((saved / packed.originalLen) * 100).toFixed(1) })
-          : t("send.compression.raw");
-      setStreamingStatus({
-        fps: txFps,
-        fileMiB: (packed.originalLen / 1024 / 1024).toFixed(2),
-        compression,
-        payloadKiB: Math.ceil(payload.length / 1024),
-        codes: gridCodes,
-      });
-      streamActive = true;
-      setXferChrome(true);
-      updateSendXferUi();
+      openStream();
     }
     return rasterizeQr(qr.modules.size, qr.modules.data, QR_MARGIN);
   };
@@ -466,7 +499,7 @@ async function startStream(): Promise<void> {
       nextAt = now + Math.min(interval, 16);
       return;
     }
-    const cell = modules + 2 * QR_MARGIN;
+    const cell = cellSpan || modules + 2 * QR_MARGIN;
     const stagingCtx = staging.getContext("2d");
     const ctx = canvas.getContext("2d");
     if (!stagingCtx || !ctx) {

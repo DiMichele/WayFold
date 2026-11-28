@@ -15,6 +15,14 @@ const files = [
   "../shared/opt-flags.ts",
   "../diode/rx-controller.ts",
   "../diode/tx-controller.ts",
+  "../color/profile.ts",
+  "../color/palette.ts",
+  "../color/matrices.ts",
+  "../color/composite.ts",
+  "../color/fit.ts",
+  "../color/schedule.ts",
+  "../color/engine.ts",
+  "../color/live.ts",
 ];
 
 test("optical flags and the diode path do not open a network channel", () => {

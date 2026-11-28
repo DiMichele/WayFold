@@ -1,0 +1,278 @@
+{
+ "machine": {
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12650H",
+  "cores": 16,
+  "node": "v24.14.1"
+ },
+ "note": "Synthetic rasters. Not a monitor or camera measurement. Transfer and Diode share the same fountain frame, so the pixel rows apply to both. Network capacity is the ARQ window formula, not a link measurement.",
+ "units": {
+  "ber": "module bits wrong before ECC",
+  "overhead": "fraction of the composite that is frame rather than QR cell"
+ },
+ "samePayloadBytes": 48,
+ "rows": [
+  {
+   "mode": "transfer",
+   "profile": "mono",
+   "method": "none",
+   "sample": "none",
+   "palette": "mono",
+   "pixels": 1369,
+   "paintMs": 0.11,
+   "frameOverhead": 0,
+   "ber": [
+    0
+   ],
+   "success": [
+    1
+   ],
+   "note": "Mono raster only. No calibration and no channel split."
+  },
+  {
+   "mode": "transfer",
+   "profile": "color2",
+   "method": "affine",
+   "sample": "module",
+   "palette": "rb",
+   "pixels": 32400,
+   "paintMs": 1.53,
+   "calMs": 0.56,
+   "splitMs": 2.98,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1
+   ],
+   "residual": 9.658940314238862e-14,
+   "condition": 247428.78787878784
+  },
+  {
+   "mode": "transfer",
+   "profile": "color2",
+   "method": "classify",
+   "sample": "module",
+   "palette": "rb",
+   "pixels": 32400,
+   "paintMs": 0.54,
+   "calMs": 0.06,
+   "splitMs": 0.18,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1
+   ],
+   "residual": 9.658940314238862e-14,
+   "condition": 247428.78787878784
+  },
+  {
+   "mode": "transfer",
+   "profile": "color2",
+   "method": "hybrid",
+   "sample": "module",
+   "palette": "rb",
+   "pixels": 32400,
+   "paintMs": 0.65,
+   "calMs": 0.05,
+   "splitMs": 0.88,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1
+   ],
+   "residual": 9.658940314238862e-14,
+   "condition": 247428.78787878784
+  },
+  {
+   "mode": "transfer",
+   "profile": "color2",
+   "method": "hybrid",
+   "sample": "pixel",
+   "palette": "rb",
+   "pixels": 32400,
+   "paintMs": 0.21,
+   "calMs": 0.03,
+   "splitMs": 6.19,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1
+   ],
+   "residual": 9.658940314238862e-14,
+   "condition": 247428.78787878784
+  },
+  {
+   "mode": "transfer",
+   "profile": "rgb3",
+   "method": "affine",
+   "sample": "module",
+   "palette": "rgb",
+   "pixels": 32400,
+   "paintMs": 0.19,
+   "calMs": 0.03,
+   "splitMs": 0.74,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1,
+    1
+   ],
+   "residual": 3.3084646133829665e-14,
+   "condition": 180817.19528142965
+  },
+  {
+   "mode": "transfer",
+   "profile": "rgb3",
+   "method": "classify",
+   "sample": "module",
+   "palette": "rgb",
+   "pixels": 32400,
+   "paintMs": 0.17,
+   "calMs": 0.03,
+   "splitMs": 0.13,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1,
+    1
+   ],
+   "residual": 3.3084646133829665e-14,
+   "condition": 180817.19528142965
+  },
+  {
+   "mode": "transfer",
+   "profile": "rgb3",
+   "method": "hybrid",
+   "sample": "module",
+   "palette": "rgb",
+   "pixels": 32400,
+   "paintMs": 0.32,
+   "calMs": 0.03,
+   "splitMs": 0.74,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1,
+    1
+   ],
+   "residual": 3.3084646133829665e-14,
+   "condition": 180817.19528142965
+  },
+  {
+   "mode": "transfer",
+   "profile": "rgb3",
+   "method": "hybrid",
+   "sample": "pixel",
+   "palette": "rgb",
+   "pixels": 32400,
+   "paintMs": 0.16,
+   "calMs": 0.03,
+   "splitMs": 5.36,
+   "frameOverhead": 0.324,
+   "ber": [
+    0,
+    0,
+    0
+   ],
+   "success": [
+    1,
+    1,
+    1
+   ],
+   "residual": 3.3084646133829665e-14,
+   "condition": 180817.19528142965
+  }
+ ],
+ "paletteOnLinearMix": [
+  {
+   "palette": "rb",
+   "ber": [
+    0,
+    0
+   ],
+   "worst": 0
+  },
+  {
+   "palette": "rg",
+   "ber": [
+    0,
+    0
+   ],
+   "worst": 0
+  },
+  {
+   "palette": "gb",
+   "ber": [
+    0,
+    0
+   ],
+   "worst": 0
+  }
+ ],
+ "asymmetricRedWhitened": [
+  {
+   "profile": "color2",
+   "ber": [
+    0.17677136596055515,
+    0
+   ]
+  },
+  {
+   "profile": "rgb3",
+   "ber": [
+    0.06720233747260775,
+    0,
+    0
+   ]
+  }
+ ],
+ "network": {
+  "opticalInflight": 12,
+  "theoreticalBitrate": 768000,
+  "theoreticalLabel": "12 * 1200 * 8 / 0.15 s",
+  "grids": [
+   1,
+   2,
+   4
+  ]
+ },
+ "diode": {
+  "unidirectional": true,
+  "contents": [
+   "file",
+   "chat",
+   "video"
+  ],
+  "videoRepeatsSameSymbol": true
+ }
+}

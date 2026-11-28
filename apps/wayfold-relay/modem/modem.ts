@@ -13,6 +13,10 @@ import {
 } from "../receive/camera.ts";
 import { readVideoRegion } from "../receive/frame-grab.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
+import { paintGrid } from "../color/composite.ts";
+import { paletteFor } from "../color/engine.ts";
+import { captureColor as planColorCapture, lockProfileSelect, profileChannels, setColorHint, unlockProfileSelect } from "../color/live.ts";
+import type { OpticalProfileId } from "../color/profile.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
 import type { Quad } from "../receive/decode-core.ts";
@@ -95,6 +99,7 @@ export interface HelperStatus {
 interface Encoded {
   size: number;
   mods: Uint8Array[];
+  color?: { data: Uint8ClampedArray; width: number; height: number };
 }
 
 const MTU_OPTIONS = [400, 600, 900, 1200, 1500, 1850, 2300];
@@ -380,7 +385,11 @@ export class Modem {
 
   private readonly roi = new RoiSession();
   private grabGen = 0;
-  private readonly slotGrab: { gen: number; ox: number; oy: number }[] = [];
+  private readonly slotGrab: { gen: number; ox: number; oy: number; color?: boolean }[] = [];
+  private colorProfile: OpticalProfileId = "mono";
+  private colorRect: { x: number; y: number; w: number; h: number } | null = null;
+  private colorMisses = 0;
+  private colorPhase = 0;
   private focusBusy = false;
   private focusQueued: FocusPoint | null = null;
 
@@ -464,6 +473,10 @@ export class Modem {
     this.testRun = (Math.random() * 0xffffffff) >>> 0;
     this.testSeq = 0;
     this.testWindow = [];
+    this.colorProfile = lockProfileSelect("net-color");
+    this.colorRect = null;
+    this.colorMisses = 0;
+    this.colorPhase = 0;
     beginOptSession(this.settings.fps);
     this.roi.reset();
     this.grabGen = 0;
@@ -522,6 +535,8 @@ export class Modem {
     this.helper = null;
     void this.wake?.release().catch(() => undefined);
     this.wake = null;
+    unlockProfileSelect("net-color");
+    this.colorProfile = "mono";
     removeOptHud(this.root);
     this.renderControls();
     this.renderSide();
@@ -637,10 +652,16 @@ export class Modem {
     }
     if (this.paintClock) {
       optTrace.noteTx(this.paintClock.snapshot());
-      renderOptHud(this.root, "bit");
+      renderOptHud(this.root, "bit", "link");
     }
     this.requestNext();
   };
+
+  private pullCount(): number {
+    if (this.colorProfile === "mono") return this.settings.grid;
+    const grid = this.settings.grid === 2 || this.settings.grid === 4 ? this.settings.grid : 1;
+    return grid * profileChannels(this.colorProfile);
+  }
 
   private requestNext(): void {
     if (this.encoding || this.awaitingBatch || this.ready) return;
@@ -651,19 +672,19 @@ export class Modem {
     if (this.link) {
       const box = this.canvas.getBoundingClientRect();
       const mtu = Math.max(200, frameBytesForGrid(this.settings.mtu, this.settings.grid, box.width, box.height, window.devicePixelRatio || 1));
-      const frames = this.link.pull(this.settings.grid, mtu);
+      const frames = this.link.pull(this.pullCount(), mtu);
       if (frames.length) this.encode(frames);
       else if (!this.shown && !this.encoding) this.drawIdle(this.opts.idleText?.() ?? "In attesa");
       return;
     }
     if (this.ws?.readyState !== WebSocket.OPEN) return;
     this.awaitingBatch = true;
-    this.ws.send(JSON.stringify({ t: "pull", n: this.settings.grid }));
+    this.ws.send(JSON.stringify({ t: "pull", n: this.pullCount() }));
   }
 
   private testFrames(): Uint8Array[] {
     const out: Uint8Array[] = [];
-    for (let i = 0; i < this.settings.grid; i++) {
+    for (let i = 0; i < this.pullCount(); i++) {
       const f = new Uint8Array(this.settings.mtu);
       const dv = new DataView(f.buffer);
       f[0] = TEST_MAGIC0;
@@ -696,6 +717,21 @@ export class Modem {
       return;
     }
     this.version = data.version;
+    if (this.colorProfile !== "mono") {
+      const channels = profileChannels(this.colorProfile);
+      const cells: Uint8Array[][] = [];
+      for (let i = 0; i + channels <= data.mods.length; i += channels) {
+        cells.push(data.mods.slice(i, i + channels).map((row) => Uint8Array.from(row, (v) => (v ? 1 : 0))));
+      }
+      if (!cells.length) {
+        this.ready = { size: data.size, mods: data.mods };
+        return;
+      }
+      const cols = cells.length === 4 ? 2 : Math.max(1, cells.length);
+      const raster = paintGrid(cells, paletteFor(this.colorProfile), 1, cols);
+      this.ready = { size: data.size, mods: data.mods, color: raster };
+      return;
+    }
     this.ready = { size: data.size, mods: data.mods };
   }
 
@@ -728,6 +764,20 @@ export class Modem {
     const ox = Math.floor((w - cols * px) / 2);
     const oy = Math.floor((h - rows * px) / 2);
     ctx.imageSmoothingEnabled = false;
+    if (img.color) {
+      const scale = Math.max(1, Math.floor(Math.min(w / img.color.width, h / img.color.height)));
+      const pw = img.color.width * scale;
+      const ph = img.color.height * scale;
+      const stage = this.staging[0] ?? document.createElement("canvas");
+      this.staging[0] = stage;
+      if (stage.width !== img.color.width || stage.height !== img.color.height) {
+        stage.width = img.color.width;
+        stage.height = img.color.height;
+      }
+      stage.getContext("2d")!.putImageData(new ImageData(new Uint8ClampedArray(img.color.data), img.color.width, img.color.height), 0, 0);
+      ctx.drawImage(stage, Math.floor((w - pw) / 2), Math.floor((h - ph) / 2), pw, ph);
+      return;
+    }
     img.mods.forEach((mods, i) => {
       let stage = this.staging[i];
       if (!stage) {
@@ -784,7 +834,7 @@ export class Modem {
         optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
         optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
         optTrace.notePasses(passes, skipped ?? 0);
-        if (grabMeta) {
+        if (grabMeta && !grabMeta.color) {
           const t0 = wallNow();
           this.roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
           optTrace.mark("aggregate", t0, wallNow() - t0);
@@ -888,7 +938,56 @@ export class Modem {
     video.style.height = `${box.width}px`;
   }
 
+  private captureColor(video: HTMLVideoElement): void {
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    if (!vw || !vh) return;
+    const free: number[] = [];
+    for (let i = 0; i < this.busy.length; i++) if (!this.busy[i]) free.push(i);
+    if (!free.length) return;
+    const source = this.colorRect && this.colorMisses < 2 ? this.colorRect : { x: 0, y: 0, w: vw, h: vh };
+    const img = readVideoRegion(this.grab, video, source);
+    const captured = planColorCapture(img, this.colorProfile, free.length, "adaptive", this.colorPhase);
+    this.colorPhase = captured.plan.nextPhase;
+    const gen = ++this.grabGen;
+    if (!captured.found.length) {
+      this.colorMisses++;
+      if (this.colorMisses >= 2) this.colorRect = null;
+      setColorHint("color-hint-net", captured.monoLike ? "Il mittente sembra in Mono. Nessun cambio automatico." : null);
+      optTrace.noteCapture(gen);
+      return;
+    }
+    this.colorMisses = 0;
+    setColorHint("color-hint-net", null);
+    if (captured.bounds) {
+      this.colorRect = {
+        x: Math.max(0, source.x + captured.bounds.x),
+        y: Math.max(0, source.y + captured.bounds.y),
+        w: captured.bounds.w,
+        h: captured.bounds.h,
+      };
+    }
+    captured.plan.batches.forEach((batch, i) => {
+      const images = batch.map((item) => item.payload);
+      const first = images[0];
+      if (!first) return;
+      const extras = images.slice(1).map((image) => ({ buf: image.data.buffer, w: image.width, h: image.height }));
+      const slot = free[i]!;
+      this.busy[slot] = true;
+      this.slotGrab[slot] = { gen, ox: 0, oy: 0, color: true };
+      this.workers[slot]!.postMessage(
+        { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+        [first.data.buffer, ...extras.map((extra) => extra.buf)],
+      );
+    });
+    optTrace.noteCapture(gen);
+  }
+
   private capture(video: HTMLVideoElement): void {
+    if (this.colorProfile !== "mono" && this.turn === 0) {
+      this.captureColor(video);
+      return;
+    }
     const vw = video.videoWidth;
     const vh = video.videoHeight;
     if (!vw || !vh) return;
