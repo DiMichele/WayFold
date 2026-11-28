@@ -327,11 +327,16 @@ async function startStream(): Promise<void> {
   const colorChannels = profileChannels(colorProfile);
   const gridCodes = normalizeGrid(Number((document.getElementById("cfg-grid") as HTMLSelectElement | null)?.value));
   const viewport = Math.min(window.innerWidth, window.innerHeight);
-  const singleBudget = colorChannels > 1
-    ? Math.min(Math.max(displayPx, 360), viewport * 0.92)
-    : Math.min(displayPx, viewport * 0.9, 360);
+  const fullSide = Math.max(320, viewport);
+  const singleBudget = colorChannels > 1 ? fullSide : Math.min(displayPx, viewport * 0.9, 360);
   const fitW = gridCodes > 1 ? Math.min(displayPx, 0.96 * window.innerWidth) : singleBudget;
   const fitH = gridCodes > 1 ? Math.min(displayPx, 0.8 * window.innerHeight) : singleBudget;
+  if (colorChannels > 1) {
+    const stage = el("qr-stage");
+    setStreamingUi(true);
+    void stage?.requestFullscreen?.().catch(() => undefined);
+  }
+
   const { cols: gridCols, rows: gridRows } = gridDims(gridCodes, fitW >= fitH);
   let frameBytes = frameBytesForGrid(
     Number(cfgBytes.value),
@@ -407,7 +412,11 @@ async function startStream(): Promise<void> {
     const totalW = cell * gridCols + gutter * Math.max(0, gridCols - 1);
     const totalH = cell * gridRows + gutter * Math.max(0, gridRows - 1);
     canvas.classList.toggle("is-grid", gridCodes > 1);
-    scale = Math.max(1, Math.floor(Math.min((fitW * dpr) / totalW, (fitH * dpr) / totalH)));
+    const full = document.fullscreenElement === el("qr-stage");
+    const side = Math.max(320, Math.min(window.innerWidth, window.innerHeight));
+    const limitW = full ? side : fitW;
+    const limitH = full ? side : fitH;
+    scale = Math.max(1, Math.floor(Math.min((limitW * dpr) / totalW, (limitH * dpr) / totalH)));
     staging.width = totalW;
     staging.height = totalH;
     canvas.width = totalW * scale;
@@ -428,6 +437,15 @@ async function startStream(): Promise<void> {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(staging, 0, 0, canvas.width, canvas.height);
   };
+
+  const onFullscreen = () => {
+    if (gen !== generation) {
+      document.removeEventListener("fullscreenchange", onFullscreen);
+      return;
+    }
+    if (modules) sizeCanvas();
+  };
+  document.addEventListener("fullscreenchange", onFullscreen);
 
   const noteGeometry = (qrVersion: number, qrSize: number, span: number) => {
     if (version !== undefined) return;
@@ -571,6 +589,12 @@ function wireControls(): void {
   el<HTMLButtonElement>("send-pause")?.addEventListener("click", () => setPaused(true));
   el<HTMLButtonElement>("send-resume")?.addEventListener("click", () => setPaused(false));
   el<HTMLButtonElement>("send-stop")?.addEventListener("click", () => cancelStream());
+  el<HTMLButtonElement>("send-fullscreen")?.addEventListener("click", () => {
+    const stage = el("qr-stage");
+    if (!stage) return;
+    if (document.fullscreenElement === stage) void document.exitFullscreen?.();
+    else void stage.requestFullscreen?.().catch(() => undefined);
+  });
 }
 
 function syncLayoutButtons(): void {

@@ -83,6 +83,21 @@ test("a camera-style split lets ZXing read Color 2 and RGB 3 without the frame l
   await roundtrip("color2", color2, cameraTint(painted2));
 });
 
+test("RGB 3 still separates after a screen is photographed", async () => {
+  const rgb3 = [bytes(36, 3), bytes(36, 8), bytes(36, 13)];
+  const painted = encodePayloads(rgb3, "M", "rgb3", "rgb", 4);
+  const data = new Uint8ClampedArray(painted.data);
+  for (let i = 0; i < data.length; i += 4) {
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+    data[i] = Math.min(255, 22 + r * 0.7 + g * 0.05);
+    data[i + 1] = Math.min(255, 20 + g * 0.58 + r * 0.04);
+    data[i + 2] = Math.min(255, 18 + b * 0.5 + g * 0.05);
+  }
+  await roundtrip("rgb3", rgb3, { data, width: painted.width, height: painted.height });
+});
+
 test("a phone-sized color code still reads after camera blur", async () => {
   const n = colorFrameBytes(1850, 360, "M");
   assert.ok(n < 400, String(n));

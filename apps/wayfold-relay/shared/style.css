@@ -838,6 +838,27 @@ body.role-home .mode-btn.is-active {
   aspect-ratio: 1 / 1;
   max-width: 100%;
 }
+.stage:fullscreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+}
+.workspace.is-xfer .stage:fullscreen canvas,
+.stage:fullscreen canvas {
+  width: min(100vw, 100vh) !important;
+  height: min(100vw, 100vh) !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: 1 / 1;
+}
 .stage canvas.is-grid {
   aspect-ratio: auto;
   image-rendering: pixelated;

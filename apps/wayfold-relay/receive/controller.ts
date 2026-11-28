@@ -848,12 +848,20 @@ function postColorBatch(
 }
 
 function postColorImages(free: number[], images: Raster[], gen: number): void {
-  const slots = Math.min(free.length, images.length);
-  if (!slots) return;
-  const start = gen % images.length;
-  for (let i = 0; i < slots; i++) {
-    const image = images[(start + i) % images.length];
-    if (image) postColorBatch(free[i]!, [image], gen);
+  if (!free.length || !images.length) return;
+  if (images.length <= free.length) {
+    for (let i = 0; i < images.length; i++) postColorBatch(free[i]!, [images[i]!], gen);
+    return;
+  }
+  const base = Math.floor(images.length / free.length);
+  let extra = images.length % free.length;
+  let cursor = 0;
+  for (let i = 0; i < free.length; i++) {
+    const count = base + (extra > 0 ? 1 : 0);
+    if (extra > 0) extra--;
+    const slice = images.slice(cursor, cursor + count);
+    cursor += count;
+    if (slice.length) postColorBatch(free[i]!, slice, gen);
   }
 }
 
