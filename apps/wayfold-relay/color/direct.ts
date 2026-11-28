@@ -8,24 +8,6 @@ import { opticalProfile, type OpticalProfileId } from "./profile.ts";
  * Neutral pixels (the screen's black and white) set every channel together,
  * so a phone can read the code without first finding the thin color frame.
  */
-export function frameLooksColored(raster: Raster): boolean {
-  const { data, width, height } = raster;
-  const step = Math.max(1, Math.floor(Math.min(width, height) / 24));
-  let sat = 0;
-  let n = 0;
-  for (let y = 0; y < height; y += step) {
-    for (let x = 0; x < width; x += step) {
-      const i = (y * width + x) * 4;
-      const r = data[i]!;
-      const g = data[i + 1]!;
-      const b = data[i + 2]!;
-      sat += Math.max(r, g, b) - Math.min(r, g, b);
-      n++;
-    }
-  }
-  return n > 0 && sat / n > 18;
-}
-
 export function directChannelImages(raster: Raster, profile: OpticalProfileId, paletteId?: string): Raster[] {
   const spec = opticalProfile(profile, paletteId);
   if (spec.channels < 2) return [];

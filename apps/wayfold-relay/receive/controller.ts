@@ -18,7 +18,6 @@ import {
   type QrTrackCapabilities,
 } from "./camera.ts";
 import { readVideoRegion } from "./frame-grab.ts";
-import { directChannelImages, frameLooksColored } from "../color/direct.ts";
 import { captureColor, colorSearchRect, lockProfileSelect, lockedProfile, noteLocatedGeometry, setColorHint, unlockProfileSelect } from "../color/live.ts";
 import type { Raster } from "../color/composite.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "./optics-metrics.ts";
@@ -928,21 +927,6 @@ function captureFrame(): void {
   const free: number[] = [];
   for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
   if (free.length === 0) return;
-  const probe = readVideoRegion(grab, video, {
-    x: Math.floor(vw * 0.2),
-    y: Math.floor(vh * 0.2),
-    w: Math.max(1, Math.floor(vw * 0.6)),
-    h: Math.max(1, Math.floor(vh * 0.6)),
-  });
-  if (frameLooksColored(probe)) {
-    const full = readVideoRegion(grab, video, { x: 0, y: 0, w: vw, h: vh });
-    const gen = ++grabGen;
-    postColorBatch(free[0]!, directChannelImages(full, "color2"), gen);
-    if (free[1] != null) postColorBatch(free[1]!, directChannelImages(full, "rgb3"), gen);
-    syncOptWorkers();
-    optTrace.noteCapture(gen);
-    return;
-  }
   const flags = getOptFlags();
   const jobs = roi.jobs(vw, vh, free.length, flags.roi).slice(0, free.length);
   const gen = ++grabGen;
