@@ -23,20 +23,58 @@ La separazione campiona il centro di ogni modulo, oppure un 3×3 interno al modu
 ## Modalità
 
 - Transfer: ogni canale è un frame fountain con `seq` proprio. Griglie 1, 2 e 4.
-- Diode: file e chat consumano N frame fountain per paint, nello stesso ordine del carousel. Il video continua a ripetere lo stesso simbolo, così il fermo-immagine non cambia semantica. Il ricevitore non dipinge e non c'è ACK.
+- Diode: file e chat consumano N frame fountain per paint, nello stesso ordine del carousel. Il video Mono continua a ripetere il simbolo di `seq` 0, così il fermo-immagine non cambia. Il video a colori mette su ogni canale un `seq` fountain distinto della stessa sessione. Codec, bitrate, risoluzione e contenitore non cambiano. Il ricevitore non dipinge e non c'è ACK.
 - Optical Network: ogni canale è un'unità già prodotta da `pull`, come una cella della griglia. Si usano solo le griglie 1, 2 e 4. `OPTICAL_INFLIGHT` resta 12. Un canale perso è un frame ottico perso: l'ARQ esistente lo ritrasmette e riconsegna in ordine. Il tetto teorico `12 × MTU × 8 / RTT` è una formula, non una misura di link.
 
 Il crop della camera resta quello di prima quando il profilo è Mono. A colori, il fotogramma intero si legge solo finché la cornice non è stata vista; poi si ritaglia il composito prima di `getImageData`.
+
+## Scheduling
+
+Una cattura non tiene una coda fra un frame e il successivo. RGB 3 con quattro compositi offre 12 canali.
+
+| Modalità | Cosa fa un worker | Con 2 worker e 12 canali |
+|---|---|---|
+| `channel` | un simbolo | ne elabora 2 e ne lascia 10 |
+| `composite` | un simbolo, ordinato per composito | ne elabora 2 e ne lascia 10 |
+| `cell` | tutti i canali di un composito | ne elabora 6 (due compositi) |
+| `adaptive` | quanti ne servono, senza tetto di tempo | ne elabora 12, 6 per worker |
+| `budget` | come `adaptive`, finché il job più lento sta nel periodo del frame | dipende dal tempo misurato |
+
+Il percorso attivo è `budget`. Il periodo è quello della camera (o 30 fps finché non c'è una misura) moltiplicato per il flag `budget` già esistente, che resta 1. Il costo di un simbolo parte da 12 ms e diventa il tempo reale del job diviso i simboli di quel job. La separazione sul thread principale si ferma allo stesso periodo: il primo composito viene sempre separato, i successivi solo se avanza tempo, e il frame dopo parte da un altro composito. Non si aggiungono worker. `channel` e `composite` restano solo il confronto: sono loro a tagliare i canali al numero di worker liberi.
+
+## Rotazione
+
+Il modem cromatico usa la stessa trasformazione di canvas del percorso Mono, a 90°, 180° e 270°. La ROI è espressa nell'immagine già ruotata. La lettura scrive solo il rettangolo della ROI: non c'è una seconda copia `ImageData` dell'intero fotogramma quando la cornice è già nota. Il primo fotogramma, senza ROI, legge ancora l'immagine intera. Mono non passa da questa funzione.
+
+## HUD
+
+Con `?wfopt=perf` la HUD e il JSON della sessione riportano, quando il profilo non è Mono: profilo, griglia, canali, candidati, schedulati, scartati, decodificati, goodput ottico già presente nelle righe sopra, saturazione (`none`, `budget`, `slots`, `pool`), qualità cromatica, localizzazione, calibrazione, separazione, decode, residuo e numero di condizione. `pool` significa che il frame non è stato analizzato perché nessun worker era libero. `budget` significa che il tempo del frame non bastava. Non sono la saturazione ARQ: quella resta `in volo`, ritrasmissioni e duplicati.
 
 ## Benchmark sintetici
 
 `bench/color-bench.mjs` scrive `bench/results/color.json`. Sono raster generati in memoria, non una misura di monitor o fotocamera. Sui frame puliti a 4 pixel per modulo, Color 2 e RGB 3 hanno BER 0 su ogni canale, con i tre metodi e con entrambi i campionamenti. Il mix lineare usato per le palette non le distingue: il rosso/blu resta la palette di Color 2 perché è la prima a parità di BER, non perché una prova fisica l'abbia scelta. Lo sbiancamento dei soli moduli rossi alza il BER del canale rosso e lascia il blu a zero. L'overhead della cornice è la frazione di moduli che non appartiene alla cella QR.
 
-I test `tests/color-arq.test.mjs` usano `ArqSender` e `ArqReceiver` di produzione. La finestra non supera 12. La perdita di un canale produce ritrasmissioni. L'ordine di consegna resta quello dei numeri di segmento. Una coda vuota non inventa segmenti. Il goodput del modello resta entro la formula della finestra.
+`bench/color-load-bench.mjs` scrive `bench/results/color-load.json`. Confronta 48, 400, 800, 1200, 1850 e 2331 byte solo sulle coppie payload/ECC che un QR può contenere, sulle griglie 1, 2 e 4 (sopra 800 byte solo la griglia 1, per tenere il raster nel processo). Mono, Color 2 e RGB 3 sono portati alla stessa superficie esterna, cornice compresa. Oltre al frame pulito ci sono crosstalk non lineare, gamma, saturazione, clipping, 4:2:0, sfocatura, rumore, prospettiva e rolling shutter. Il goodput in quel file usa 10 compositi al secondo: è un modello, non una misura.
+
+I test `tests/color-arq.test.mjs` usano `ArqSender` e `ArqReceiver` di produzione. La finestra non supera 12. La perdita di un canale produce ritrasmissioni. L'ordine di consegna resta quello dei numeri di segmento. Una coda vuota non inventa segmenti. Il goodput del modello resta entro la formula della finestra. L'osservazione segna la saturazione come `arq` e lascia vuoti BER ottico e limite dei worker: sono tre cause diverse.
+
+## Matrice fisica
+
+Non eseguita: in questa sessione non c'è un monitor e una fotocamera sotto misura. Per ripeterla, aprire la pagina con `?wfopt=perf`, bloccare il profilo all'avvio e copiare il JSON della HUD.
+
+| Caso | Profilo | Griglia | Rotazione | Cosa controllare |
+|---|---|---|---|---|
+| Default | Mono | 1 | 0 | Nessun campo colore, stesso percorso di prima |
+| Color 2 | Color 2 | 1, 2, 4 | 0 | Canali schedulati e scartati, BER non richiesto dalla HUD |
+| RGB 3 | RGB 3 | 1, 2, 4 | 0, 90, 180, 270 | Quattro orientamenti, saturazione `budget` o `none` |
+| Diode video | Color 2 o RGB 3 | 1 | 0 | Seq diversi nello stesso paint, nessun ritorno |
+| Rete | Color 2 | 2 | 0 | In volo ≤ 12, distinto da saturazione worker |
 
 ## Limiti
 
-- Nessuna misura con monitor e fotocamera. Non va letto come un incremento di goodput reale.
-- La rotazione del modem (90/180/270) non entra nel percorso colore: con il profilo cromatico il modem legge il sensore solo a rotazione 0.
+- Nessuna misura con monitor e fotocamera. I numeri sintetici non sono un incremento di goodput reale.
 - Se i segmenti offerti superano i 12 in volo, l'ARQ ripete il più vecchio. Allargare la finestra sarebbe una modifica di ARQ e non è stata fatta.
 - Il confronto fra palette, affine e classificazione sui raster puliti non mostra differenze di BER. Il vantaggio dell'affine compare sul residuo di un mix lineare, non su un goodput misurato.
+- Il primo fotogramma cromatico ruotato legge ancora l'immagine intera. Il crop arriva dopo la prima cornice trovata.
+- L'ultimo paint video a colori, se i simboli rimasti non riempiono un composito, ripete l'ultimo `seq` sui canali vuoti. Il ricevitore lo tratta come duplicato.
+- Auto-Tuning e Adaptive Optical Modem non sono implementati.

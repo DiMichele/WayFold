@@ -142,6 +142,32 @@ export interface OptSnapshot {
    * The transfer progress bar is an ETA estimate. It is not one of the goodput fields.
    */
   progressBar: "estimate";
+  /** Last color capture. Null on Mono and before the first color frame. */
+  color: ColorTelemetry | null;
+}
+
+export interface ColorTelemetry {
+  profile: string;
+  grid: number;
+  channels: number;
+  candidates: number;
+  scheduled: number;
+  dropped: number;
+  decoded: number;
+  perJob: number[];
+  workersFree: number;
+  workers: number;
+  saturated: boolean;
+  /** Why symbols of this frame were left out. `pool` means the capture was not started. */
+  limit: "none" | "budget" | "slots" | "pool";
+  poolSkips: number;
+  locateMs: number;
+  calMs: number;
+  splitMs: number;
+  decodeMs: number | null;
+  residual: number | null;
+  condition: number | null;
+  quality: "ok" | "mono-like" | "none";
 }
 
 const RING = 512;
@@ -200,6 +226,8 @@ class OptTrace {
   private grabFull = 0;
   private lastGrab: { jobs: number; pixels: number; full: boolean } | null = null;
   private tx: TxPaintStats | null = null;
+  private color: ColorTelemetry | null = null;
+  private symbolMs = 12;
   private readonly windows: OptSnapshot["windows"] = [];
   private windowStarted = 0;
   private windowOptical = 0;
@@ -256,6 +284,64 @@ class OptTrace {
     this.grabFull = 0;
     this.lastGrab = null;
     this.tx = null;
+    this.color = null;
+    this.symbolMs = 12;
+  }
+
+  colorSymbolMs(): number {
+    return this.symbolMs;
+  }
+
+  noteColor(next: Omit<ColorTelemetry, "decoded" | "poolSkips" | "decodeMs">): void {
+    const prev = this.color;
+    this.color = {
+      ...next,
+      decoded: prev?.decoded ?? 0,
+      poolSkips: prev?.poolSkips ?? 0,
+      decodeMs: prev?.decodeMs ?? null,
+    };
+  }
+
+  noteColorDecoded(count: number, jobMs: number | null): void {
+    if (!this.color || count <= 0) return;
+    this.color.decoded += count;
+    if (jobMs != null && jobMs >= 0) {
+      this.color.decodeMs = jobMs;
+      this.symbolMs = jobMs / count;
+    }
+  }
+
+  noteColorPoolSkip(workers: number, profile: string): void {
+    if (!this.color) {
+      this.color = {
+        profile,
+        grid: 0,
+        channels: 0,
+        candidates: 0,
+        scheduled: 0,
+        dropped: 0,
+        decoded: 0,
+        perJob: [],
+        workersFree: 0,
+        workers,
+        saturated: true,
+        limit: "pool",
+        poolSkips: 1,
+        locateMs: 0,
+        calMs: 0,
+        splitMs: 0,
+        decodeMs: null,
+        residual: null,
+        condition: null,
+        quality: "none",
+      };
+      return;
+    }
+    this.color.poolSkips += 1;
+    this.color.workers = workers;
+    this.color.workersFree = 0;
+    this.color.saturated = true;
+    this.color.limit = "pool";
   }
 
   noteTx(stats: TxPaintStats): void {
@@ -564,6 +650,7 @@ class OptTrace {
       ppm: this.symbolPx != null && this.symbolModules ? this.symbolPx / this.symbolModules : null,
       net: this.net,
       progressBar: "estimate",
+      color: this.color,
     };
   }
 

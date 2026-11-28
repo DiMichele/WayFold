@@ -23,6 +23,8 @@ const files = [
   "../color/schedule.ts",
   "../color/engine.ts",
   "../color/live.ts",
+  "../color/video-plan.ts",
+  "../color/arq-observe.ts",
 ];
 
 test("optical flags and the diode path do not open a network channel", () => {

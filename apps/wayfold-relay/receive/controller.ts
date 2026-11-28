@@ -744,6 +744,10 @@ async function start(): Promise<void> {
       noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
       const symbols = symbolsFromWorker(e.data);
       optTrace.noteDecoded(symbols.length);
+      if (grab?.color) {
+        const jobMs = typeof startedAt === "number" && typeof doneAt === "number" ? doneAt - startedAt : null;
+        optTrace.noteColorDecoded(symbols.length, jobMs);
+      }
       for (const symbol of symbols) onDecoded(symbol);
     };
     w.onerror = (event) => {
@@ -827,12 +831,15 @@ function captureColorFrame(video: HTMLVideoElement): void {
   if (!vw0 || !vh0) return;
   const free: number[] = [];
   for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
-  if (free.length === 0) return;
+  if (free.length === 0) {
+    optTrace.noteColorPoolSkip(busy.length, profile);
+    return;
+  }
   const vw = video.videoWidth;
   const vh = video.videoHeight;
   const source = colorRect && colorMisses < 2 ? colorRect : { x: 0, y: 0, w: vw, h: vh };
   const img = readVideoRegion(grab, video, source);
-  const captured = captureColor(img, profile, free.length, "adaptive", colorPhase);
+  const captured = captureColor(img, profile, free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
   const gen = ++grabGen;
   if (!captured.found.length) {

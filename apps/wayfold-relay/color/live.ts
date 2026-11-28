@@ -5,6 +5,8 @@ import { recoverRaster, scheduleRecovered, type RecoveredComposite } from "./eng
 import type { Raster } from "./composite.ts";
 import type { ScheduleMode } from "./profile.ts";
 import type { SchedulePlan } from "./schedule.ts";
+import { getOptFlags } from "../shared/opt-flags.ts";
+import { optTrace } from "../shared/opt-trace.ts";
 
 const locked = new Map<string, OpticalProfileId>();
 
@@ -64,14 +66,49 @@ export function captureColor(
   raster: Raster,
   profile: OpticalProfileId,
   freeSlots: number,
-  mode: ScheduleMode = "adaptive",
+  mode: ScheduleMode = "budget",
   phase = 0,
+  workers = freeSlots,
 ): ColorCapture {
-  const recovered = recoverRaster(raster, profile, "hybrid", "module");
-  const plan = scheduleRecovered(recovered.found, freeSlots, mode, phase);
+  const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
+  const budgetMs = (1000 / Math.max(1, fps)) * getOptFlags().budget;
+  const recovered = recoverRaster(raster, profile, "hybrid", "module", undefined, undefined, { budgetMs, phase });
+  const plan = scheduleRecovered(recovered.found, freeSlots, mode, phase, {
+    symbolMs: optTrace.colorSymbolMs(),
+    budgetMs,
+  });
   const bounds = recovered.found.length
     ? unionBounds(recovered.found.map((cell) => cell.bounds))
     : null;
+  const calMs = recovered.found.reduce((n, cell) => n + cell.split.calMs, 0);
+  const splitMs = recovered.found.reduce((n, cell) => n + cell.split.splitMs, 0);
+  const residual = recovered.found.reduce((n, cell) => Math.max(n, cell.split.residual), 0);
+  const condition = recovered.found.reduce<number | null>((n, cell) => {
+    if (cell.split.condition == null) return n;
+    return n == null ? cell.split.condition : Math.max(n, cell.split.condition);
+  }, null);
+  const channelCount = opticalProfile(profile).channels;
+  const unsplitSymbols = recovered.unsplit * channelCount;
+  const limit = plan.dropped > 0 || unsplitSymbols > 0 ? (mode === "budget" ? "budget" : "slots") : "none";
+  optTrace.noteColor({
+    profile,
+    grid: recovered.found.length,
+    channels: channelCount,
+    candidates: plan.candidates + unsplitSymbols,
+    scheduled: plan.scheduled,
+    dropped: plan.dropped + unsplitSymbols,
+    perJob: plan.perJob,
+    workersFree: freeSlots,
+    workers,
+    saturated: limit !== "none",
+    limit,
+    locateMs: recovered.locateMs,
+    calMs,
+    splitMs,
+    residual: recovered.found.length ? residual : null,
+    condition,
+    quality: recovered.monoLike ? "mono-like" : recovered.found.length ? "ok" : "none",
+  });
   return { found: recovered.found, plan, monoLike: recovered.monoLike, bounds };
 }
 

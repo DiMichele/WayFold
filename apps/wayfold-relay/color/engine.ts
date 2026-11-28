@@ -11,7 +11,7 @@ import {
   type Raster,
   type SplitTimings,
 } from "./composite.ts";
-import { scheduleSymbols, type SchedulePlan, type ScheduledSymbol } from "./schedule.ts";
+import { scheduleSymbols, type ScheduleBudget, type SchedulePlan, type ScheduledSymbol } from "./schedule.ts";
 import type { ScheduleMode } from "./profile.ts";
 import type { EccLevel } from "../shared/optical.ts";
 import { gridDims } from "../shared/optical.ts";
@@ -75,19 +75,33 @@ export function recoverRaster(
   sample: SampleMode = "module",
   paletteId?: string,
   source?: Uint8Array[][],
-): { found: RecoveredComposite[]; monoLike: boolean } {
+  splitBudget?: { budgetMs: number; phase: number },
+): { found: RecoveredComposite[]; monoLike: boolean; locateMs: number; unsplit: number } {
   const spec = opticalProfile(profile, paletteId);
-  if (spec.channels === 1) return { found: [], monoLike: false };
+  if (spec.channels === 1) return { found: [], monoLike: false, locateMs: 0, unsplit: 0 };
   const palette = paletteById(spec.paletteId);
+  const tLocate = performance.now();
   const located = locateComposites(raster);
-  const found = located.found.map((item, index) => {
+  const locateMs = performance.now() - tLocate;
+  const order = located.found.map((item, index) => ({ item, index }));
+  if (splitBudget && order.length > 1) {
+    const start = ((splitBudget.phase % order.length) + order.length) % order.length;
+    order.push(...order.splice(0, start));
+  }
+  const found: RecoveredComposite[] = [];
+  let spent = locateMs;
+  for (let n = 0; n < order.length; n++) {
+    if (splitBudget && n > 0 && spent >= splitBudget.budgetMs) break;
+    const started = performance.now();
+    const { item, index } = order[n]!;
     const split = splitComposite(raster, item, palette, method, sample, source?.[index]);
     const channels = split.bits
       .map((bits) => (bits.some((v) => v) ? renderChannel(bits, item.qrSize) : null))
       .filter((img): img is Raster => !!img);
-    return { index, split, channels, bounds: item.bounds };
-  });
-  return { found, monoLike: located.monoLike };
+    found.push({ index, split, channels, bounds: item.bounds });
+    spent += performance.now() - started;
+  }
+  return { found, monoLike: located.monoLike, locateMs, unsplit: located.found.length - found.length };
 }
 
 export function scheduleRecovered(
@@ -95,6 +109,7 @@ export function scheduleRecovered(
   freeSlots: number,
   mode: ScheduleMode,
   phase = 0,
+  budget?: ScheduleBudget,
 ): SchedulePlan<Raster> {
   const items: ScheduledSymbol<Raster>[] = [];
   for (const cell of found) {
@@ -102,7 +117,7 @@ export function scheduleRecovered(
       items.push({ composite: cell.index, channel, payload: image });
     });
   }
-  return scheduleSymbols(items, freeSlots, mode, phase);
+  return scheduleSymbols(items, freeSlots, mode, phase, budget);
 }
 
 export function paletteFor(profile: OpticalProfileId, paletteId?: string): Palette {

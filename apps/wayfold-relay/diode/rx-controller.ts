@@ -380,10 +380,13 @@ function scheduleFrame(gen: number): void {
 function captureDiodeColor(video: HTMLVideoElement, vw: number, vh: number): void {
   const free: number[] = [];
   for (let i = 0; i < busy.length; i++) if (!busy[i]) free.push(i);
-  if (!free.length) return;
+  if (!free.length) {
+    optTrace.noteColorPoolSkip(busy.length, lockedProfile("dx-color"));
+    return;
+  }
   const source = colorRect && colorMisses < 2 ? colorRect : { x: 0, y: 0, w: vw, h: vh };
   const img = readVideoRegion(grab, video, source);
-  const captured = captureColor(img, lockedProfile("dx-color"), free.length, "adaptive", colorPhase);
+  const captured = captureColor(img, lockedProfile("dx-color"), free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
   const gen = ++grabGen;
   if (!captured.found.length) {
@@ -496,6 +499,10 @@ function startWorkers(): void {
       noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
       const symbols = symbolsFromWorker(e.data);
       optTrace.noteDecoded(symbols.length);
+      if (grabMeta?.color) {
+        const jobMs = typeof startedAt === "number" && typeof doneAt === "number" ? doneAt - startedAt : null;
+        optTrace.noteColorDecoded(symbols.length, jobMs);
+      }
       for (const symbol of symbols) onDecoded(symbol);
     };
     worker.onerror = (event) => {

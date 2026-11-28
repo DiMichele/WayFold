@@ -184,6 +184,7 @@ export function locateComposites(raster: Raster): { found: LocatedComposite[]; m
 function locateBox(raster: Raster, box: Box): LocatedComposite | null {
   const ppm = borderPpm(raster, box);
   if (!(ppm >= 1)) return null;
+  if (!innerRimLight(raster, box, ppm)) return null;
   const span = Math.round(box.w / ppm);
   const qrSize = span - 2 * QR_MARGIN - 2 * FRAME;
   if (qrSize < 21 || (qrSize - 17) % 4 !== 0 || Math.abs(box.w - span * ppm) > ppm) return null;
@@ -361,6 +362,20 @@ function componentBoxes(raster: Raster): Box[] {
     }
   }
   return boxes;
+}
+
+/** The module inside the black ring is white, so a QR blob is not a second composite. */
+function innerRimLight(raster: Raster, box: Box, ppm: number): boolean {
+  const points = [
+    { x: box.x + ppm * 1.5, y: box.y + box.h / 2 },
+    { x: box.x + box.w - ppm * 1.5, y: box.y + box.h / 2 },
+    { x: box.x + box.w / 2, y: box.y + ppm * 1.5 },
+    { x: box.x + box.w / 2, y: box.y + box.h - ppm * 1.5 },
+  ];
+  return points.every((point) => {
+    const color = sample(raster, point.x, point.y);
+    return (color.r + color.g + color.b) / 3 > 170;
+  });
 }
 
 function borderPpm(raster: Raster, box: Box): number {

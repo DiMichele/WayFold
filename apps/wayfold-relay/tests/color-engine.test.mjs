@@ -5,6 +5,9 @@ import { distortColors, paintGrid, paintMatrices } from "../color/composite.ts";
 import { encodePayloads, recoverRaster, scheduleRecovered } from "../color/engine.ts";
 import { bindProfile, compareProfiles, parseProfile, windowCapacityBitrate } from "../color/profile.ts";
 import { scheduleSymbols } from "../color/schedule.ts";
+import { videoBatchKind } from "../color/video-plan.ts";
+import { optTrace } from "../shared/opt-trace.ts";
+import { hudLines } from "../shared/opt-ui.ts";
 
 function bytes(n, seed) {
   const out = new Uint8Array(n);
@@ -93,6 +96,32 @@ test("whitening red modules hurts red more than blue", () => {
   assert.ok(ber[1] < 0.02);
 });
 
+test("a tight frame budget splits one composite and rotates the next frame", async () => {
+  const palette = (await import("../color/palette.ts")).PALETTE_RB;
+  const cells = [];
+  for (let i = 0; i < 4; i++) cells.push(alignMatrices([bytes(40, 50 + i), bytes(40, 60 + i)], "L").matrices);
+  const grid = paintGrid(cells, palette, 2, 2);
+  const first = recoverRaster(grid, "color2", "hybrid", "module", "rb", cells, { budgetMs: 0, phase: 0 });
+  const later = recoverRaster(grid, "color2", "hybrid", "module", "rb", cells, { budgetMs: 0, phase: 1 });
+  assert.equal(first.found.length, 1);
+  assert.equal(first.unsplit, 3);
+  assert.equal(later.found.length, 1);
+  assert.notEqual(first.found[0].index, later.found[0].index);
+  assert.ok(first.found[0].split.ber.every((v) => v === 0));
+});
+
+test("a dense grid does not invent composites from the QR interior", async () => {
+  const palette = (await import("../color/palette.ts")).PALETTE_RB;
+  const cells = [];
+  for (let i = 0; i < 4; i++) {
+    cells.push(alignMatrices([bytes(48, 20 + i), bytes(48, 30 + i)], "H").matrices);
+  }
+  const grid = paintGrid(cells, palette, 2, 2);
+  const recovered = recoverRaster(grid, "color2", "hybrid", "module", "rb", cells);
+  assert.equal(recovered.found.length, 4);
+  assert.ok(recovered.found.every((cell) => cell.split.ber.every((v) => v === 0)));
+});
+
 test("a 2 by 2 grid locates four composites", async () => {
   const cells = [0, 1, 2, 3].map((seed) => {
     const encoded = encodePayloads([bytes(24, seed + 1), bytes(24, seed + 9)], "L", "color2", "rb", 3);
@@ -154,4 +183,92 @@ test("scheduleRecovered drops blank channels", () => {
   const plan = scheduleRecovered(recovered.found, 2, "adaptive");
   assert.equal(plan.dropped, 0);
   assert.equal(plan.batches.flat().length, 2);
+});
+
+function rgb12() {
+  const items = [];
+  for (let composite = 0; composite < 4; composite++) {
+    for (let channel = 0; channel < 3; channel++) items.push({ composite, channel, payload: composite * 3 + channel });
+  }
+  return items;
+}
+
+test("RGB 3 x 4 does not stop at the free worker count when the budget allows it", () => {
+  const items = rgb12();
+  const channel = scheduleSymbols(items, 2, "channel");
+  assert.equal(channel.candidates, 12);
+  assert.equal(channel.scheduled, 2);
+  assert.equal(channel.dropped, 10);
+  assert.deepEqual(channel.perJob, [1, 1]);
+
+  const oneComposite = scheduleSymbols(items, 2, "cell");
+  assert.equal(oneComposite.scheduled, 6);
+  assert.deepEqual(oneComposite.perJob, [3, 3]);
+  assert.equal(oneComposite.dropped, 6);
+
+  const packed = scheduleSymbols(items, 2, "adaptive");
+  assert.equal(packed.scheduled, 12);
+  assert.equal(packed.dropped, 0);
+  assert.deepEqual(packed.perJob, [6, 6]);
+
+  const budget = scheduleSymbols(items, 2, "budget", 0, { symbolMs: 8, budgetMs: 33 });
+  assert.equal(budget.scheduled, 8);
+  assert.equal(budget.dropped, 4);
+  assert.ok(budget.slowest * 8 <= 33);
+  const seen = new Set(budget.batches.flat().map((item) => item.channel));
+  assert.deepEqual([...seen].sort(), [0, 1, 2]);
+
+  const wide = scheduleSymbols(items, 4, "budget", 0, { symbolMs: 8, budgetMs: 33 });
+  assert.equal(wide.scheduled, 12);
+  assert.equal(wide.dropped, 0);
+  assert.equal(wide.slowest, 3);
+
+  const again = scheduleSymbols(items, 2, "budget", budget.nextPhase, { symbolMs: 8, budgetMs: 33 });
+  assert.equal(again.candidates, 12);
+  assert.notDeepEqual(
+    budget.batches[0].map((item) => item.channel),
+    again.batches[0].map((item) => item.channel),
+  );
+});
+
+test("mono video repeats one symbol and color video uses distinct seqs", () => {
+  assert.equal(videoBatchKind(1), "repeat-still");
+  assert.equal(videoBatchKind(2), "distinct-seqs");
+  assert.equal(videoBatchKind(3), "distinct-seqs");
+});
+
+test("the perf HUD and JSON expose the color schedule", () => {
+  optTrace.reset();
+  optTrace.noteColor({
+    profile: "rgb3",
+    grid: 4,
+    channels: 3,
+    candidates: 12,
+    scheduled: 8,
+    dropped: 4,
+    perJob: [4, 4],
+    workersFree: 2,
+    workers: 2,
+    saturated: true,
+    limit: "budget",
+    locateMs: 1.2,
+    calMs: 0.4,
+    splitMs: 3.5,
+    residual: 0.2,
+    condition: 12,
+    quality: "ok",
+  });
+  optTrace.noteColorDecoded(4, 20);
+  const snap = optTrace.snapshot();
+  assert.equal(snap.color.scheduled, 8);
+  assert.equal(snap.color.decoded, 4);
+  assert.equal(snap.color.decodeMs, 20);
+  const text = hudLines(snap).join("\n");
+  assert.match(text, /rgb3/);
+  assert.match(text, /sched 8/);
+  assert.match(text, /scartati 4/);
+  assert.match(text, /saturazione budget/);
+  assert.match(JSON.stringify(snap), /"scheduled":8/);
+  optTrace.reset();
+  assert.equal(optTrace.snapshot().color, null);
 });

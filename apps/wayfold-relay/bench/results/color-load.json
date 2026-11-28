@@ -1,0 +1,6433 @@
+{
+  "measuredAt": "2026-11-28T07:20:13.684Z",
+  "host": "12th Gen Intel(R) Core(TM) i7-12650H / node v24.14.1",
+  "kind": "synthetic",
+  "camera": false,
+  "rows": [
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 8100,
+      "ppm": 2.432,
+      "qrModules": 29,
+      "paintMs": 1.07,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 140520,
+      "modelGoodputBps": 480,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 8100,
+      "ppm": 2,
+      "qrModules": 29,
+      "paintMs": 1.27,
+      "locateMs": 3.15,
+      "calMs": 0.45,
+      "splitMs": 2.4,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 5288,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 8100,
+      "ppm": 2,
+      "qrModules": 29,
+      "paintMs": 1.44,
+      "locateMs": 2.36,
+      "calMs": 0.07,
+      "splitMs": 0.9,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -140456,
+      "modelGoodputBps": 1440,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 16560,
+      "ppm": 2.421,
+      "qrModules": 29,
+      "paintMs": 0.66,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 7728,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 16560,
+      "ppm": 1.957,
+      "qrModules": 29,
+      "paintMs": 1.13,
+      "locateMs": 1.43,
+      "calMs": 0.06,
+      "splitMs": 1.81,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -533312,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 16560,
+      "ppm": 1.957,
+      "qrModules": 29,
+      "paintMs": 1.5,
+      "locateMs": 1.06,
+      "calMs": 0.05,
+      "splitMs": 0.98,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -396280,
+      "modelGoodputBps": 2880,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 33856,
+      "ppm": 2.421,
+      "qrModules": 29,
+      "paintMs": 1.45,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 9664,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 33856,
+      "ppm": 1.957,
+      "qrModules": 29,
+      "paintMs": 1.71,
+      "locateMs": 2.11,
+      "calMs": 0.07,
+      "splitMs": 2.09,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 789712,
+      "modelGoodputBps": 3840,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 33856,
+      "ppm": 1.957,
+      "qrModules": 29,
+      "paintMs": 4.67,
+      "locateMs": 0.55,
+      "calMs": 0.09,
+      "splitMs": 2.13,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 152232,
+      "modelGoodputBps": 5760,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 9604,
+      "ppm": 2.39,
+      "qrModules": 33,
+      "paintMs": 0.99,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 480,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 9604,
+      "ppm": 2,
+      "qrModules": 33,
+      "paintMs": 0.51,
+      "locateMs": 0.18,
+      "calMs": 0.02,
+      "splitMs": 0.65,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -116824,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 9604,
+      "ppm": 2,
+      "qrModules": 33,
+      "paintMs": 0.64,
+      "locateMs": 0.25,
+      "calMs": 0.03,
+      "splitMs": 0.47,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -47904,
+      "modelGoodputBps": 1440,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 19600,
+      "ppm": 2.381,
+      "qrModules": 33,
+      "paintMs": 0.72,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 616,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 19600,
+      "ppm": 1.961,
+      "qrModules": 33,
+      "paintMs": 1.18,
+      "locateMs": 0.47,
+      "calMs": 0.05,
+      "splitMs": 1.29,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -349120,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 19600,
+      "ppm": 1.961,
+      "qrModules": 33,
+      "paintMs": 1.53,
+      "locateMs": 0.33,
+      "calMs": 0.05,
+      "splitMs": 1.14,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -130096,
+      "modelGoodputBps": 2880,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 40000,
+      "ppm": 2.381,
+      "qrModules": 33,
+      "paintMs": 1.36,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 40000,
+      "ppm": 1.961,
+      "qrModules": 33,
+      "paintMs": 2.04,
+      "locateMs": 0.83,
+      "calMs": 0.08,
+      "splitMs": 3.37,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -1094512,
+      "modelGoodputBps": 3840,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 40000,
+      "ppm": 1.961,
+      "qrModules": 33,
+      "paintMs": 2.92,
+      "locateMs": 0.63,
+      "calMs": 0.08,
+      "splitMs": 2.22,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 1171592,
+      "modelGoodputBps": 5760,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 11236,
+      "ppm": 2.356,
+      "qrModules": 37,
+      "paintMs": 0.35,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 480,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 11236,
+      "ppm": 2,
+      "qrModules": 37,
+      "paintMs": 0.63,
+      "locateMs": 0.29,
+      "calMs": 0.29,
+      "splitMs": 0.59,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 181512,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 11236,
+      "ppm": 2,
+      "qrModules": 37,
+      "paintMs": 1.12,
+      "locateMs": 0.2,
+      "calMs": 0.02,
+      "splitMs": 0.66,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 240984,
+      "modelGoodputBps": 1440,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 22896,
+      "ppm": 2.348,
+      "qrModules": 37,
+      "paintMs": 0.9,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 22896,
+      "ppm": 1.964,
+      "qrModules": 37,
+      "paintMs": 1.32,
+      "locateMs": 0.58,
+      "calMs": 0.04,
+      "splitMs": 1.18,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 17368,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 22896,
+      "ppm": 1.964,
+      "qrModules": 37,
+      "paintMs": 1.55,
+      "locateMs": 0.47,
+      "calMs": 0.04,
+      "splitMs": 1.29,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 149680,
+      "modelGoodputBps": 2880,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 46656,
+      "ppm": 2.348,
+      "qrModules": 37,
+      "paintMs": 1.65,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": -120192,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 46656,
+      "ppm": 1.964,
+      "qrModules": 37,
+      "paintMs": 3.02,
+      "locateMs": 0.95,
+      "calMs": 0.08,
+      "splitMs": 2.83,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 14184,
+      "modelGoodputBps": 3840,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 46656,
+      "ppm": 1.964,
+      "qrModules": 37,
+      "paintMs": 3.46,
+      "locateMs": 0.93,
+      "calMs": 0.13,
+      "splitMs": 3.04,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 272176,
+      "modelGoodputBps": 5760,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 12996,
+      "ppm": 2.327,
+      "qrModules": 41,
+      "paintMs": 0.45,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 632,
+      "modelGoodputBps": 480,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 12996,
+      "ppm": 2,
+      "qrModules": 41,
+      "paintMs": 1.68,
+      "locateMs": 0.47,
+      "calMs": 0.03,
+      "splitMs": 1.29,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -1606040,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 12996,
+      "ppm": 2,
+      "qrModules": 41,
+      "paintMs": 1.38,
+      "locateMs": 0.31,
+      "calMs": 0.02,
+      "splitMs": 1.24,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -1522448,
+      "modelGoodputBps": 1440,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 26448,
+      "ppm": 2.32,
+      "qrModules": 41,
+      "paintMs": 0.88,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 960,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 26448,
+      "ppm": 1.966,
+      "qrModules": 41,
+      "paintMs": 1.43,
+      "locateMs": 0.52,
+      "calMs": 0.03,
+      "splitMs": 1.73,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 938056,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 26448,
+      "ppm": 1.966,
+      "qrModules": 41,
+      "paintMs": 2.23,
+      "locateMs": 0.52,
+      "calMs": 0.04,
+      "splitMs": 2.09,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 1084728,
+      "modelGoodputBps": 2880,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 53824,
+      "ppm": 2.32,
+      "qrModules": 41,
+      "paintMs": 1.79,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 1920,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 53824,
+      "ppm": 1.966,
+      "qrModules": 41,
+      "paintMs": 3.08,
+      "locateMs": 0.91,
+      "calMs": 0.04,
+      "splitMs": 3.24,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 1852560,
+      "modelGoodputBps": 3840,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 48,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 53824,
+      "ppm": 1.966,
+      "qrModules": 41,
+      "paintMs": 4.76,
+      "locateMs": 1,
+      "calMs": 0.06,
+      "splitMs": 3.45,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -2043144,
+      "modelGoodputBps": 5760,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 28900,
+      "ppm": 2.208,
+      "qrModules": 69,
+      "paintMs": 1.67,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 2024,
+      "modelGoodputBps": 4000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 28900,
+      "ppm": 2,
+      "qrModules": 69,
+      "paintMs": 2.89,
+      "locateMs": 0.6,
+      "calMs": 0.02,
+      "splitMs": 2.52,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -1218848,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 28900,
+      "ppm": 2,
+      "qrModules": 69,
+      "paintMs": 3.5,
+      "locateMs": 0.81,
+      "calMs": 0.03,
+      "splitMs": 2.39,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -924000,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 58480,
+      "ppm": 2.205,
+      "qrModules": 69,
+      "paintMs": 2.96,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 58480,
+      "ppm": 1.977,
+      "qrModules": 69,
+      "paintMs": 5.51,
+      "locateMs": 1.61,
+      "calMs": 0.04,
+      "splitMs": 5.63,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 1779720,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 58480,
+      "ppm": 1.977,
+      "qrModules": 69,
+      "paintMs": 6.83,
+      "locateMs": 1.17,
+      "calMs": 0.03,
+      "splitMs": 4.72,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -1929448,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 118336,
+      "ppm": 2.205,
+      "qrModules": 69,
+      "paintMs": 6.18,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 118336,
+      "ppm": 1.977,
+      "qrModules": 69,
+      "paintMs": 9.88,
+      "locateMs": 2.62,
+      "calMs": 0.06,
+      "splitMs": 8.59,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -767368,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 118336,
+      "ppm": 1.977,
+      "qrModules": 69,
+      "paintMs": 14.09,
+      "locateMs": 2.18,
+      "calMs": 0.09,
+      "splitMs": 13.84,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 2915568,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 34596,
+      "ppm": 2.188,
+      "qrModules": 77,
+      "paintMs": 1.73,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 4000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 34596,
+      "ppm": 2,
+      "qrModules": 77,
+      "paintMs": 2.56,
+      "locateMs": 1.06,
+      "calMs": 0.02,
+      "splitMs": 2.99,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -3698632,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 34596,
+      "ppm": 2,
+      "qrModules": 77,
+      "paintMs": 3.2,
+      "locateMs": 0.82,
+      "calMs": 0.02,
+      "splitMs": 3.68,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 871128,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 69936,
+      "ppm": 2.186,
+      "qrModules": 77,
+      "paintMs": 2.5,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 69936,
+      "ppm": 1.979,
+      "qrModules": 77,
+      "paintMs": 6.02,
+      "locateMs": 2.32,
+      "calMs": 0.05,
+      "splitMs": 6.1,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 1072224,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 69936,
+      "ppm": 1.979,
+      "qrModules": 77,
+      "paintMs": 8.19,
+      "locateMs": 1.61,
+      "calMs": 0.04,
+      "splitMs": 6.41,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -2605072,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 141376,
+      "ppm": 2.186,
+      "qrModules": 77,
+      "paintMs": 4.99,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 141376,
+      "ppm": 1.979,
+      "qrModules": 77,
+      "paintMs": 9.95,
+      "locateMs": 3.39,
+      "calMs": 0.11,
+      "splitMs": 19.98,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -230448,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 141376,
+      "ppm": 1.979,
+      "qrModules": 77,
+      "paintMs": 14.38,
+      "locateMs": 3.2,
+      "calMs": 0.08,
+      "splitMs": 11.33,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 3026496,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 47524,
+      "ppm": 2.158,
+      "qrModules": 93,
+      "paintMs": 1.83,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 4000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 47524,
+      "ppm": 2,
+      "qrModules": 93,
+      "paintMs": 3.66,
+      "locateMs": 1.11,
+      "calMs": 0.01,
+      "splitMs": 5.01,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 4523904,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 47524,
+      "ppm": 2,
+      "qrModules": 93,
+      "paintMs": 4.92,
+      "locateMs": 1.16,
+      "calMs": 0.12,
+      "splitMs": 4.4,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -3494664,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 95920,
+      "ppm": 2.157,
+      "qrModules": 93,
+      "paintMs": 3.1,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 95920,
+      "ppm": 1.982,
+      "qrModules": 93,
+      "paintMs": 6.98,
+      "locateMs": 2.28,
+      "calMs": 0.09,
+      "splitMs": 8.01,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 617760,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 95920,
+      "ppm": 1.982,
+      "qrModules": 93,
+      "paintMs": 10.24,
+      "locateMs": 2,
+      "calMs": 0.08,
+      "splitMs": 10.66,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -1591024,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 193600,
+      "ppm": 2.157,
+      "qrModules": 93,
+      "paintMs": 6.43,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 193600,
+      "ppm": 1.982,
+      "qrModules": 93,
+      "paintMs": 12.33,
+      "locateMs": 4.1,
+      "calMs": 0.1,
+      "splitMs": 17.58,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 1127176,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 193600,
+      "ppm": 1.982,
+      "qrModules": 93,
+      "paintMs": 18.23,
+      "locateMs": 4.12,
+      "calMs": 0.14,
+      "splitMs": 19.12,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -52992,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 54756,
+      "ppm": 2.147,
+      "qrModules": 101,
+      "paintMs": 1.96,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 4000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 54756,
+      "ppm": 2,
+      "qrModules": 101,
+      "paintMs": 3.83,
+      "locateMs": 1.19,
+      "calMs": 0.02,
+      "splitMs": 4.66,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -1671864,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 54756,
+      "ppm": 2,
+      "qrModules": 101,
+      "paintMs": 5.37,
+      "locateMs": 1.29,
+      "calMs": 0.03,
+      "splitMs": 4.84,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -1008264,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 110448,
+      "ppm": 2.145,
+      "qrModules": 101,
+      "paintMs": 3.73,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 110448,
+      "ppm": 1.983,
+      "qrModules": 101,
+      "paintMs": 7.75,
+      "locateMs": 2.64,
+      "calMs": 0.06,
+      "splitMs": 8.9,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -3229696,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 110448,
+      "ppm": 1.983,
+      "qrModules": 101,
+      "paintMs": 10.08,
+      "locateMs": 2.39,
+      "calMs": 0.07,
+      "splitMs": 9.85,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -2063472,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 222784,
+      "ppm": 2.145,
+      "qrModules": 101,
+      "paintMs": 8.19,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 222784,
+      "ppm": 1.983,
+      "qrModules": 101,
+      "paintMs": 16.53,
+      "locateMs": 5.01,
+      "calMs": 0.11,
+      "splitMs": 19.93,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 2238168,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 222784,
+      "ppm": 1.983,
+      "qrModules": 101,
+      "paintMs": 20.42,
+      "locateMs": 5.09,
+      "calMs": 0.13,
+      "splitMs": 19.9,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -3973872,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 51076,
+      "ppm": 2.152,
+      "qrModules": 97,
+      "paintMs": 2.33,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 51076,
+      "ppm": 2,
+      "qrModules": 97,
+      "paintMs": 5.19,
+      "locateMs": 1.13,
+      "calMs": 0.02,
+      "splitMs": 4.33,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -2856872,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 51076,
+      "ppm": 2,
+      "qrModules": 97,
+      "paintMs": 6.85,
+      "locateMs": 2.28,
+      "calMs": 0.03,
+      "splitMs": 4.48,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -2327248,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 103056,
+      "ppm": 2.151,
+      "qrModules": 97,
+      "paintMs": 4.64,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 103056,
+      "ppm": 1.983,
+      "qrModules": 97,
+      "paintMs": 8.98,
+      "locateMs": 2.21,
+      "calMs": 0.05,
+      "splitMs": 8.79,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 2814928,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 103056,
+      "ppm": 1.983,
+      "qrModules": 97,
+      "paintMs": 14.12,
+      "locateMs": 2.19,
+      "calMs": 0.05,
+      "splitMs": 9.05,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -4633888,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 207936,
+      "ppm": 2.151,
+      "qrModules": 97,
+      "paintMs": 9.3,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 207936,
+      "ppm": 1.983,
+      "qrModules": 97,
+      "paintMs": 18.63,
+      "locateMs": 5.58,
+      "calMs": 0.11,
+      "splitMs": 17.5,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -2569976,
+      "modelGoodputBps": 64000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "L",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 207936,
+      "ppm": 1.983,
+      "qrModules": 97,
+      "paintMs": 28.04,
+      "locateMs": 4.22,
+      "calMs": 0.13,
+      "splitMs": 17.93,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -1045904,
+      "modelGoodputBps": 96000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 62500,
+      "ppm": 2.137,
+      "qrModules": 109,
+      "paintMs": 2.61,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 62500,
+      "ppm": 2,
+      "qrModules": 109,
+      "paintMs": 5.01,
+      "locateMs": 1.5,
+      "calMs": 0.02,
+      "splitMs": 5.94,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -7570856,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 62500,
+      "ppm": 2,
+      "qrModules": 109,
+      "paintMs": 6.88,
+      "locateMs": 1.65,
+      "calMs": 0.02,
+      "splitMs": 6.35,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 1688608,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 126000,
+      "ppm": 2.136,
+      "qrModules": 109,
+      "paintMs": 5.05,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 126000,
+      "ppm": 1.984,
+      "qrModules": 109,
+      "paintMs": 9.95,
+      "locateMs": 3.35,
+      "calMs": 0.05,
+      "splitMs": 10.61,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 1631320,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 126000,
+      "ppm": 1.984,
+      "qrModules": 109,
+      "paintMs": 14.33,
+      "locateMs": 3.05,
+      "calMs": 0.07,
+      "splitMs": 11.64,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -5762912,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 254016,
+      "ppm": 2.136,
+      "qrModules": 109,
+      "paintMs": 10.97,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 254016,
+      "ppm": 1.984,
+      "qrModules": 109,
+      "paintMs": 19.96,
+      "locateMs": 6.71,
+      "calMs": 0.26,
+      "splitMs": 22.07,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 3559040,
+      "modelGoodputBps": 64000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 254016,
+      "ppm": 1.984,
+      "qrModules": 109,
+      "paintMs": 31.33,
+      "locateMs": 7.26,
+      "calMs": 0.15,
+      "splitMs": 22.67,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 5163952,
+      "modelGoodputBps": 96000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 79524,
+      "ppm": 2.12,
+      "qrModules": 125,
+      "paintMs": 3.25,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 79524,
+      "ppm": 2,
+      "qrModules": 125,
+      "paintMs": 6.71,
+      "locateMs": 1.76,
+      "calMs": 0.02,
+      "splitMs": 7.57,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 5976408,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 79524,
+      "ppm": 2,
+      "qrModules": 125,
+      "paintMs": 9.46,
+      "locateMs": 1.81,
+      "calMs": 0.03,
+      "splitMs": 7.27,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 7011632,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 160176,
+      "ppm": 2.119,
+      "qrModules": 125,
+      "paintMs": 7.41,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 160176,
+      "ppm": 1.986,
+      "qrModules": 125,
+      "paintMs": 11.85,
+      "locateMs": 3.81,
+      "calMs": 0.06,
+      "splitMs": 13.75,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -5631936,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 160176,
+      "ppm": 1.986,
+      "qrModules": 125,
+      "paintMs": 18.26,
+      "locateMs": 3.74,
+      "calMs": 0.06,
+      "splitMs": 15.12,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -4208280,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 322624,
+      "ppm": 2.119,
+      "qrModules": 125,
+      "paintMs": 13.24,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 322624,
+      "ppm": 1.986,
+      "qrModules": 125,
+      "paintMs": 24.74,
+      "locateMs": 7.56,
+      "calMs": 0.11,
+      "splitMs": 27.24,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -8603344,
+      "modelGoodputBps": 64000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "Q",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 322624,
+      "ppm": 1.986,
+      "qrModules": 125,
+      "paintMs": 35.59,
+      "locateMs": 7.81,
+      "calMs": 0.14,
+      "splitMs": 31.59,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -7179136,
+      "modelGoodputBps": 96000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2.105,
+      "qrModules": 145,
+      "paintMs": 5.78,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 8000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2,
+      "qrModules": 145,
+      "paintMs": 8.02,
+      "locateMs": 2.3,
+      "calMs": 0.02,
+      "splitMs": 10.61,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -5216584,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2,
+      "qrModules": 145,
+      "paintMs": 12.4,
+      "locateMs": 2.33,
+      "calMs": 0.04,
+      "splitMs": 9.83,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 15483208,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 208656,
+      "ppm": 2.104,
+      "qrModules": 145,
+      "paintMs": 9.22,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 2,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 560,
+      "modelGoodputBps": 16000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 208656,
+      "ppm": 1.988,
+      "qrModules": 145,
+      "paintMs": 17.07,
+      "locateMs": 5.98,
+      "calMs": 0.05,
+      "splitMs": 21.67,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -7778144,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 2,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 208656,
+      "ppm": 1.988,
+      "qrModules": 145,
+      "paintMs": 25.17,
+      "locateMs": 5.62,
+      "calMs": 0.06,
+      "splitMs": 20.77,
+      "found": 2,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -5807520,
+      "modelGoodputBps": 48000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 419904,
+      "ppm": 2.104,
+      "qrModules": 145,
+      "paintMs": 18.23,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 576,
+      "modelGoodputBps": 32000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 419904,
+      "ppm": 1.988,
+      "qrModules": 145,
+      "paintMs": 35.73,
+      "locateMs": 10.21,
+      "calMs": 0.13,
+      "splitMs": 39.17,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 5496736,
+      "modelGoodputBps": 64000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 800,
+      "ecc": "H",
+      "grid": 4,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 419904,
+      "ppm": 1.988,
+      "qrModules": 145,
+      "paintMs": 51.44,
+      "locateMs": 9.46,
+      "calMs": 0.17,
+      "splitMs": 41.03,
+      "found": 4,
+      "ber": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 8944232,
+      "modelGoodputBps": 96000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 70756,
+      "ppm": 2.128,
+      "qrModules": 117,
+      "paintMs": 4.39,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 70756,
+      "ppm": 2,
+      "qrModules": 117,
+      "paintMs": 6.64,
+      "locateMs": 1.58,
+      "calMs": 0.02,
+      "splitMs": 6.37,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 3679808,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 70756,
+      "ppm": 2,
+      "qrModules": 117,
+      "paintMs": 9.56,
+      "locateMs": 1.45,
+      "calMs": 0.02,
+      "splitMs": 7.24,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 4461040,
+      "modelGoodputBps": 36000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 88804,
+      "ppm": 2.113,
+      "qrModules": 133,
+      "paintMs": 3.58,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 88804,
+      "ppm": 2,
+      "qrModules": 133,
+      "paintMs": 7.08,
+      "locateMs": 2.69,
+      "calMs": 0.02,
+      "splitMs": 7.79,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -9926648,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 88804,
+      "ppm": 2,
+      "qrModules": 133,
+      "paintMs": 11.71,
+      "locateMs": 1.95,
+      "calMs": 0.02,
+      "splitMs": 8.45,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 10217832,
+      "modelGoodputBps": 36000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 114244,
+      "ppm": 2.099,
+      "qrModules": 153,
+      "paintMs": 5.24,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 114244,
+      "ppm": 2,
+      "qrModules": 153,
+      "paintMs": 10.02,
+      "locateMs": 3.39,
+      "calMs": 0.03,
+      "splitMs": 11.04,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": -540272,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "Q",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 114244,
+      "ppm": 2,
+      "qrModules": 153,
+      "paintMs": 13.96,
+      "locateMs": 2.6,
+      "calMs": 0.02,
+      "splitMs": 11.78,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 1786704,
+      "modelGoodputBps": 36000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 142884,
+      "ppm": 2.088,
+      "qrModules": 173,
+      "paintMs": 6.29,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 12000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 142884,
+      "ppm": 2,
+      "qrModules": 173,
+      "paintMs": 11.89,
+      "locateMs": 3.48,
+      "calMs": 0.02,
+      "splitMs": 14.95,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 10400632,
+      "modelGoodputBps": 24000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1200,
+      "ecc": "H",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 142884,
+      "ppm": 2,
+      "qrModules": 173,
+      "paintMs": 17.59,
+      "locateMs": 3.9,
+      "calMs": 0.02,
+      "splitMs": 13.93,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -7836208,
+      "modelGoodputBps": 36000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2.105,
+      "qrModules": 145,
+      "paintMs": 6.55,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 18500,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2,
+      "qrModules": 145,
+      "paintMs": 13.04,
+      "locateMs": 2.48,
+      "calMs": 0.02,
+      "splitMs": 9.59,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 14076400,
+      "modelGoodputBps": 37000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 103684,
+      "ppm": 2,
+      "qrModules": 145,
+      "paintMs": 25.69,
+      "locateMs": 3.96,
+      "calMs": 0.02,
+      "splitMs": 12.5,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -4759048,
+      "modelGoodputBps": 55500,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2.095,
+      "qrModules": 161,
+      "paintMs": 5.82,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 18500,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2,
+      "qrModules": 161,
+      "paintMs": 11.73,
+      "locateMs": 3.45,
+      "calMs": 0.03,
+      "splitMs": 12.56,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 2450280,
+      "modelGoodputBps": 37000,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2,
+      "qrModules": 161,
+      "paintMs": 17.01,
+      "locateMs": 4.25,
+      "calMs": 0.02,
+      "splitMs": 12.12,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -14582640,
+      "modelGoodputBps": 55500,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2.095,
+      "qrModules": 161,
+      "paintMs": 6.91,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 23310,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2,
+      "qrModules": 161,
+      "paintMs": 13.93,
+      "locateMs": 3.24,
+      "calMs": 0.02,
+      "splitMs": 12.54,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 4545968,
+      "modelGoodputBps": 46620,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "L",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 125316,
+      "ppm": 2,
+      "qrModules": 161,
+      "paintMs": 20.89,
+      "locateMs": 3.02,
+      "calMs": 0.02,
+      "splitMs": 13.67,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": 4294512,
+      "modelGoodputBps": 69930,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clean",
+      "surface": 148996,
+      "ppm": 2.086,
+      "qrModules": 177,
+      "paintMs": 6.74,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "residual": null,
+      "condition": null,
+      "integrity": "modules",
+      "heapDelta": 552,
+      "modelGoodputBps": 23310,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clean",
+      "surface": 148996,
+      "ppm": 2,
+      "qrModules": 177,
+      "paintMs": 31.39,
+      "locateMs": 6.34,
+      "calMs": 0.03,
+      "splitMs": 29.21,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "residual": 9.658940314238862e-14,
+      "condition": 247428.78787878784,
+      "integrity": "modules",
+      "heapDelta": 12965296,
+      "modelGoodputBps": 46620,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clean",
+      "surface": 148996,
+      "ppm": 2,
+      "qrModules": 177,
+      "paintMs": 45.29,
+      "locateMs": 7.43,
+      "calMs": 0.03,
+      "splitMs": 24.25,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "residual": 3.3084646133829665e-14,
+      "condition": 180817.19528142965,
+      "integrity": "modules",
+      "heapDelta": -6467480,
+      "modelGoodputBps": 69930,
+      "note": "synthetic, assumed 10 composites per second, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "crosstalk",
+      "paintMs": 11.5,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "gamma",
+      "paintMs": 15.29,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "saturation",
+      "paintMs": 12.62,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clip",
+      "paintMs": 11.37,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "yuv420",
+      "paintMs": 17.41,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "blur",
+      "paintMs": 29.61,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.08262975778546713
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "noise",
+      "paintMs": 13.44,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 4000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "perspective",
+      "paintMs": 17.91,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.28096885813148786
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "rolling",
+      "paintMs": 15.21,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.23930795847750866
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "crosstalk",
+      "paintMs": 19.31,
+      "locateMs": 4.91,
+      "calMs": 0.02,
+      "splitMs": 6.81,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "gamma",
+      "paintMs": 20.05,
+      "locateMs": 1.67,
+      "calMs": 0.02,
+      "splitMs": 5.72,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "saturation",
+      "paintMs": 18.66,
+      "locateMs": 4.95,
+      "calMs": 0.02,
+      "splitMs": 6.49,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clip",
+      "paintMs": 17.57,
+      "locateMs": 5.17,
+      "calMs": 0.02,
+      "splitMs": 5.23,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "yuv420",
+      "paintMs": 21.55,
+      "locateMs": 1.42,
+      "calMs": 0.03,
+      "splitMs": 6.17,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "blur",
+      "paintMs": 11.21,
+      "locateMs": 2.16,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "noise",
+      "paintMs": 14.11,
+      "locateMs": 1.9,
+      "calMs": 0.03,
+      "splitMs": 5.49,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 8000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "perspective",
+      "paintMs": 4.09,
+      "locateMs": 0.93,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "rolling",
+      "paintMs": 4.51,
+      "locateMs": 1.23,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "crosstalk",
+      "paintMs": 10.63,
+      "locateMs": 0.87,
+      "calMs": 0.02,
+      "splitMs": 4.02,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "gamma",
+      "paintMs": 20.91,
+      "locateMs": 1.05,
+      "calMs": 0.03,
+      "splitMs": 4.22,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "saturation",
+      "paintMs": 18.43,
+      "locateMs": 1.25,
+      "calMs": 0.03,
+      "splitMs": 5.7,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clip",
+      "paintMs": 13.37,
+      "locateMs": 1.3,
+      "calMs": 0.03,
+      "splitMs": 3.32,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "yuv420",
+      "paintMs": 19.03,
+      "locateMs": 1.39,
+      "calMs": 0.03,
+      "splitMs": 6.28,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "blur",
+      "paintMs": 9.97,
+      "locateMs": 0.82,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "noise",
+      "paintMs": 13.53,
+      "locateMs": 1.69,
+      "calMs": 0.03,
+      "splitMs": 5.7,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 12000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "perspective",
+      "paintMs": 10.44,
+      "locateMs": 1.59,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "rolling",
+      "paintMs": 7.78,
+      "locateMs": 1.29,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "crosstalk",
+      "paintMs": 38.42,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "gamma",
+      "paintMs": 37.62,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "saturation",
+      "paintMs": 42.76,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "clip",
+      "paintMs": 32.73,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "yuv420",
+      "paintMs": 41.91,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "blur",
+      "paintMs": 44.95,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.10076677987465425
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "noise",
+      "paintMs": 37.14,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0
+      ],
+      "success": [
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 18500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "perspective",
+      "paintMs": 43.98,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.38678617695458845
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "mono",
+      "degrade": "rolling",
+      "paintMs": 43.41,
+      "locateMs": null,
+      "calMs": null,
+      "splitMs": null,
+      "found": 1,
+      "ber": [
+        0.3606666433248136
+      ],
+      "success": [
+        0
+      ],
+      "integrity": "mismatch",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "crosstalk",
+      "paintMs": 58.58,
+      "locateMs": 5.21,
+      "calMs": 0.03,
+      "splitMs": 24.92,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "gamma",
+      "paintMs": 63.32,
+      "locateMs": 5.63,
+      "calMs": 0.03,
+      "splitMs": 23.02,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "saturation",
+      "paintMs": 57.63,
+      "locateMs": 5.38,
+      "calMs": 0.03,
+      "splitMs": 22.32,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "clip",
+      "paintMs": 62,
+      "locateMs": 5.39,
+      "calMs": 0.05,
+      "splitMs": 24.78,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "yuv420",
+      "paintMs": 57.7,
+      "locateMs": 5.47,
+      "calMs": 0.05,
+      "splitMs": 17.89,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "blur",
+      "paintMs": 46.71,
+      "locateMs": 6.74,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "noise",
+      "paintMs": 67.87,
+      "locateMs": 7.88,
+      "calMs": 0.04,
+      "splitMs": 29.94,
+      "found": 1,
+      "ber": [
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 37000,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "perspective",
+      "paintMs": 28.73,
+      "locateMs": 3.54,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "color2",
+      "degrade": "rolling",
+      "paintMs": 25.62,
+      "locateMs": 3.17,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "crosstalk",
+      "paintMs": 73.44,
+      "locateMs": 3.31,
+      "calMs": 0.02,
+      "splitMs": 23.09,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "gamma",
+      "paintMs": 75.6,
+      "locateMs": 6.9,
+      "calMs": 0.03,
+      "splitMs": 17.02,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "saturation",
+      "paintMs": 76.18,
+      "locateMs": 6.04,
+      "calMs": 0.04,
+      "splitMs": 26.33,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "clip",
+      "paintMs": 86.63,
+      "locateMs": 5.74,
+      "calMs": 0.03,
+      "splitMs": 35.33,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "yuv420",
+      "paintMs": 89.2,
+      "locateMs": 12.48,
+      "calMs": 0.07,
+      "splitMs": 32.65,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "blur",
+      "paintMs": 50.22,
+      "locateMs": 6.87,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "noise",
+      "paintMs": 70.61,
+      "locateMs": 5.34,
+      "calMs": 0.04,
+      "splitMs": 23.14,
+      "found": 1,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "success": [
+        1,
+        1,
+        1
+      ],
+      "integrity": "modules",
+      "modelGoodputBps": 55500,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "perspective",
+      "paintMs": 34.37,
+      "locateMs": 5.93,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "grid": 1,
+      "profile": "rgb3",
+      "degrade": "rolling",
+      "paintMs": 42.52,
+      "locateMs": 7.32,
+      "calMs": null,
+      "splitMs": null,
+      "found": 0,
+      "ber": [],
+      "success": [
+        0,
+        0,
+        0
+      ],
+      "integrity": "not-located",
+      "modelGoodputBps": 0,
+      "note": "synthetic degradation, not a camera"
+    }
+  ],
+  "skipped": [
+    {
+      "bytes": 1850,
+      "ecc": "Q",
+      "reason": "not a valid QR payload/ECC pair"
+    },
+    {
+      "bytes": 1850,
+      "ecc": "H",
+      "reason": "not a valid QR payload/ECC pair"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "Q",
+      "reason": "not a valid QR payload/ECC pair"
+    },
+    {
+      "bytes": 2331,
+      "ecc": "H",
+      "reason": "not a valid QR payload/ECC pair"
+    }
+  ],
+  "zxing": [
+    {
+      "profile": "color2",
+      "bytes": 48,
+      "decodeMs": 220.83,
+      "channels": 2,
+      "intact": true,
+      "warmup": true
+    },
+    {
+      "profile": "color2",
+      "bytes": 400,
+      "decodeMs": 11.91,
+      "channels": 2,
+      "intact": true,
+      "warmup": false
+    },
+    {
+      "profile": "rgb3",
+      "bytes": 48,
+      "decodeMs": 3.01,
+      "channels": 3,
+      "intact": true,
+      "warmup": false
+    },
+    {
+      "profile": "rgb3",
+      "bytes": 400,
+      "decodeMs": 8.96,
+      "channels": 3,
+      "intact": true,
+      "warmup": false
+    }
+  ],
+  "schedule": [
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 6,
+      "dropped": 6,
+      "perJob": [
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 6.02,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 6.02,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 2,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 5.96,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 2,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 5.96,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 2,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 6,
+      "dropped": 6,
+      "perJob": [
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 17.87,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 2,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 35.73,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 2,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 10,
+      "dropped": 2,
+      "perJob": [
+        5,
+        5
+      ],
+      "slowest": 5,
+      "wallMs": 29.77,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 4,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 5.96,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 4,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 5.96,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 4,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 17.87,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 4,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 17.87,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-color2",
+      "workers": 4,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 17.87,
+      "symbolMs": 5.96,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 6,
+      "dropped": 6,
+      "perJob": [
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 6.02,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 2,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 6.02,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 1,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-48-rgb3",
+      "workers": 4,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 3.01,
+      "symbolMs": 1,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 2,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 2.99,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 2,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 2,
+      "dropped": 10,
+      "perJob": [
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 2.99,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 2,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 6,
+      "dropped": 6,
+      "perJob": [
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 8.96,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 2,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 17.92,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 2,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        6,
+        6
+      ],
+      "slowest": 6,
+      "wallMs": 17.92,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 4,
+      "mode": "channel",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 2.99,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 4,
+      "mode": "composite",
+      "candidates": 12,
+      "scheduled": 4,
+      "dropped": 8,
+      "perJob": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "slowest": 1,
+      "wallMs": 2.99,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 4,
+      "mode": "cell",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 8.96,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 4,
+      "mode": "adaptive",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 8.96,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    },
+    {
+      "label": "zxing-400-rgb3",
+      "workers": 4,
+      "mode": "budget",
+      "candidates": 12,
+      "scheduled": 12,
+      "dropped": 0,
+      "perJob": [
+        3,
+        3,
+        3,
+        3
+      ],
+      "slowest": 3,
+      "wallMs": 8.96,
+      "symbolMs": 2.99,
+      "budgetMs": 33.33,
+      "keepsQueue": false
+    }
+  ],
+  "arq": [
+    {
+      "channels": 3,
+      "unitsSent": 24,
+      "repeats": 24,
+      "duplicates": 12,
+      "retransmits": 24,
+      "delivered": 15,
+      "deliveredBytes": 18000,
+      "seconds": 0.96,
+      "appGoodputBps": 18750,
+      "capacityBps": 36000,
+      "maxOutstanding": 12,
+      "meanOutstanding": 9.875,
+      "saturatedSteps": 16,
+      "saturation": "arq",
+      "opticalBer": null,
+      "workerLimit": null,
+      "withinCapacity": true,
+      "note": "ARQ window model. opticalBer and workerLimit are null here on purpose."
+    },
+    {
+      "channels": 3,
+      "unitsSent": 18,
+      "repeats": 32,
+      "duplicates": 19,
+      "retransmits": 32,
+      "delivered": 14,
+      "deliveredBytes": 16800,
+      "seconds": 1.2,
+      "appGoodputBps": 14000,
+      "capacityBps": 36000,
+      "maxOutstanding": 12,
+      "meanOutstanding": 9.233333333333333,
+      "saturatedSteps": 16,
+      "saturation": "arq",
+      "opticalBer": null,
+      "workerLimit": null,
+      "withinCapacity": true,
+      "note": "ARQ window model. opticalBer and workerLimit are null here on purpose."
+    }
+  ],
+  "heapMiB": 14.4
+}

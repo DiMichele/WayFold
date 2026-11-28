@@ -6,7 +6,7 @@ export type SeparateMethod = "affine" | "classify" | "hybrid";
 
 export type SampleMode = "module" | "pixel";
 
-export type ScheduleMode = "channel" | "composite" | "adaptive";
+export type ScheduleMode = "channel" | "composite" | "cell" | "adaptive" | "budget";
 
 export interface OpticalProfile {
   id: OpticalProfileId;

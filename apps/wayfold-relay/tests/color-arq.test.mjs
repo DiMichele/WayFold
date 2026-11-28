@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { ArqReceiver, ArqSender } from "../../wayfold-connect/src/arq.ts";
 import { windowCapacityBitrate } from "../color/profile.ts";
+import { observeColorArq } from "../color/arq-observe.ts";
 
 function payload(n, fill) {
   const out = new Uint8Array(32);
@@ -96,4 +97,33 @@ test("observed goodput stays within the window capacity formula", () => {
   const goodput = bytes / Math.max(0.001, run.seconds);
   const cap = windowCapacityBitrate(12, mtu, rttSec) / 8;
   assert.ok(goodput <= cap * 1.25, `goodput ${goodput} cap ${cap}`);
+});
+
+test("a color composite fills the window without touching workers or optical BER", () => {
+  const run = observeColorArq({
+    channels: 3,
+    count: 36,
+    steps: 24,
+    rttMs: 200,
+    stepMs: 40,
+    mtu: 1200,
+    payloadBytes: 64,
+  });
+  assert.ok(run.maxOutstanding <= 12);
+  assert.equal(run.saturation, "arq");
+  assert.ok(run.unitsSent <= 12 + run.delivered);
+  assert.ok(run.appGoodputBps <= run.capacityBps * 1.25);
+  assert.equal(run.opticalBer, null);
+  assert.equal(run.workerLimit, null);
+  assert.ok(run.repeats >= 0);
+  const lost = observeColorArq({
+    channels: 3,
+    count: 12,
+    steps: 30,
+    rttMs: 80,
+    drop: (_step, channel) => channel === 2,
+  });
+  assert.ok(lost.retransmits > 0);
+  assert.ok(lost.duplicates >= 0);
+  assert.ok(lost.maxOutstanding <= 12);
 });

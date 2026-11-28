@@ -15,6 +15,7 @@ import {
   rasterizeQr,
 } from "../shared/optical.ts";
 import { encodePayloads } from "../color/engine.ts";
+import { videoBatchKind } from "../color/video-plan.ts";
 import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
 import type { OpticalProfileId } from "../color/profile.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
@@ -380,9 +381,9 @@ function makeFrame(): Frame | null {
   if (!currentId || framesLeft <= 0 || !eligibleIds().includes(currentId)) advance();
   if (!currentId) return null;
   const p = prepared.get(currentId)!;
-  // A video packet is one fountain block. Repeating the same symbol keeps the QR
-  // still for the camera; a new seq would redraw it every frame and none would freeze.
-  if (isVideoId(currentId)) {
+  // Mono video repeats seq 0 so one QR stays still for the camera.
+  // Color video emits a distinct fountain seq of the same session on every channel.
+  if (isVideoId(currentId) && videoBatchKind(profileChannels(diodeColor)) === "repeat-still") {
     const still = packFrame({ ...p.header, seq: 0 }, p.encoder.encode(0));
     if (videoStill?.id !== currentId) {
       videoStill = { id: currentId, img: qrImage(still), bytes: still };
@@ -475,12 +476,13 @@ function run(): void {
     if (gen !== generation || paused) return;
     try {
       const depth = gridCount() * Math.max(1, profileChannels(diodeColor));
+      const distinctVideo = videoBatchKind(profileChannels(diodeColor)) === "distinct-seqs";
       while (lookahead.length < LOOKAHEAD * depth) {
-        if (lookahead.some((frame) => isVideoId(frame.id))) break;
+        if (!distinctVideo && lookahead.some((frame) => isVideoId(frame.id))) break;
         const frame = makeFrame();
         if (!frame) break;
         lookahead.push(frame);
-        if (isVideoId(frame.id)) break;
+        if (!distinctVideo && isVideoId(frame.id)) break;
       }
     } catch (error) {
       showBanner("dx-error", error instanceof Error ? error.message : String(error));
@@ -490,7 +492,8 @@ function run(): void {
     if (gen !== generation) return;
     fill();
     const depth = gridCount() * Math.max(1, profileChannels(diodeColor));
-    const need = lookahead.some((frame) => isVideoId(frame.id)) ? 1 : LOOKAHEAD * depth;
+    const distinctVideo = videoBatchKind(profileChannels(diodeColor)) === "distinct-seqs";
+    const need = !distinctVideo && lookahead.some((frame) => isVideoId(frame.id)) ? 1 : LOOKAHEAD * depth;
     window.setTimeout(pump, lookahead.length < need ? 0 : 32);
   };
   pump();
@@ -529,7 +532,7 @@ function run(): void {
     }
     const channels = profileChannels(diodeColor);
     const batch = [frame];
-    if (channels > 1 && !isVideoId(frame.id)) {
+    if (videoBatchKind(channels) === "distinct-seqs") {
       while (batch.length < gridCount() * channels) {
         const next = lookahead.shift();
         if (!next || next.id !== frame.id) {
@@ -538,18 +541,14 @@ function run(): void {
         }
         batch.push(next);
       }
-      if (batch.length < channels) {
-        for (let i = batch.length - 1; i >= 0; i--) lookahead.unshift(batch[i]!);
-        paintClock?.noteStarved();
-        publishPaint();
-        nextAt = now + interval;
-        return;
+      if (batch.length % channels !== 0) {
+        const tail = batch[batch.length - 1]!;
+        while (batch.length % channels !== 0) batch.push(tail);
       }
       paintColor(canvas, staging, batch, channels);
     } else if (isVideoId(frame.id)) {
       while (batch.length < gridCount()) batch.push(frame);
-      if (channels > 1) paintColor(canvas, staging, Array.from({ length: gridCount() * channels }, () => frame), channels);
-      else paint(canvas, staging, batch);
+      paint(canvas, staging, batch);
     } else {
       while (batch.length < gridCount()) {
         const next = lookahead.shift();
@@ -563,7 +562,7 @@ function run(): void {
       paint(canvas, staging, batch);
     }
     fill();
-    framesSent += isVideoId(frame.id) ? 1 : batch.length;
+    framesSent += isVideoId(frame.id) && videoBatchKind(channels) === "repeat-still" ? 1 : batch.length;
     if (onAirId !== frame.id) {
       onAirId = frame.id;
       setStage(true);

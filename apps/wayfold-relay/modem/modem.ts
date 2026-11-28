@@ -11,7 +11,7 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
-import { readVideoRegion } from "../receive/frame-grab.ts";
+import { readUprightRegion, readVideoRegion } from "../receive/frame-grab.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { paintGrid } from "../color/composite.ts";
 import { paletteFor } from "../color/engine.ts";
@@ -842,6 +842,10 @@ export class Modem {
         noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
         const symbols = symbolsFromWorker(e.data);
         optTrace.noteDecoded(symbols.length);
+        if (grabMeta?.color) {
+          const jobMs = typeof startedAt === "number" && typeof doneAt === "number" ? doneAt - startedAt : null;
+          optTrace.noteColorDecoded(symbols.length, jobMs);
+        }
         this.c.decodes++;
         for (const s of symbols) this.onSymbol(s);
       };
@@ -944,10 +948,17 @@ export class Modem {
     if (!vw || !vh) return;
     const free: number[] = [];
     for (let i = 0; i < this.busy.length; i++) if (!this.busy[i]) free.push(i);
-    if (!free.length) return;
-    const source = this.colorRect && this.colorMisses < 2 ? this.colorRect : { x: 0, y: 0, w: vw, h: vh };
-    const img = readVideoRegion(this.grab, video, source);
-    const captured = planColorCapture(img, this.colorProfile, free.length, "adaptive", this.colorPhase);
+    if (!free.length) {
+      optTrace.noteColorPoolSkip(this.workers.length, this.colorProfile);
+      return;
+    }
+    const turn = this.turn === 90 || this.turn === 180 || this.turn === 270 ? this.turn : 0;
+    const quarter = turn % 180 !== 0;
+    const dw = quarter ? vh : vw;
+    const dh = quarter ? vw : vh;
+    const source = this.colorRect && this.colorMisses < 2 ? this.colorRect : { x: 0, y: 0, w: dw, h: dh };
+    const img = readUprightRegion(this.grab, video, turn, vw, vh, source);
+    const captured = planColorCapture(img, this.colorProfile, free.length, "budget", this.colorPhase, this.workers.length);
     this.colorPhase = captured.plan.nextPhase;
     const gen = ++this.grabGen;
     if (!captured.found.length) {
@@ -984,7 +995,7 @@ export class Modem {
   }
 
   private capture(video: HTMLVideoElement): void {
-    if (this.colorProfile !== "mono" && this.turn === 0) {
+    if (this.colorProfile !== "mono") {
       this.captureColor(video);
       return;
     }
