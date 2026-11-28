@@ -49,8 +49,8 @@ test("grid choices stay on the layouts the receiver can scan", () => {
   assert.equal(frameBytesForGrid(1850, 2, 1000, 640), 1850);
   assert.equal(frameBytesForGrid(100, 4, 900), 100);
   assert.equal(frameBytesForGrid(1850, 4, 100), 32);
-  assert.equal(colorFrameBytes(1850, 360, "M"), 251);
-  assert.equal(colorFrameBytes(1850, 1000, "M"), 1850);
+  assert.equal(colorFrameBytes(1850, 360, "M"), 106);
+  assert.equal(colorFrameBytes(1850, 1000, "M"), 1628);
   assert.equal(colorFrameBytes(100, 360, "M"), 100);
   const four = frameBytesForGrid(1850, 4, 1000, 720);
   assert.ok((4 * four) / gridHoldMs(24, 4) > 1850 / gridHoldMs(24, 1));

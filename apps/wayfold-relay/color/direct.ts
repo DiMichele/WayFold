@@ -11,7 +11,7 @@ import { opticalProfile, type OpticalProfileId } from "./profile.ts";
 export function directChannelImages(raster: Raster, profile: OpticalProfileId, paletteId?: string): Raster[] {
   const spec = opticalProfile(profile, paletteId);
   if (spec.channels < 2) return [];
-  const small = boxDown(raster, 960);
+  const small = raster;
   const source = cropToColor(small);
   const { width, height } = source;
   const planes = Array.from({ length: spec.channels }, () => new Uint8ClampedArray(width * height * 4));
@@ -31,40 +31,6 @@ export function directChannelImages(raster: Raster, profile: OpticalProfileId, p
     }
   }
   return planes.map((plane) => ({ data: plane, width, height }));
-}
-
-/** Average the camera picture down before classifying, so a phone frame stays fast and less noisy. */
-function boxDown(raster: Raster, maxSide: number): Raster {
-  const side = Math.max(raster.width, raster.height);
-  if (side <= maxSide) return raster;
-  const factor = Math.max(2, Math.ceil(side / maxSide));
-  const width = Math.max(1, Math.floor(raster.width / factor));
-  const height = Math.max(1, Math.floor(raster.height / factor));
-  const data = new Uint8ClampedArray(width * height * 4);
-  const area = factor * factor;
-  for (let y = 0; y < height; y++) {
-    const y0 = y * factor;
-    for (let x = 0; x < width; x++) {
-      let r = 0;
-      let g = 0;
-      let b = 0;
-      const x0 = x * factor;
-      for (let dy = 0; dy < factor; dy++) {
-        for (let dx = 0; dx < factor; dx++) {
-          const p = ((y0 + dy) * raster.width + (x0 + dx)) * 4;
-          r += raster.data[p]!;
-          g += raster.data[p + 1]!;
-          b += raster.data[p + 2]!;
-        }
-      }
-      const d = (y * width + x) * 4;
-      data[d] = r / area;
-      data[d + 1] = g / area;
-      data[d + 2] = b / area;
-      data[d + 3] = 255;
-    }
-  }
-  return { data, width, height };
 }
 
 /** The colorful code, plus a margin, when the camera frame is mostly the page around it. */

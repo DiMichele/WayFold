@@ -113,9 +113,7 @@ ctx.onmessage = async (e: MessageEvent) => {
       passes = out.passes;
       skipped = out.skipped;
     } else if (req.color) {
-      const fast = { ...COLOR_READ_OPTS, tryHarder: false };
-      symbols = await readSymbols(read, pixels, w, h, fast);
-      if (!symbols.length) symbols = await readSymbols(read, pixels, w, h, COLOR_READ_OPTS);
+      symbols = await readSymbols(read, pixels, w, h, COLOR_READ_OPTS);
     } else {
       symbols = await legacyDecode(read, pixels, w, h);
     }

@@ -838,29 +838,6 @@ body.role-home .mode-btn.is-active {
   aspect-ratio: 1 / 1;
   max-width: 100%;
 }
-body.qr-fill .topbar,
-body.qr-fill .aurora,
-body.qr-fill .dir-switch,
-body.qr-fill .diode-screen-bar,
-body.qr-fill .layout-hint,
-body.qr-fill .xfer-hint,
-body.qr-fill .status-line {
-  display: none !important;
-}
-body.qr-fill .workspace.is-xfer {
-  gap: 8px;
-}
-body.qr-fill .workspace.is-xfer .stage {
-  padding: 0;
-  border: 0;
-  background: #fff;
-}
-body.qr-fill .workspace.is-xfer .stage canvas:not(.is-grid) {
-  width: min(96vw, 92vh) !important;
-  height: min(96vw, 92vh) !important;
-  max-width: none !important;
-  max-height: none !important;
-}
 .stage:fullscreen {
   display: flex;
   align-items: center;

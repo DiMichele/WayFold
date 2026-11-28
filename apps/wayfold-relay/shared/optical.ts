@@ -27,7 +27,7 @@ export const DEFAULT_ECC = "L" as const;
  * CSS pixels per module for a color code. Below this, a phone camera mixes
  * neighboring red and blue modules and ECC L cannot repair the QR.
  */
-export const COLOR_MODULE_CSS = 4.5;
+export const COLOR_MODULE_CSS = 6;
 
 /** Matches the black ring painted around a color composite. */
 const COLOR_FRAME = 4;

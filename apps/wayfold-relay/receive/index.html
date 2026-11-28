@@ -239,7 +239,7 @@
           </div>
           <p class="layout-hint" data-i18n="send.publicChannel">Any camera pointed at this screen can read the file. The link is not encrypted.</p>
           <div class="stage-wrap">
-            <div class="stage" id="qr-stage" hidden aria-hidden="true">
+            <div class="stage" id="qr-stage" hidden aria-hidden="true" data-i18n-title="send.doubleClick">
               <canvas id="qr" width="16" height="16"></canvas>
             </div>
             <div class="stage-placeholder card-inner" id="qr-placeholder">
@@ -258,7 +258,6 @@
           </div>
           <p class="status-line" id="specs" hidden role="status"></p>
           <div class="xfer-actions" id="send-controls" hidden>
-            <button type="button" id="send-fullscreen" class="btn-secondary btn-icon-text" data-i18n="send.fullscreen">QR a schermo intero</button>
             <button type="button" id="send-pause" class="btn-secondary btn-icon-text" data-i18n="xfer.pause">Pause</button>
             <button type="button" id="send-resume" class="btn-primary btn-icon-text" hidden data-i18n="xfer.resume">Resume</button>
             <button type="button" id="send-stop" class="btn-ghost btn-cancel" data-i18n="xfer.cancel">Cancel</button>

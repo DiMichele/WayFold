@@ -22,7 +22,7 @@ import {
   type EccLevel,
 } from "../shared/optical.ts";
 import { encodePayloads } from "../color/engine.ts";
-import { lockProfileSelect, profileChannels, readProfileSelect, unlockProfileSelect } from "../color/live.ts";
+import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
 import type { OpticalProfileId } from "../color/profile.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
@@ -112,23 +112,11 @@ function setWorkspaceXfer(active: boolean): void {
   document.querySelector("#view-send .workspace")?.classList.toggle("is-xfer", active);
 }
 
-function setQrFill(on: boolean): void {
-  document.body.classList.toggle("qr-fill", on);
-}
-
 function colorShownSide(): number {
   if (document.fullscreenElement?.id === "qr-stage") {
     return Math.max(320, Math.min(window.innerWidth, window.innerHeight));
   }
-  return Math.max(320, Math.min(window.innerWidth * 0.96, window.innerHeight * 0.92));
-}
-
-function enterQrFullscreen(): void {
-  setQrFill(true);
-  const stage = el("qr-stage");
-  if (!stage || document.fullscreenElement) return;
-  setStreamingUi(true);
-  void stage.requestFullscreen?.().catch(() => undefined);
+  return Math.max(240, Math.min(window.innerWidth * 0.78, 360));
 }
 
 function setXferChrome(visible: boolean): void {
@@ -254,7 +242,6 @@ function cancelStream(): void {
   generation++;
   navSuspended = false;
   pausedBeforeNav = false;
-  setQrFill(false);
   unlockProfileSelect("cfg-color");
   endOptSession();
   removeOptHud(el("send-xfer"));
@@ -270,8 +257,6 @@ async function startStream(): Promise<void> {
   navSuspended = false;
   pausedBeforeNav = false;
   setXferChrome(false);
-  if (readProfileSelect("cfg-color") !== "mono") enterQrFullscreen();
-  else setQrFill(false);
 
   const canvas = el<HTMLCanvasElement>("qr");
   const cfgPayload = el<HTMLInputElement>("cfg-payload");
@@ -458,6 +443,14 @@ async function startStream(): Promise<void> {
       document.removeEventListener("fullscreenchange", onFullscreen);
       return;
     }
+    if (colorChannels > 1) {
+      const next = colorFrameBytes(Number(cfgBytes.value), colorShownSide(), ecc);
+      if (next !== frameBytes) {
+        document.removeEventListener("fullscreenchange", onFullscreen);
+        void startStream();
+        return;
+      }
+    }
     if (modules) sizeCanvas();
   };
   document.addEventListener("fullscreenchange", onFullscreen);
@@ -604,9 +597,10 @@ function wireControls(): void {
   el<HTMLButtonElement>("send-pause")?.addEventListener("click", () => setPaused(true));
   el<HTMLButtonElement>("send-resume")?.addEventListener("click", () => setPaused(false));
   el<HTMLButtonElement>("send-stop")?.addEventListener("click", () => cancelStream());
-  el<HTMLButtonElement>("send-fullscreen")?.addEventListener("click", () => {
+  el("qr-stage")?.addEventListener("dblclick", (event) => {
+    event.preventDefault();
     const stage = el("qr-stage");
-    if (!stage) return;
+    if (!stage || stage.hidden) return;
     if (document.fullscreenElement === stage) void document.exitFullscreen?.();
     else void stage.requestFullscreen?.().catch(() => undefined);
   });
