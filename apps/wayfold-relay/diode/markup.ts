@@ -127,7 +127,7 @@ const VIEW = `
           </button>
         </div>
         <div class="stage-wrap">
-          <div class="stage" id="dx-stage" hidden>
+          <div class="stage" id="dx-stage" hidden data-i18n-title="send.doubleClick">
             <canvas id="dx-qr" width="16" height="16"></canvas>
           </div>
           <div class="stage-placeholder card-inner" id="dx-idle">

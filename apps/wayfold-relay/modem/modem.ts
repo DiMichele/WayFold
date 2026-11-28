@@ -1,3 +1,4 @@
+import { t } from "../shared/i18n.ts";
 import { QR_MARGIN, frameBytesForGrid, rasterizeQr, symbolsFromWorker, type EccLevel } from "../shared/optical.ts";
 import { TxPaintClock } from "../shared/tx-paint.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
@@ -297,7 +298,10 @@ export class Modem {
   }
 
   fullscreen(): void {
-    void this.r.stage!.requestFullscreen?.().catch(() => undefined);
+    const stage = this.r.stage;
+    if (!stage) return;
+    if (document.fullscreenElement === stage) void document.exitFullscreen?.();
+    else void stage.requestFullscreen?.().catch(() => undefined);
   }
 
   // --- settings -----------------------------------------------------------
@@ -370,7 +374,12 @@ export class Modem {
     this.r.ws!.addEventListener("change", onChange);
     this.r.start!.addEventListener("click", () => void this.start());
     this.r.stop!.addEventListener("click", () => this.stop());
-    this.r.fs!.addEventListener("click", () => void this.r.stage!.requestFullscreen?.().catch(() => undefined));
+    this.r.fs!.addEventListener("click", () => this.fullscreen());
+    this.r.stage!.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      this.fullscreen();
+    });
+    this.r.stage!.title = t("send.doubleClick");
     this.r.turn?.addEventListener("click", () => {
       this.turn = (this.turn + 90) % 360;
       writeTurn(this.turn);

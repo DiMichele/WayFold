@@ -1072,6 +1072,13 @@ function wireOnce(): void {
   el("dx-pause")?.addEventListener("click", () => setPaused(true));
   el("dx-resume")?.addEventListener("click", () => setPaused(false));
   el("dx-stop")?.addEventListener("click", stopTx);
+  el("dx-stage")?.addEventListener("dblclick", (event) => {
+    event.preventDefault();
+    const stage = el("dx-stage");
+    if (!stage || stage.hidden) return;
+    if (document.fullscreenElement === stage) void document.exitFullscreen?.();
+    else void stage.requestFullscreen?.().catch(() => undefined);
+  });
   const fpsSelect = el<HTMLSelectElement>("dx-fps");
   if (fpsSelect) {
     try {
