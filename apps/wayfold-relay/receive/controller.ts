@@ -77,10 +77,14 @@ let colorSeen = 0;
 let colorForceFull = false;
 let colorPhase = 0;
 
+/** Scaricato e rimanente: MB decimali, oppure KB sotto 1 MB. */
 function formatBytes(n: number): string {
-  if (n < 1024) return `${Math.max(0, Math.round(n))} B`;
-  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KiB`;
-  return `${(n / 1024 / 1024).toFixed(2)} MiB`;
+  const v = Math.max(0, n);
+  if (v < 1_000_000) {
+    const kb = v / 1_000;
+    return `${kb < 10 ? kb.toFixed(1) : kb.toFixed(0)} KB`;
+  }
+  return `${(v / 1_000_000).toFixed(2)} MB`;
 }
 
 function sessionKey(header: FrameHeader): string {
