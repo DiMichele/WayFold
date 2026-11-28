@@ -459,6 +459,12 @@ export class LocalLink implements ModemLink {
       outBps: this.rates.outBps,
       inBytes: s?.mux.dataIn ?? 0,
       outBytes: s?.mux.dataOut ?? 0,
+      srttMs: s ? Math.round(s.sender.srtt) : 0,
+      retransmits: s?.sender.retransmits ?? 0,
+      duplicates: s?.receiver.duplicates ?? 0,
+      arqOutstanding: s?.sender.outstanding ?? 0,
+      streams: this.tunnels?.openCount() ?? this.egress?.openCount() ?? 0,
+      bytesAcked: s?.sender.bytesAcked ?? 0,
     };
   }
 

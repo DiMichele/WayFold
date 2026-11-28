@@ -2,7 +2,7 @@
 
 Protocollo QR + fountain invariato. Ogni ottimizzazione è un flag spento di default; i numeri entrano qui solo dopo un benchmark eseguito.
 
-Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`, `exp`, `exp:4`, `exp:8`, `exp:16`. `exp:short` resta l’alias di 8 ms. Nessuno di questi è il default.
+Attivazione: `?wfopt=perf` (o `localStorage.wf-opt`). Token aggiuntivi: `roi`, `mem`, `gray`, `fast`, `latest`, `native`, `budget:0.5|1|1.5|2`, `sched:latest|pool`, `exp`, `exp:4`, `exp:8`, `exp:16`. `mem` e `gray` sono indipendenti; la vecchia combinazione è `mem,gray`. `exp:short` resta l’alias di 8 ms. Nessuno di questi è il default.
 
 ## Unità
 
@@ -86,24 +86,31 @@ Camera reale: non misurato.
 
 **Motivo:** con 2 o 4 QR il frame intero (circa 5 MB a 1280×960) veniva comunque copiato in JS.
 
-**Cosa cambia:** se i worker liberi sono almeno quanti i riquadri, ogni ROI è un `drawImage` della sola sorgente e un `getImageData` di quel ritaglio. Se è libero un solo worker, si legge l’unione dei riquadri, mai il frame intero finché il layout è noto. I ritagli della stessa cattura condividono un id di generazione; i quadrilateri tornano in coordinate camera e il layout si aggiorna solo a batch completo. Sul modem, con rotazione 90/180/270, il frame trasformato resta sul canvas e si legge solo il rettangolo della ROI. Il full-frame resta ogni 15 catture e dopo due miss di un riquadro.
+**Cosa cambia:** se i worker liberi sono almeno quanti i riquadri, ogni ROI è un `drawImage` della sola sorgente e un `getImageData` di quel ritaglio. Se è libero un solo worker, si legge l’unione dei riquadri, mai il frame intero finché il layout è noto. I ritagli della stessa cattura condividono un id di generazione; i quadrilateri tornano in coordinate camera e il layout si aggiorna solo a batch completo. `roi` da solo manda `track` al worker, che usa la cascata dura (la stessa dei flag spenti) e restituisce i quad: non servono `fast` né `mem`. Se un riquadro sparisce dopo due miss, `expected` si riduce ai riquadri rimasti e il frame successivo è intero. Un worker che fallisce chiude il suo slot del batch; i simboli già decodificati dagli altri slot restano al chiamante. Sul modem, con rotazione 90/180/270, il frame trasformato resta sul canvas e si legge solo il rettangolo della ROI. Il full-frame resta anche ogni 15 catture.
 
-**Benchmark eseguiti:** unit `roi.test.mjs` (4 crop con 4 slot, unione con 1 slot, batch). Pixel letti e goodput in camera: **non misurato**.
+**Benchmark eseguiti:** unit `roi.test.mjs` (4 crop con 4 slot, unione con 1 slot, batch, ROI persa, batch chiuso su errore) e `worker-plan.test.mjs`. Pixel letti e goodput in camera: **non misurato**.
 
-**Regressioni:** con `roi` spento `planGrabs` restituisce sempre il frame intero.
+**Regressioni:** con tutti i flag spenti il messaggio al worker è vuoto e il decode resta `legacyDecode`, senza quad.
 
-## Grayscale (flag `mem`)
+## Memoria e grayscale (flag `mem` e `gray`)
 
 **File:** `receive/decode-core.ts` (`rgbaToLuma`, `lumaToPgm`), `receive/worker-plan.ts`.
 
-**Cosa cambia:** con `mem` il worker salta il clone `ImageData` e passa a ZXing un PGM P5 (luminanza Rec.601). Il buffer RGBA inviato al worker resta a 4 byte per pixel; la riduzione riguarda l’immagine che entra nel decoder, non il trasferimento dal thread principale.
+**Cosa cambia:** `mem` e `gray` sono indipendenti. `mem` salta il clone `ImageData` e passa a ZXing la vista RGBA. `gray` converte una volta in luminanza Rec.601 e consegna un PGM P5. `mem,gray` chiede entrambi: il decoder vede il PGM, quindi il clone RGBA non avviene comunque. Il token `mem` delle build precedenti accendeva anche il grigio; quella combinazione ora è `mem,gray`. Il buffer RGBA inviato al worker resta a 4 byte per pixel.
 
 **Sonda eseguita** (`node --experimental-strip-types bench/probe.mjs`, zxing-wasm 2.2.4), salvata in `bench/results/probe.json`:
 
 - `imageData`, vista RGBA senza `ImageData`, PGM intero e PGM ritagliato decodificano gli stessi byte del QR sintetico.
 - La posizione riportata da ZXing sta entro circa 2 px dal quad disegnato.
 
-**Non misurato:** tempo di conversione, trasferimento e decode rispetto all’RGBA. Il flag resta spento di default.
+**Benchmark sintetico** (`node --experimental-strip-types bench/mem-gray.mjs`, stesso PC i7-12650H, Node 24, zxing-wasm 2.2.4), salvato in `bench/results/mem-gray.json`. Non è una misura di fotocamera. `decodeMs` è l’intera `plannedDecode`. `convertMs` è `rgbaToLuma` + `lumaToPgm` misurato a parte ed è già dentro `decodeMs` quando `gray` è acceso. Mediana di 5 ripetizioni, successo completo:
+
+| Caso | rgba-clone | mem | gray | mem+gray | conversione |
+|---|---:|---:|---:|---:|---:|
+| 1 QR, 1850 B, camera 1280 | 16.6 ms | 13.6 ms | 12.9 ms | 15.0 ms | 2.6 ms |
+| 4 QR, 800 B, camera 1280 | 10.6 ms | 10.0 ms | 9.8 ms | 9.8 ms | 2.6 ms |
+
+Su questi frame puliti `mem` da solo è il guadagno stabile sul QR singolo. Il grigio costa circa 2.6 ms di conversione e non batte `mem` in modo netto sul 4-up. I flag restano spenti di default. Camera reale: **non misurato**.
 
 ## Come leggere i sei test in camera
 
@@ -290,6 +297,16 @@ Prima a 24 FPS, poi alla frequenza più alta del punto 1 che aveva `integerDivis
 
 Il goodput che conta è `fountainBps` (byte/s; in HUD di Transfer e Diode è kB/s), a file integro. Il tetto sintetico a 24 FPS e quattro QR da 1830 byte utili è 175.7 kB/s e non è il numero da battere qui: è il riferimento di un canale senza perdite. Il massimo sostenibile è il `fountainBps` più alto di questa tabella che non peggiora l’integrità del file e non alza `tx.late` né `tx.starved`.
 
+## Consolidamento dopo l’audit
+
+I default restano spenti. Protocollo QR, fountain, WFL1 e ARQ non sono cambiati. La Diode non ha un canale di ritorno.
+
+La HUD, con `perf`, distingue tre orizzonti: `ist` è la finestra, `sess` è dall’avvio della sessione, `fin` è congelato al completamento del file. La barra di progresso del Transfer è etichettata «Stima» e non entra in quei campi (`progressBar: "estimate"` nel JSON). Il goodput del file è registrato prima di smontare la HUD della camera e il pannello, con «Copia JSON», resta sul risultato. `noteCapture` conta una generazione una sola volta anche se è divisa fra più worker. `beginOptSession` / `endOptSession` azzerano finestre e contatori all’avvio e quando si lascia la modalità, Diode TX compreso; una trasmissione sospesa non viene azzerata.
+
+La HUD del modem (`profile: "link"`) non mostra fountain né file. RX/TX applicativi sono derivati dai contatori mux. Il goodput cumulativo e gli ACK, le ritrasmissioni, i duplicati e i segmenti in volo sono misure già esposte da WFL1. La capacità `griglia × fps × MTU` è teorica. L’SRTT è la misura lisciata; l’ultimo campione RTT non è conservato dall’ARQ. Il jitter è quello dei simboli ottici.
+
+Nitidezza, luminanza, contrasto, saturazione, span del simbolo e pixel per modulo (solo se il decoder riporta la versione) sono campioni diagnostici, al più ogni 500 ms, su un riquadro di al più 160 px. Non muovono la fotocamera. Valgono su Transfer, Diode e Optical Network quando `perf` è acceso.
+
 ## Dopo i JSON
 
-Latest Frame Only solo se `queue` mostra worker fermi. BarcodeDetector resta rimandato. Nessun default cambia senza il prima/dopo di queste righe. Nessun altro intervento sul decoder prima di quei JSON.
+Latest Frame Only, BarcodeDetector e l’auto-tuning restano fuori. I default non cambiano senza un prima/dopo in camera. Il decoder, con i flag spenti, resta la cascata legacy.

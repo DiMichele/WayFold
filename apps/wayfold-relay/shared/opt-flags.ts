@@ -4,6 +4,7 @@ export type OptFlag =
   | "perf"
   | "roi"
   | "mem"
+  | "gray"
   | "fast"
   | "latest"
   | "native";
@@ -17,6 +18,8 @@ export interface OptFlags {
   perf: boolean;
   roi: boolean;
   mem: boolean;
+  /** Luminance PGM. Independent of `mem`. The old `mem` token used to enable both. */
+  gray: boolean;
   fast: boolean;
   latest: boolean;
   native: boolean;
@@ -29,12 +32,13 @@ export interface OptFlags {
 }
 
 const STORAGE_KEY = "wf-opt";
-const ALL: OptFlag[] = ["perf", "roi", "mem", "fast", "latest", "native"];
+const ALL: OptFlag[] = ["perf", "roi", "mem", "gray", "fast", "latest", "native"];
 
 const DEFAULTS: OptFlags = {
   perf: false,
   roi: false,
   mem: false,
+  gray: false,
   fast: false,
   latest: false,
   native: false,

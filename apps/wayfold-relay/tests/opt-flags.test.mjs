@@ -6,6 +6,8 @@ test("opt flags default all off", () => {
   const f = parseOptList(null);
   assert.equal(f.perf, false);
   assert.equal(f.roi, false);
+  assert.equal(f.mem, false);
+  assert.equal(f.gray, false);
   assert.equal(f.latest, false);
   assert.equal(f.budget, 1);
   assert.equal(f.schedule, "drop");
@@ -29,6 +31,18 @@ test("exp defaults off and exp:short is opt-in", () => {
   assert.equal(parseOptList("exp:16").exposure, 16);
   assert.equal(parseOptList("exp:4").perf, false);
   assert.equal(parseOptList("exp:short").perf, false);
+});
+
+test("mem and gray are independent; together they match the old mem token", () => {
+  const mem = parseOptList("mem");
+  assert.equal(mem.mem, true);
+  assert.equal(mem.gray, false);
+  const gray = parseOptList("gray");
+  assert.equal(gray.mem, false);
+  assert.equal(gray.gray, true);
+  const both = parseOptList("mem,gray");
+  assert.equal(both.mem, true);
+  assert.equal(both.gray, true);
 });
 
 test("latest alone selects grab-on-free schedule", () => {

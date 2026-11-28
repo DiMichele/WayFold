@@ -34,6 +34,19 @@ test("stale frameId does not move boxes", () => {
   assert.equal(state.boxes[0].rect.x, before);
 });
 
+test("a dropped ROI forces an early full frame and shrinks expected", () => {
+  const state = createRoiState();
+  roiUpdate(state, 1, 400, 400, [quad(40, 40), quad(220, 40)], true);
+  assert.equal(state.expected, 2);
+  roiUpdate(state, 2, 400, 400, [quad(40, 40)], false);
+  assert.equal(state.boxes.length, 2);
+  assert.equal(state.expected, 2);
+  const next = roiUpdate(state, 3, 400, 400, [quad(40, 40)], false);
+  assert.equal(state.boxes.length, 1);
+  assert.equal(state.expected, 1);
+  assert.equal(next.fullNext, true);
+});
+
 test("misses clear a box and force full frame", () => {
   const state = createRoiState();
   roiUpdate(state, 1, 400, 400, [quad(40, 40)], true);
@@ -100,6 +113,18 @@ test("a batch of crops applies once, in camera coordinates", () => {
   session.push(2, [quad(0, 0, 20)], 200, 40);
   assert.equal(session.fullNext, false);
   assert.equal(session.state.boxes.length, 2);
+});
+
+test("a failed worker closes its batch and the other crop is kept", () => {
+  const session = new RoiSession();
+  session.begin(4, 2, true, 400, 400);
+  session.push(4, [quad(40, 40, 20)], 0, 0);
+  assert.equal(session.state.boxes.length, 0);
+  session.fail(4);
+  assert.equal(session.state.expected, 1);
+  assert.equal(session.state.boxes.length, 1);
+  session.fail(4);
+  assert.equal(session.state.boxes.length, 1);
 });
 
 test("quadAabb is axis aligned", () => {

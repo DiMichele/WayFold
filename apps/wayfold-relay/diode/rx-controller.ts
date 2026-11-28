@@ -10,7 +10,7 @@ import {
 import { symbolsFromWorker } from "../shared/optical.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
-import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { beginOptSession, endOptSession, ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import {
   applyQrFocusConstraints,
@@ -19,6 +19,8 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
+import { readVideoRegion } from "../receive/frame-grab.ts";
+import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
 import type { Quad } from "../receive/decode-core.ts";
@@ -388,16 +390,12 @@ function captureFrame(video: HTMLVideoElement): void {
   for (let i = 0; i < jobs.length; i++) {
     const job = jobs[i]!;
     const slot = free[i]!;
-    if (grab.width !== job.rect.w || grab.height !== job.rect.h) {
-      grab.width = job.rect.w;
-      grab.height = job.rect.h;
-    }
-    const img = timed("extract", () => {
-      const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(video, job.rect.x, job.rect.y, job.rect.w, job.rect.h, 0, 0, job.rect.w, job.rect.h);
-      return ctx.getImageData(0, 0, job.rect.w, job.rect.h);
-    }, job.full ? "full" : "crop");
+    const img = timed(
+      "extract",
+      () => readVideoRegion(grab, video, job.rect),
+      job.full ? "full" : "crop",
+    );
+    noteOpticsFrame(img.data, job.rect.w, job.rect.h, job.full ? job.boxes[0] : undefined);
     busy[slot] = true;
     slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
     const fps = optTrace.observedFps() || optTrace.negotiatedFps || CAPTURE_FPS;
@@ -409,7 +407,7 @@ function captureFrame(video: HTMLVideoElement): void {
     );
   }
   optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
-  optTrace.noteProcessed();
+  optTrace.noteCapture(gen);
 }
 
 
@@ -428,25 +426,32 @@ function startWorkers(): void {
         passes?: { pass: string; ms: number }[];
         skipped?: number;
       };
+      if (id === -1) return;
+      const grabMeta = slotGrab[slot];
       if (error) {
+        if (grabMeta) roi.fail(grabMeta.gen);
+        busy[slot] = false;
         showBanner("dr-error", t("receive.workerError", { msg: error }));
         logEvent("error", "diode.log.rxWorkerError", { msg: error });
         return;
       }
-      if (id === -1) return;
       busy[slot] = false;
       optTrace.setWorkers(busy.filter(Boolean).length, workers.length);
       optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
-      const grabMeta = slotGrab[slot];
       if (grabMeta) {
         const t0 = wallNow();
         roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
         optTrace.mark("aggregate", t0, wallNow() - t0);
       }
-      for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
+      noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
+      const symbols = symbolsFromWorker(e.data);
+      optTrace.noteDecoded(symbols.length);
+      for (const symbol of symbols) onDecoded(symbol);
     };
     worker.onerror = (event) => {
+      const grabMeta = slotGrab[slot];
+      if (grabMeta) roi.fail(grabMeta.gen);
       busy[slot] = false;
       showBanner("dr-error", t("receive.workerError", { msg: event.message }));
       logEvent("error", "diode.log.rxWorkerError", { msg: event.message });
@@ -476,10 +481,7 @@ async function start(): Promise<void> {
   counts = { received: 0, rejected: 0, duplicates: 0 };
   open.clear();
   lastKey = null;
-  if (getOptFlags().perf) {
-    optTrace.reset();
-    optTrace.configuredFps = CAPTURE_FPS;
-  }
+  beginOptSession(CAPTURE_FPS);
   roi.reset();
   grabGen = 0;
   renderControls();
@@ -685,4 +687,5 @@ export function unmountRx(): void {
   stopRx();
   mounted = false;
   document.removeEventListener("visibilitychange", onVisibility);
+  endOptSession();
 }

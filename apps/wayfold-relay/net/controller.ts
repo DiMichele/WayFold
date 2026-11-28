@@ -1,4 +1,5 @@
 import { onLangChange, t } from "../shared/i18n.ts";
+import { endOptSession } from "../shared/opt-ui.ts";
 import { Modem, type HelperStatus, type ModemErrorKind, type ModemSnapshot } from "../modem/modem.ts";
 import { LocalLink, type Role } from "./link.ts";
 import { NET_CHANNEL, type NetBroadcast } from "./channel.ts";
@@ -398,6 +399,7 @@ export function mountNet(): void {
 
 export function unmountNet(): void {
   stop();
+  endOptSession();
   mounted = false;
   document.body.classList.remove("net-share", "net-join");
 }

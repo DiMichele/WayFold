@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { PassCosts, plannedDecode } from "../receive/decode-core.ts";
+import { PassCosts, SymbolSet, plannedDecode, qrModules } from "../receive/decode-core.ts";
 
 test("fast with unknown layout stops after partial symbols", async () => {
   const bytes = new Uint8Array([1, 2, 3]);
@@ -69,6 +69,50 @@ test("fast with expected layout retries only missing ROI", async () => {
   assert.equal(out.symbols.length, 2);
   assert.ok(calls.length >= 2);
   assert.ok(out.passes.some((p) => p.pass.startsWith("roi-")));
+});
+
+test("a shared hash does not drop a different payload", () => {
+  const seen = new SymbolSet(() => 1);
+  const a = seen.add(new Uint8Array([1, 2, 3]));
+  const b = seen.add(new Uint8Array([9, 9]));
+  const again = seen.add(new Uint8Array([1, 2, 3]));
+  assert.ok(a);
+  assert.ok(b);
+  assert.equal(again, null);
+  assert.equal(qrModules(32), 145);
+  assert.equal(qrModules("nope"), 0);
+});
+
+test("planned decode keeps distinct symbols and drops an exact repeat", async () => {
+  const a = new Uint8Array([1, 2, 3]);
+  const b = new Uint8Array([4, 5, 6]);
+  let calls = 0;
+  const out = await plannedDecode(async () => {
+    calls++;
+    if (calls > 1) return [];
+    return [
+      { isValid: true, bytes: a, version: 32 },
+      { isValid: true, bytes: a },
+      { isValid: true, bytes: b },
+    ];
+  }, {
+    pixels: new Uint8ClampedArray(16),
+    w: 2,
+    h: 2,
+    fast: false,
+    mem: true,
+    gray: false,
+    expected: 0,
+    rects: null,
+    budgetMs: Infinity,
+    startedAt: 0,
+    now: () => 0,
+    costs: new PassCosts(),
+  });
+  assert.equal(out.symbols.length, 2);
+  assert.equal(out.quads.length, 2);
+  assert.equal(out.modules[0], 145);
+  assert.equal(out.modules[1], 0);
 });
 
 test("budget skips a pass that would not fit", async () => {

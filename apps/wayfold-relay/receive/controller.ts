@@ -4,7 +4,7 @@ import { symbolsFromWorker } from "../shared/optical.ts";
 import { SESSION_STALL_TIMEOUT_MS, SOFT_ORIGINAL_LIMIT } from "../shared/limits.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
-import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { beginOptSession, endOptSession, ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { formatKBps } from "../shared/throughput.ts";
 import { fnv1a, parseFrame, type FrameHeader } from "../shared/protocol.ts";
 import { t, onLangChange } from "../shared/i18n.ts";
@@ -17,7 +17,8 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "./camera.ts";
-import { sharpnessOfRgba } from "./sharpness.ts";
+import { readVideoRegion } from "./frame-grab.ts";
+import { noteDecodedGeometry, noteOpticsFrame } from "./optics-metrics.ts";
 import { workerPlanFields } from "./worker-plan.ts";
 import { jobLocalRects, RoiSession, type GrabJob } from "./roi.ts";
 import type { Quad, Rect } from "./decode-core.ts";
@@ -63,7 +64,6 @@ let focusTimer: number | null = null;
 let focusBusy = false;
 let focusQueued: { point: FocusPoint; pref: FocusModePref; kind: "startup" | "tap" } | null = null;
 let lastFocusPoint: FocusPoint = { x: 0.5, y: 0.5 };
-let lastSharpnessAt = 0;
 let focusSupported: boolean | null = null;
 const roi = new RoiSession();
 let grabGen = 0;
@@ -227,7 +227,7 @@ function refreshReceiveStats(): void {
   }
 
   const liveByteRate = decodeWindowByteRate(now, blockLen, 900);
-  // Velocità mostrata: segnale recente (non gonfiare con max su medie morte).
+  // Stima per l'ETA. Non è il goodput istantaneo, di sessione o finale della HUD.
   const byteRate =
     winByteRate > 0
       ? Math.max(winByteRate, liveByteRate * 0.35)
@@ -648,10 +648,7 @@ async function start(): Promise<void> {
   const captureWidth = Number(el<HTMLSelectElement>("cfg-width").value);
   const captureFps = Number(el<HTMLSelectElement>("cfg-capfps").value);
   const workerCount = Number(el<HTMLSelectElement>("cfg-workers").value);
-  if (getOptFlags().perf) {
-    optTrace.reset();
-    optTrace.configuredFps = captureFps;
-  }
+  beginOptSession(captureFps);
   roi.reset();
   grabGen = 0;
   settings.hidden = true;
@@ -717,24 +714,32 @@ async function start(): Promise<void> {
         passes?: { pass: string; ms: number }[];
         skipped?: number;
       };
+      if (id === -1) return;
+      const grab = slotGrab[slot];
       if (error) {
+        if (grab) roi.fail(grab.gen);
         abortTransfer(`✗ ${t("receive.workerError", { msg: error })}`);
         return;
       }
-      if (id === -1) return;
       busy[slot] = false;
       syncOptWorkers();
       optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
       optTrace.notePasses(passes, skipped ?? 0);
-      const grab = slotGrab[slot];
       if (grab) {
         const t0 = wallNow();
         roi.push(grab.gen, quads, grab.ox, grab.oy);
         optTrace.mark("aggregate", t0, wallNow() - t0);
       }
-      for (const symbol of symbolsFromWorker(e.data)) onDecoded(symbol);
+      noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
+      const symbols = symbolsFromWorker(e.data);
+      optTrace.noteDecoded(symbols.length);
+      for (const symbol of symbols) onDecoded(symbol);
     };
-    w.onerror = (event) => abortTransfer(`✗ ${t("receive.workerError", { msg: event.message })}`);
+    w.onerror = (event) => {
+      const grab = slotGrab[slot];
+      if (grab) roi.fail(grab.gen);
+      abortTransfer(`✗ ${t("receive.workerError", { msg: event.message })}`);
+    };
     workers.push(w);
     busy.push(false);
   }
@@ -770,25 +775,13 @@ function scheduleFrame(gen: number): void {
 }
 
 function readRegion(video: CanvasImageSource, rect: Rect, full: boolean): ImageData {
-  if (grab.width !== rect.w || grab.height !== rect.h) {
-    grab.width = rect.w;
-    grab.height = rect.h;
-  }
-  return timed("extract", () => {
-    const ctx = grab.getContext("2d", { willReadFrequently: true })!;
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.drawImage(video, rect.x, rect.y, rect.w, rect.h, 0, 0, rect.w, rect.h);
-    return ctx.getImageData(0, 0, rect.w, rect.h);
-  }, full ? "full" : "crop");
+  return timed("extract", () => readVideoRegion(grab, video, rect), full ? "full" : "crop");
 }
 
 function postGrab(slot: number, video: HTMLVideoElement, job: GrabJob, gen: number, expected: number): void {
   const img = readRegion(video, job.rect, job.full);
   const postedAt = wallNow();
-  if (getOptFlags().perf && postedAt - lastSharpnessAt > 500) {
-    lastSharpnessAt = postedAt;
-    optTrace.setSharpness(sharpnessOfRgba(img.data, job.rect.w, job.rect.h));
-  }
+  noteOpticsFrame(img.data, job.rect.w, job.rect.h, job.full ? job.boxes[0] : undefined);
   busy[slot] = true;
   slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
   const fps = optTrace.observedFps() || optTrace.negotiatedFps || optTrace.configuredFps || 30;
@@ -821,7 +814,7 @@ function captureFrame(): void {
     postGrab(free[i]!, video, jobs[i]!, gen, roi.state.expected);
   }
   syncOptWorkers();
-  optTrace.noteProcessed();
+  optTrace.noteCapture(gen);
 }
 
 function onDecoded(bytes: Uint8Array): void {
@@ -886,15 +879,20 @@ async function finish(payload: Uint8Array, seconds: number, header: FrameHeader)
     showIntegrityError(t("receive.integrity.fnv"));
     return;
   }
-  cleanupResources();
-  const cameraPanel = el("camera-panel");
-  if (cameraPanel) cameraPanel.hidden = true;
-  const unpacked = await parseEnvelope(payload);
+  let unpacked: Awaited<ReturnType<typeof parseEnvelope>> = null;
+  try {
+    unpacked = await parseEnvelope(payload);
+  } catch {
+    unpacked = null;
+  }
   if (!unpacked) {
     showIntegrityError(t("receive.integrity.envelope"));
     return;
   }
   optTrace.noteFileComplete(unpacked.file.length, seconds);
+  cleanupResources();
+  const cameraPanel = el("camera-panel");
+  if (cameraPanel) cameraPanel.hidden = true;
 
   updateProgressUi(100, lastRateLabel || "…", "0 s", unpacked.file.length, 0);
   syncStatsVisibility();
@@ -926,6 +924,7 @@ async function finish(payload: Uint8Array, seconds: number, header: FrameHeader)
     image.alt = t("receive.previewAlt", { name: unpacked.filename });
     result.append(image);
   }
+  renderOptHud(result);
   const resetBtn = el<HTMLButtonElement>("reset");
   if (resetBtn) resetBtn.hidden = false;
 }
@@ -1089,4 +1088,5 @@ export function unmountReceive(): void {
   window.removeEventListener("pagehide", onPageHide);
   cleanupResources();
   clearTransferState();
+  endOptSession();
 }

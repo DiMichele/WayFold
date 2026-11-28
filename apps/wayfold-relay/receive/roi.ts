@@ -50,6 +50,15 @@ export function expandRect(raw: Rect, margin: number, frameW: number, frameH: nu
   return { x, y, w: Math.max(1, x1 - x), h: Math.max(1, y1 - y) };
 }
 
+/** A removed box shrinks `expected` to what is still tracked, so the next plan is not stale. */
+function dropMissed(state: RoiState): boolean {
+  const before = state.boxes.length;
+  state.boxes = state.boxes.filter((b) => b.misses < MISS_RESET);
+  if (state.boxes.length === before) return false;
+  state.expected = state.boxes.length;
+  return true;
+}
+
 function center(r: Rect): Point {
   return { x: r.x + r.w / 2, y: r.y + r.h / 2 };
 }
@@ -87,6 +96,7 @@ export function roiUpdate(
     return { fullNext: state.boxes.length === 0, rects: state.boxes.map((b) => b.rect) };
   }
   state.lastFrameId = frameId;
+  let forceFull = false;
 
   const raws = quads.filter((q): q is Quad => !!q).map(quadAabb);
   if (wasFullFrame) {
@@ -143,16 +153,19 @@ export function roiUpdate(
     for (const box of state.boxes) {
       if (!raws.some((raw) => overlaps(box.rect, raw))) box.misses++;
     }
-    state.boxes = state.boxes.filter((b) => b.misses < MISS_RESET);
+    const removed = dropMissed(state);
     state.framesSinceFull++;
+    if (removed) forceFull = true;
   } else {
     for (const box of state.boxes) box.misses++;
-    state.boxes = state.boxes.filter((b) => b.misses < MISS_RESET);
+    const removed = dropMissed(state);
     state.framesSinceFull++;
+    if (removed) forceFull = true;
     if (state.boxes.length === 0) state.expected = 0;
   }
 
   const needFull =
+    forceFull ||
     state.boxes.length === 0 ||
     state.framesSinceFull >= FULL_EVERY ||
     state.expected === 0;
@@ -277,6 +290,15 @@ export class RoiSession {
 
   begin(gen: number, count: number, full: boolean, w: number, h: number): void {
     this.batches.set(gen, { left: count, quads: [], full, w, h });
+  }
+
+  /**
+   * One worker of this generation failed or returned no geometry.
+   * Closes that slot. Symbols already delivered by other workers stay with the caller:
+   * this session only stores quads.
+   */
+  fail(gen: number): void {
+    this.push(gen, [], 0, 0);
   }
 
   /** Shift crop-space quads into the camera frame. Applies the layout when the batch completes. */

@@ -1,0 +1,99 @@
+{
+ "machine": {
+  "cpu": "12th Gen Intel(R) Core(TM) i7-12650H",
+  "cores": 16,
+  "node": "v24.14.1",
+  "platform": "win32"
+ },
+ "note": "Synthetic camera frames. decodeMs is the full plannedDecode call. convertMs is rgbaToLuma + lumaToPgm measured beside it, and is already inside decodeMs when gray is on. Not a camera measurement.",
+ "rows": [
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "variant": "rgba-clone",
+   "symbols": 1,
+   "want": 1,
+   "decodeMs": 16.6,
+   "convertMs": 0
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "variant": "mem",
+   "symbols": 1,
+   "want": 1,
+   "decodeMs": 13.6,
+   "convertMs": 0
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "variant": "gray",
+   "symbols": 1,
+   "want": 1,
+   "decodeMs": 12.9,
+   "convertMs": 2.6
+  },
+  {
+   "payload": 1850,
+   "ecc": "L",
+   "grid": 1,
+   "camW": 1280,
+   "variant": "mem+gray",
+   "symbols": 1,
+   "want": 1,
+   "decodeMs": 15,
+   "convertMs": 2.6
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "variant": "rgba-clone",
+   "symbols": 4,
+   "want": 4,
+   "decodeMs": 10.6,
+   "convertMs": 0
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "variant": "mem",
+   "symbols": 4,
+   "want": 4,
+   "decodeMs": 10,
+   "convertMs": 0
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "variant": "gray",
+   "symbols": 4,
+   "want": 4,
+   "decodeMs": 9.8,
+   "convertMs": 2.6
+  },
+  {
+   "payload": 800,
+   "ecc": "L",
+   "grid": 4,
+   "camW": 1280,
+   "variant": "mem+gray",
+   "symbols": 4,
+   "want": 4,
+   "decodeMs": 9.8,
+   "convertMs": 2.6
+  }
+ ]
+}

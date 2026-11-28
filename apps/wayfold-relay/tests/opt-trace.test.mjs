@@ -52,6 +52,37 @@ test("observed FPS comes from video metadata deltas", () => {
   setOptFlagsForTest(null);
 });
 
+test("one capture split across workers counts as one processed frame", () => {
+  setOptFlagsForTest({ perf: true });
+  optTrace.reset();
+  optTrace.noteCapture(7);
+  optTrace.noteCapture(7);
+  optTrace.noteCapture(7);
+  assert.equal(optTrace.processedFps(), 1);
+  optTrace.noteCapture(8);
+  assert.ok(optTrace.processedFps() > 1);
+  setOptFlagsForTest(null);
+});
+
+test("file goodput is final, and reset clears the session", () => {
+  setOptFlagsForTest({ perf: true });
+  optTrace.reset();
+  optTrace.noteUniqueSymbol(1000);
+  optTrace.noteFileComplete(4096, 2);
+  const snap = optTrace.snapshot();
+  assert.equal(snap.goodput.file.finalBps, 2048);
+  assert.equal(snap.goodput.file.instantBps, 0);
+  assert.equal(snap.progressBar, "estimate");
+  assert.ok(snap.goodput.optical.finalBps > 0);
+  optTrace.reset();
+  const cleared = optTrace.snapshot();
+  assert.equal(cleared.goodput.fileBps, 0);
+  assert.equal(cleared.goodput.optical.finalBps, 0);
+  assert.equal(cleared.net, null);
+  assert.equal(cleared.fps.negotiated, 0);
+  setOptFlagsForTest(null);
+});
+
 test("ARQ RTT is stored separately from optical waits", () => {
   setOptFlagsForTest({ perf: true });
   optTrace.reset();

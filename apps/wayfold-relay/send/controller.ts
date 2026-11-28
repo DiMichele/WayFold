@@ -21,7 +21,7 @@ import {
 } from "../shared/optical.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
-import { ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { beginOptSession, endOptSession, ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { isReadFailure, readBlobBytes } from "../shared/read-blob.ts";
 import { TxPaintClock } from "../shared/tx-paint.ts";
 import { zipFiles } from "../shared/zip.ts";
@@ -230,6 +230,8 @@ function cancelStream(): void {
   generation++;
   navSuspended = false;
   pausedBeforeNav = false;
+  endOptSession();
+  removeOptHud(el("send-xfer"));
   const cfgPayload = el<HTMLInputElement>("cfg-payload");
   if (cfgPayload) cfgPayload.value = "";
   setIdleStatus();
@@ -444,8 +446,7 @@ async function startStream(): Promise<void> {
   const paintClock = getOptFlags().perf ? new TxPaintClock(txFps) : null;
   const hudHost = el("send-xfer");
   if (paintClock) {
-    optTrace.reset();
-    optTrace.configuredFps = txFps;
+    beginOptSession(txFps);
     ensureOptHud(hudHost);
   }
   const publishPaint = () => {
@@ -630,4 +631,6 @@ export function unmountSend(): void {
   streamActive = false;
   paused = false;
   navSuspended = false;
+  endOptSession();
+  removeOptHud(el("send-xfer"));
 }

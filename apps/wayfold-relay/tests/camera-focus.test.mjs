@@ -21,7 +21,7 @@ import {
   SHORT_EXPOSURE_S,
 } from "../receive/camera.ts";
 import { centerTileRects, cropRgbaCenter, cropRgbaRect, gridSliceRects } from "../receive/image-crop.ts";
-import { laplacianVariance, sharpnessOfRgba } from "../receive/sharpness.ts";
+import { laplacianVariance, opticalQualityOfRgba, sharpnessOfRgba } from "../receive/sharpness.ts";
 
 test("clamp01 bounds and non-finite values", () => {
   assert.equal(clamp01(0.3), 0.3);
@@ -302,6 +302,26 @@ test("laplacian variance is higher on a sharp edge than a blur", () => {
   const b = sharpnessOfRgba(soft, w, h);
   assert.ok(a > b * 2, `expected sharp ${a} >> soft ${b}`);
   assert.ok(laplacianVariance(new Uint8Array([0]), 1, 1) === 0);
+});
+
+test("optical quality reports brightness, contrast, and saturation", () => {
+  const w = 16;
+  const h = 16;
+  const mid = new Uint8ClampedArray(w * h * 4);
+  const white = new Uint8ClampedArray(w * h * 4);
+  for (let i = 0; i < mid.length; i += 4) {
+    mid[i] = mid[i + 1] = mid[i + 2] = 128;
+    mid[i + 3] = 255;
+    white[i] = white[i + 1] = white[i + 2] = 255;
+    white[i + 3] = 255;
+  }
+  const flat = opticalQualityOfRgba(mid, w, h);
+  const blown = opticalQualityOfRgba(white, w, h);
+  assert.ok(Math.abs(flat.brightness - 128) < 1);
+  assert.ok(flat.contrast < 1);
+  assert.equal(flat.saturated, 0);
+  assert.ok(blown.saturated > 0.9);
+  assert.ok(blown.brightness > 250);
 });
 
 test("center crop keeps the middle pixels", () => {

@@ -16,7 +16,7 @@ import {
 } from "../shared/optical.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
-import { ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { beginOptSession, endOptSession, ensureOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { HEADER_LEN, createSessionId, fnv1a, packFrame, type FrameHeader } from "../shared/protocol.ts";
 import { TxPaintClock } from "../shared/tx-paint.ts";
 import { airBudget, carrierYieldsToFile, dwellFrames, nextOnAir } from "./carousel.ts";
@@ -468,7 +468,10 @@ function run(): void {
   let nextAt = performance.now();
   const paintClock = getOptFlags().perf ? new TxPaintClock(fps()) : null;
   const hudHost = el("dx-status");
-  if (paintClock) ensureOptHud(hudHost);
+  if (paintClock) {
+    optTrace.configuredFps = fps();
+    ensureOptHud(hudHost);
+  }
   const publishPaint = () => {
     if (!paintClock) return;
     optTrace.noteTx(paintClock.snapshot());
@@ -532,6 +535,7 @@ function run(): void {
 
 function start(): void {
   if (running) return;
+  beginOptSession(fps());
   running = true;
   paused = false;
   turn = 0;
@@ -1082,6 +1086,7 @@ export async function mountTx(): Promise<void> {
 
 export function unmountTx(): void {
   stopTx();
+  endOptSession();
   mounted = false;
   prepared.clear();
   states.clear();

@@ -42,6 +42,15 @@ export interface Hit {
   isValid: boolean;
   bytes: Uint8Array;
   position?: Quad;
+  /** QR version 1–40 when the decoder reports one. */
+  version?: string | number;
+}
+
+/** Modules on a side, quiet zone excluded. 0 when the version is missing. */
+export function qrModules(version: string | number | undefined): number {
+  const n = typeof version === "number" ? version : typeof version === "string" ? Number.parseInt(version, 10) : NaN;
+  if (!Number.isInteger(n) || n < 1 || n > 40) return 0;
+  return 17 + 4 * n;
 }
 
 /** zxing-wasm `readBarcodes`: a pixmap/ImageData is RGBA; bytes are an encoded image (PGM here). */
@@ -100,14 +109,47 @@ async function decodeQr(read: ReadFn, img: ImageData, opts: ReadOpts = READ_OPTS
   return out;
 }
 
-function remember(symbols: Uint8Array[], seen: Set<number>, bytes: Uint8Array): void {
-  let hash = 2166136261;
-  const step = Math.max(1, Math.floor(bytes.length / 24));
-  for (let i = 0; i < bytes.length; i += step) hash = Math.imul(hash ^ bytes[i]!, 16777619);
-  hash = Math.imul(hash ^ bytes.length, 16777619) >>> 0;
-  if (seen.has(hash)) return;
-  seen.add(hash);
-  symbols.push(bytes);
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
+function fnvBytes(bytes: Uint8Array): number {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < bytes.length; i++) h = Math.imul(h ^ bytes[i]!, 0x01000193);
+  return (Math.imul(h ^ bytes.length, 0x01000193) >>> 0);
+}
+
+/**
+ * Hash buckets speed the check. Two different payloads that share a hash are both kept.
+ * `add` returns the stored copy, or null when the same bytes were already seen.
+ */
+export class SymbolSet {
+  private readonly buckets = new Map<number, Uint8Array[]>();
+  private readonly hash: (bytes: Uint8Array) => number;
+
+  constructor(hash: (bytes: Uint8Array) => number = fnvBytes) {
+    this.hash = hash;
+  }
+
+  add(bytes: Uint8Array): Uint8Array | null {
+    const key = this.hash(bytes);
+    const copy = new Uint8Array(bytes);
+    let bucket = this.buckets.get(key);
+    if (!bucket) {
+      this.buckets.set(key, [copy]);
+      return copy;
+    }
+    for (const prev of bucket) if (sameBytes(prev, copy)) return null;
+    bucket.push(copy);
+    return copy;
+  }
+}
+
+function remember(symbols: Uint8Array[], seen: SymbolSet, bytes: Uint8Array): void {
+  const copy = seen.add(bytes);
+  if (copy) symbols.push(copy);
 }
 
 /** One code per slice, when the full frame returns nothing. Stops at four symbols. */
@@ -120,7 +162,7 @@ async function decodeRects(
   opts: ReadOpts,
 ): Promise<Uint8Array[]> {
   const symbols: Uint8Array[] = [];
-  const seen = new Set<number>();
+  const seen = new SymbolSet();
   for (const rect of rects) {
     if (rect.w < 48 || rect.h < 48) continue;
     const crop = cropRgbaRect(pixels, w, h, rect.x, rect.y, rect.w, rect.h);
@@ -204,16 +246,13 @@ export interface PlanInput {
 export interface PlanOutput {
   symbols: Uint8Array[];
   quads: (Quad | null)[];
+  /** Parallel to `symbols`. 0 when the decoder did not report a version. */
+  modules: number[];
   passes: PassLog[];
   /** Passes not started because the budget would have run out. */
   skipped: number;
 }
 
-function fnv(bytes: Uint8Array): number {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < bytes.length; i++) h = Math.imul(h ^ bytes[i]!, 0x01000193);
-  return (Math.imul(h ^ bytes.length, 0x01000193) >>> 0);
-}
 
 /** Rec. 601 luma, the same weights zxing applies to RGBA. */
 export function rgbaToLuma(src: Uint8ClampedArray | Uint8Array, w: number, h: number): Uint8Array {
@@ -262,8 +301,8 @@ function shiftQuad(q: Quad, dx: number, dy: number): Quad {
 
 export async function plannedDecode(read: ReadFn, input: PlanInput): Promise<PlanOutput> {
   const { pixels, w, h, mem, gray, costs, now } = input;
-  const out: PlanOutput = { symbols: [], quads: [], passes: [], skipped: 0 };
-  const seen = new Set<number>();
+  const out: PlanOutput = { symbols: [], quads: [], modules: [], passes: [], skipped: 0 };
+  const seen = new SymbolSet();
   const lum = gray ? rgbaToLuma(pixels, w, h) : null;
 
   const image = (rect: Rect | null): Pixmap | Uint8Array => {
@@ -291,11 +330,11 @@ export async function plannedDecode(read: ReadFn, input: PlanInput): Promise<Pla
     let found = 0;
     for (const hit of hits) {
       if (!hit.isValid || hit.bytes.length === 0) continue;
-      const key = fnv(hit.bytes);
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.symbols.push(new Uint8Array(hit.bytes));
+      const copy = seen.add(hit.bytes);
+      if (!copy) continue;
+      out.symbols.push(copy);
       out.quads.push(hit.position ? (r ? shiftQuad(hit.position, r.x, r.y) : hit.position) : null);
+      out.modules.push(qrModules(hit.version));
       found++;
     }
     out.passes.push({ pass: kind, ms, found, px });

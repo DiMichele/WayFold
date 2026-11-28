@@ -2,7 +2,7 @@ import { QR_MARGIN, frameBytesForGrid, rasterizeQr, symbolsFromWorker, type EccL
 import { TxPaintClock } from "../shared/tx-paint.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace, timed, wallNow } from "../shared/opt-trace.ts";
-import { ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
+import { beginOptSession, ensureOptHud, removeOptHud, renderOptHud } from "../shared/opt-ui.ts";
 import { formatBitrate } from "../shared/throughput.ts";
 import {
   applyQrFocusConstraints,
@@ -11,6 +11,8 @@ import {
   type FocusPoint,
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
+import { readVideoRegion } from "../receive/frame-grab.ts";
+import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
 import type { Quad } from "../receive/decode-core.ts";
@@ -79,6 +81,15 @@ export interface HelperStatus {
   outBps: number;
   inBytes: number;
   outBytes: number;
+  /** Smoothed RTT, same clock as rttMs. Optional so an external helper can omit it. */
+  srttMs?: number;
+  retransmits?: number;
+  duplicates?: number;
+  /** Unacked ARQ segments. */
+  arqOutstanding?: number;
+  streams?: number;
+  /** Cumulative acknowledged ARQ payload, framing included. */
+  bytesAcked?: number;
 }
 
 interface Encoded {
@@ -453,10 +464,7 @@ export class Modem {
     this.testRun = (Math.random() * 0xffffffff) >>> 0;
     this.testSeq = 0;
     this.testWindow = [];
-    if (getOptFlags().perf) {
-      optTrace.reset();
-      optTrace.configuredFps = this.settings.fps;
-    }
+    beginOptSession(this.settings.fps);
     this.roi.reset();
     this.grabGen = 0;
     this.renderControls();
@@ -764,25 +772,32 @@ export class Modem {
           passes?: { pass: string; ms: number }[];
           skipped?: number;
         };
+        if (id === -1) return;
+        const grabMeta = this.slotGrab[slot];
         if (error) {
+          if (grabMeta) this.roi.fail(grabMeta.gen);
+          this.busy[slot] = false;
           this.error(`Decoder QR non disponibile: ${error}`, "decoder");
           return;
         }
-        if (id === -1) return;
         this.busy[slot] = false;
         optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
         optTrace.noteWorkerTurn(postedAt, startedAt, doneAt);
         optTrace.notePasses(passes, skipped ?? 0);
-        const grabMeta = this.slotGrab[slot];
         if (grabMeta) {
           const t0 = wallNow();
           this.roi.push(grabMeta.gen, quads, grabMeta.ox, grabMeta.oy);
           optTrace.mark("aggregate", t0, wallNow() - t0);
         }
+        noteDecodedGeometry(quads, (e.data as { modules?: number[] }).modules);
+        const symbols = symbolsFromWorker(e.data);
+        optTrace.noteDecoded(symbols.length);
         this.c.decodes++;
-        for (const s of symbolsFromWorker(e.data)) this.onSymbol(s);
+        for (const s of symbols) this.onSymbol(s);
       };
       worker.onerror = () => {
+        const grabMeta = this.slotGrab[slot];
+        if (grabMeta) this.roi.fail(grabMeta.gen);
         this.busy[slot] = false;
       };
       this.workers.push(worker);
@@ -919,14 +934,9 @@ export class Modem {
       const slot = free[i]!;
       const img = timed("extract", () => {
         if (rotated) return ctx.getImageData(job.rect.x, job.rect.y, job.rect.w, job.rect.h);
-        if (this.grab.width !== job.rect.w || this.grab.height !== job.rect.h) {
-          this.grab.width = job.rect.w;
-          this.grab.height = job.rect.h;
-        }
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.drawImage(video, job.rect.x, job.rect.y, job.rect.w, job.rect.h, 0, 0, job.rect.w, job.rect.h);
-        return ctx.getImageData(0, 0, job.rect.w, job.rect.h);
+        return readVideoRegion(this.grab, video, job.rect);
       }, job.full ? "full" : "crop");
+      noteOpticsFrame(img.data, job.rect.w, job.rect.h, job.full ? job.boxes[0] : undefined);
       this.busy[slot] = true;
       this.slotGrab[slot] = { gen, ox: job.rect.x, oy: job.rect.y };
       const fps = optTrace.observedFps() || optTrace.negotiatedFps || this.settings.fps || 30;
@@ -938,7 +948,7 @@ export class Modem {
       );
     }
     optTrace.setWorkers(this.busy.filter(Boolean).length, this.workers.length);
-    optTrace.noteProcessed();
+    optTrace.noteCapture(gen);
   }
 
   private onSymbol(bytes: Uint8Array): void {
@@ -998,9 +1008,24 @@ export class Modem {
       );
     }
     if (getOptFlags().perf) {
-      const rtt = this.helper?.state === "connected" ? this.helper.rttMs : null;
+      const h = this.helper;
+      const rtt = h?.state === "connected" ? h.rttMs : null;
       optTrace.setArqRtt(rtt);
-      renderOptHud(this.root, "bit");
+      optTrace.noteNet({
+        appRxBps: h ? h.inBps : null,
+        appTxBps: h ? h.outBps : null,
+        appRxBytes: h ? h.inBytes : null,
+        appTxBytes: h ? h.outBytes : null,
+        capacityBps: this.settings.grid * this.settings.fps * this.settings.mtu,
+        shownPerSec: this.rates.tx ?? 0,
+        srttMs: h?.srttMs ?? (h && h.state === "connected" ? h.rttMs : null),
+        retransmits: h?.retransmits ?? null,
+        duplicates: h?.duplicates ?? null,
+        outstanding: h?.arqOutstanding ?? null,
+        streams: h?.streams ?? null,
+        bytesAcked: h?.bytesAcked ?? null,
+      });
+      renderOptHud(this.root, "bit", "link");
     }
     this.renderSide();
   }
@@ -1051,8 +1076,11 @@ export class Modem {
     ];
     if (r.loss !== undefined) rows.push(["Perdita (test)", `${(r.loss * 100).toFixed(0)}%`]);
     if (h?.state === "connected") {
-      rows.push(["Dati giù / su", `${formatBitrate(h.inBps)} / ${formatBitrate(h.outBps)}`]);
-      rows.push(["RTT", `${h.rttMs} ms`]);
+      rows.push(["Goodput ↓ / ↑", `${formatBitrate(h.inBps)} / ${formatBitrate(h.outBps)}`]);
+      rows.push(["SRTT", `${h.srttMs ?? h.rttMs} ms`]);
+      if (h.retransmits != null) rows.push(["Ritrasmissioni ARQ", String(h.retransmits)]);
+      if (h.duplicates != null) rows.push(["Duplicati ARQ", String(h.duplicates)]);
+      if (h.arqOutstanding != null) rows.push(["In volo ARQ", String(h.arqOutstanding)]);
     }
     rows.push(["Capacità TX teorica", formatBitrate(capacityBps)]);
     this.r.stats!.replaceChildren(

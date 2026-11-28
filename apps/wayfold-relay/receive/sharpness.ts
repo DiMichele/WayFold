@@ -50,6 +50,67 @@ export function laplacianVariance(gray: Uint8Array, width: number, height: numbe
   return sumSq / n - mean * mean;
 }
 
+export interface OpticalQuality {
+  /** Laplacian variance. Higher means a sharper sample. */
+  sharpness: number;
+  /** Mean luma, 0–255. */
+  brightness: number;
+  /** Standard deviation of luma. */
+  contrast: number;
+  /** Share of samples at the black or white rail. */
+  saturated: number;
+}
+
+/** One gray conversion feeds sharpness and the luma stats. The box is capped so a full frame stays cheap. */
+export function opticalQualityOfRgba(
+  rgba: Uint8ClampedArray | Uint8Array,
+  width: number,
+  height: number,
+  region?: { x: number; y: number; w: number; h: number },
+): OpticalQuality {
+  const focus = capBox(width, height, region);
+  const { gray, width: gw, height: gh } = rgbaRegionToGray(rgba, width, height, focus.x, focus.y, focus.w, focus.h);
+  const sharpness = laplacianVariance(gray, gw, gh);
+  const step = gw * gh > 8000 ? Math.max(1, Math.ceil(Math.sqrt((gw * gh) / 8000))) : 1;
+  let sum = 0;
+  let sumSq = 0;
+  let n = 0;
+  let sat = 0;
+  for (let i = 0; i < gray.length; i += step) {
+    const v = gray[i]!;
+    sum += v;
+    sumSq += v * v;
+    if (v <= 4 || v >= 251) sat++;
+    n++;
+  }
+  const mean = n ? sum / n : 0;
+  const variance = n ? Math.max(0, sumSq / n - mean * mean) : 0;
+  return { sharpness, brightness: mean, contrast: Math.sqrt(variance), saturated: n ? sat / n : 0 };
+}
+
+function capBox(
+  width: number,
+  height: number,
+  region?: { x: number; y: number; w: number; h: number },
+): { x: number; y: number; w: number; h: number } {
+  const side = 160;
+  const base = region ?? {
+    x: Math.max(0, Math.floor((width - Math.min(width, side)) / 2)),
+    y: Math.max(0, Math.floor((height - Math.min(height, side)) / 2)),
+    w: Math.min(width, side),
+    h: Math.min(height, side),
+  };
+  if (base.w <= side && base.h <= side) return base;
+  const rw = Math.min(base.w, side);
+  const rh = Math.min(base.h, side);
+  return {
+    x: base.x + Math.floor((base.w - rw) / 2),
+    y: base.y + Math.floor((base.h - rh) / 2),
+    w: rw,
+    h: rh,
+  };
+}
+
 /** Convenience: variance of the center (or given) region of an RGBA frame. */
 export function sharpnessOfRgba(
   rgba: Uint8ClampedArray | Uint8Array,

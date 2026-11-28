@@ -34,14 +34,56 @@ export interface OptFps {
   processed: number;
 }
 
+/** Bytes/s at three horizons. `instantBps` is a sliding window. `sessionBps` is since reset. `finalBps` is frozen when a file completes. */
+export interface BpsView {
+  instantBps: number;
+  sessionBps: number;
+  finalBps: number;
+}
+
+export interface OptQuality {
+  sharpness: number;
+  brightness: number;
+  contrast: number;
+  saturated: number;
+}
+
+/** Modem / ARQ figures. Null means the helper did not report that counter. */
+export interface NetTelemetry {
+  /** Application bytes/s, derived from mux totals over about a second. */
+  appRxBps: number | null;
+  appTxBps: number | null;
+  /** Cumulative application bytes. Measured. */
+  appRxBytes: number | null;
+  appTxBytes: number | null;
+  /** grid × fps × mtu. Theoretical. */
+  capacityBps: number;
+  /** Painted frames per second. Measured. */
+  shownPerSec: number;
+  /** Smoothed RTT. The ARQ sender does not keep the last raw sample. */
+  srttMs: number | null;
+  retransmits: number | null;
+  duplicates: number | null;
+  /** Unacked ARQ segments. */
+  outstanding: number | null;
+  streams: number | null;
+  /** Cumulative ARQ payload acknowledged. Measured, framing included. */
+  bytesAcked: number | null;
+}
+
 export interface OptGoodput {
-  /** Unique optical symbols (new seq) bytes/s. */
+  /** Unique optical symbols (new seq) bytes/s. Instant window. */
   opticalBps: number;
-  /** Fountain solved bytes/s (solvedCount * blockLen growth). */
+  /** Fountain solved bytes/s (solvedCount * blockLen growth). Instant window. */
   fountainBps: number;
-  /** Original file bytes/s once verified end-to-end. */
+  /** Original file bytes/s of the last completed file. */
   fileBps: number;
   uniqueQrPerSec: number;
+  /** Every decoded payload, duplicates included. */
+  decodedPerSec: number;
+  optical: BpsView;
+  fountain: BpsView;
+  file: BpsView;
 }
 
 export interface OptSnapshot {
@@ -89,6 +131,17 @@ export interface OptSnapshot {
   };
   /** Transmitter paint clock. Null on a receive page. */
   tx: TxPaintStats | null;
+  quality: OptQuality | null;
+  /** Shortest finder span in camera pixels, and modules when the decoder reported a version. */
+  symbolPx: number | null;
+  symbolModules: number | null;
+  ppm: number | null;
+  /** Present on the optical network. Fountain fields stay at zero there. */
+  net: NetTelemetry | null;
+  /**
+   * The transfer progress bar is an ETA estimate. It is not one of the goodput fields.
+   */
+  progressBar: "estimate";
 }
 
 const RING = 512;
@@ -114,13 +167,22 @@ class OptTrace {
   private uniqueAt: number[] = [];
   private opticalBytes = 0;
   private fountainBytes = 0;
-  private fileBytes = 0;
-  private fileElapsedSec = 0;
   private opticalWindow: { t: number; bytes: number }[] = [];
   private fountainWindow: { t: number; bytes: number }[] = [];
   private uniqueWindow: number[] = [];
+  private decodedAt: number[] = [];
+  private sessionStarted = 0;
+  private opticalFinalBps = 0;
+  private fountainFinalBps = 0;
+  private fileFinalBps = 0;
+  private fileSessionBytes = 0;
+  private lastCaptureGen = -1;
 
   sharpness: number | null = null;
+  private quality: OptQuality | null = null;
+  private symbolPx: number | null = null;
+  private symbolModules: number | null = null;
+  private net: NetTelemetry | null = null;
   busyWorkers = 0;
   workerCount = 0;
   arqRttMs: number | null = null;
@@ -153,15 +215,29 @@ class OptTrace {
     this.ring.length = 0;
     this.observedSamples = 0;
     this.observedDt = 0;
+    this.lastPresented = 0;
+    this.lastMediaTime = 0;
+    this.configuredFps = 0;
+    this.negotiatedFps = 0;
+    this.arqRttMs = null;
     this.processedAt.length = 0;
     this.uniqueAt.length = 0;
     this.opticalBytes = 0;
     this.fountainBytes = 0;
-    this.fileBytes = 0;
-    this.fileElapsedSec = 0;
     this.opticalWindow.length = 0;
     this.fountainWindow.length = 0;
     this.uniqueWindow.length = 0;
+    this.decodedAt.length = 0;
+    this.sessionStarted = wallNow();
+    this.opticalFinalBps = 0;
+    this.fountainFinalBps = 0;
+    this.fileFinalBps = 0;
+    this.fileSessionBytes = 0;
+    this.lastCaptureGen = -1;
+    this.quality = null;
+    this.symbolPx = null;
+    this.symbolModules = null;
+    this.net = null;
     this.symbolGaps.length = 0;
     this.lastSymbolAt = 0;
     this.windows.length = 0;
@@ -263,6 +339,41 @@ class OptTrace {
     this.trim(this.processedAt, now - 2000);
   }
 
+  /**
+   * One camera callback, even when that frame is split across several workers.
+   * A second call with the same generation does not move processed FPS.
+   */
+  noteCapture(gen: number): void {
+    if (!this.enabled()) return;
+    if (gen === this.lastCaptureGen) return;
+    this.lastCaptureGen = gen;
+    this.noteProcessed();
+  }
+
+  noteDecoded(count = 1): void {
+    if (!this.enabled() || count <= 0) return;
+    const now = wallNow();
+    for (let i = 0; i < count; i++) this.decodedAt.push(now);
+    this.trim(this.decodedAt, now - 2000);
+  }
+
+  setQuality(value: OptQuality): void {
+    if (!this.enabled()) return;
+    this.quality = value;
+    this.sharpness = value.sharpness;
+  }
+
+  noteSymbol(px: number, modules: number | null): void {
+    if (!this.enabled()) return;
+    this.symbolPx = px;
+    this.symbolModules = modules;
+  }
+
+  noteNet(value: NetTelemetry): void {
+    if (!this.enabled()) return;
+    this.net = value;
+  }
+
   noteUniqueSymbol(bytes: number): void {
     if (!this.enabled()) return;
     const now = wallNow();
@@ -294,8 +405,28 @@ class OptTrace {
 
   noteFileComplete(originalBytes: number, elapsedSec: number): void {
     if (!this.enabled()) return;
-    this.fileBytes = originalBytes;
-    this.fileElapsedSec = Math.max(0.001, elapsedSec);
+    const elapsed = Math.max(0.001, elapsedSec);
+    this.fileSessionBytes += originalBytes;
+    this.fileFinalBps = originalBytes / elapsed;
+    this.opticalFinalBps = this.freeze(this.opticalBytes, elapsed);
+    this.fountainFinalBps = this.freeze(this.fountainBytes, elapsed);
+  }
+
+  private sessionSeconds(): number {
+    if (this.sessionStarted <= 0) return 0;
+    return Math.max(0, (wallNow() - this.sessionStarted) / 1000);
+  }
+
+  private sessionRate(bytes: number): number {
+    const dt = this.sessionSeconds();
+    if (dt < 0.25 || bytes <= 0) return 0;
+    return bytes / dt;
+  }
+
+  private freeze(bytes: number, elapsedSec: number): number {
+    const session = this.sessionRate(bytes);
+    if (session > 0) return session;
+    return bytes / Math.max(0.001, elapsedSec);
   }
 
   setSharpness(value: number): void {
@@ -405,12 +536,7 @@ class OptTrace {
         observed: this.observedFps(),
         processed: this.processedFps(),
       },
-      goodput: {
-        opticalBps: this.rateFrom(this.opticalWindow),
-        fountainBps: this.rateFrom(this.fountainWindow),
-        fileBps: this.fileElapsedSec > 0 ? this.fileBytes / this.fileElapsedSec : 0,
-        uniqueQrPerSec: this.countRate(this.uniqueWindow),
-      },
+      goodput: this.goodput(),
       sharpness: this.sharpness,
       heapMiB: this.heapMiB(),
       busyWorkers: this.busyWorkers,
@@ -432,6 +558,40 @@ class OptTrace {
         last: this.lastGrab,
       },
       tx: this.tx,
+      quality: this.quality,
+      symbolPx: this.symbolPx,
+      symbolModules: this.symbolModules,
+      ppm: this.symbolPx != null && this.symbolModules ? this.symbolPx / this.symbolModules : null,
+      net: this.net,
+      progressBar: "estimate",
+    };
+  }
+
+  private goodput(): OptGoodput {
+    const opticalInstant = this.rateFrom(this.opticalWindow);
+    const fountainInstant = this.rateFrom(this.fountainWindow);
+    const fileFinal = this.fileFinalBps;
+    return {
+      opticalBps: opticalInstant,
+      fountainBps: fountainInstant,
+      fileBps: fileFinal,
+      uniqueQrPerSec: this.countRate(this.uniqueWindow),
+      decodedPerSec: this.countRate(this.decodedAt),
+      optical: {
+        instantBps: opticalInstant,
+        sessionBps: this.sessionRate(this.opticalBytes),
+        finalBps: this.opticalFinalBps,
+      },
+      fountain: {
+        instantBps: fountainInstant,
+        sessionBps: this.sessionRate(this.fountainBytes),
+        finalBps: this.fountainFinalBps,
+      },
+      file: {
+        instantBps: 0,
+        sessionBps: this.sessionRate(this.fileSessionBytes),
+        finalBps: fileFinal,
+      },
     };
   }
 

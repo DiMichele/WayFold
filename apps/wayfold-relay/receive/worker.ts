@@ -42,6 +42,7 @@ const read: ReadFn = async (input, opts) => {
       isValid: true,
       bytes: new Uint8Array(hit.bytes),
       position: hit.position as Quad | undefined,
+      version: (hit as { version?: string | number }).version,
     });
   }
   return out;
@@ -60,6 +61,7 @@ type WorkerReq = {
   fast?: boolean;
   mem?: boolean;
   gray?: boolean;
+  track?: boolean;
   expected?: number;
   rects?: Rect[] | null;
   budgetMs?: number;
@@ -72,9 +74,17 @@ ctx.onmessage = async (e: MessageEvent) => {
   const startedAt = wallNow();
   try {
     const pixels = new Uint8ClampedArray(buf);
-    const usePlan = !!(req.fast || req.mem || req.gray || (req.rects && req.rects.length) || Number.isFinite(req.budgetMs));
+    const usePlan = !!(
+      req.fast ||
+      req.mem ||
+      req.gray ||
+      req.track ||
+      (req.rects && req.rects.length) ||
+      Number.isFinite(req.budgetMs)
+    );
     let symbols: Uint8Array[];
     let quads: (Quad | null)[] = [];
+    let modules: number[] = [];
     let passes: PlanOutput["passes"] = [];
     let skipped = 0;
 
@@ -95,6 +105,7 @@ ctx.onmessage = async (e: MessageEvent) => {
       });
       symbols = out.symbols;
       quads = out.quads;
+      modules = out.modules;
       passes = out.passes;
       skipped = out.skipped;
     } else {
@@ -106,6 +117,7 @@ ctx.onmessage = async (e: MessageEvent) => {
       bytes: symbols[0] ?? null,
       symbols,
       quads,
+      modules,
       passes,
       skipped,
       postedAt: queueAt,
