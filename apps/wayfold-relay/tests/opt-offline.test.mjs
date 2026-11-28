@@ -21,6 +21,7 @@ const files = [
   "../color/composite.ts",
   "../color/fit.ts",
   "../color/schedule.ts",
+  "../color/quad.ts",
   "../color/engine.ts",
   "../color/live.ts",
   "../color/video-plan.ts",

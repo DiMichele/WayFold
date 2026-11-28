@@ -15,7 +15,7 @@ import { readUprightRegion, readVideoRegion } from "../receive/frame-grab.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { paintGrid } from "../color/composite.ts";
 import { paletteFor } from "../color/engine.ts";
-import { captureColor as planColorCapture, lockProfileSelect, profileChannels, setColorHint, unlockProfileSelect } from "../color/live.ts";
+import { captureColor as planColorCapture, colorSearchRect, lockProfileSelect, noteLocatedGeometry, profileChannels, setColorHint, unlockProfileSelect } from "../color/live.ts";
 import type { OpticalProfileId } from "../color/profile.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
@@ -389,6 +389,9 @@ export class Modem {
   private colorProfile: OpticalProfileId = "mono";
   private colorRect: { x: number; y: number; w: number; h: number } | null = null;
   private colorMisses = 0;
+  private colorCaptures = 0;
+  private colorSeen = 0;
+  private colorForceFull = false;
   private colorPhase = 0;
   private focusBusy = false;
   private focusQueued: FocusPoint | null = null;
@@ -476,6 +479,9 @@ export class Modem {
     this.colorProfile = lockProfileSelect("net-color");
     this.colorRect = null;
     this.colorMisses = 0;
+    this.colorCaptures = 0;
+    this.colorSeen = 0;
+    this.colorForceFull = false;
     this.colorPhase = 0;
     beginOptSession(this.settings.fps);
     this.roi.reset();
@@ -956,7 +962,15 @@ export class Modem {
     const quarter = turn % 180 !== 0;
     const dw = quarter ? vh : vw;
     const dh = quarter ? vw : vh;
-    const source = this.colorRect && this.colorMisses < 2 ? this.colorRect : { x: 0, y: 0, w: dw, h: dh };
+    const search = colorSearchRect(
+      { x: 0, y: 0, w: dw, h: dh },
+      this.colorRect,
+      this.colorMisses,
+      ++this.colorCaptures,
+      this.colorForceFull,
+    );
+    if (search.fullFrame) this.colorForceFull = false;
+    const source = search.rect;
     const img = readUprightRegion(this.grab, video, turn, vw, vh, source);
     const captured = planColorCapture(img, this.colorProfile, free.length, "budget", this.colorPhase, this.workers.length);
     this.colorPhase = captured.plan.nextPhase;
@@ -970,7 +984,10 @@ export class Modem {
     }
     this.colorMisses = 0;
     setColorHint("color-hint-net", null);
-    if (captured.bounds) {
+    const geo = noteLocatedGeometry(this.colorSeen, captured.geometry.length);
+    this.colorSeen = geo.seen;
+    if (geo.forceFull) this.colorForceFull = true;
+    if (geo.updateCrop && captured.bounds) {
       this.colorRect = {
         x: Math.max(0, source.x + captured.bounds.x),
         y: Math.max(0, source.y + captured.bounds.y),

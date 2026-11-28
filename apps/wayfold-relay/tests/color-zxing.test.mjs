@@ -22,6 +22,27 @@ async function decode(raster) {
   return hits.filter((hit) => hit.isValid && hit.bytes?.length).map((hit) => new Uint8Array(hit.bytes));
 }
 
+test("ZXing reads 800, 1200, 1850 and 2331 byte channels", async () => {
+  const sizes = [
+    [800, "M"],
+    [1200, "M"],
+    [1850, "M"],
+    [2331, "L"],
+  ];
+  for (const [n, ecc] of sizes) {
+    const raw = [bytes(n, 3), bytes(n, 8), bytes(n, 13)];
+    const encoded = encodePayloads(raw, ecc, "rgb3", "rgb", 4);
+    const recovered = recoverRaster(encoded, "rgb3", "hybrid", "module");
+    assert.equal(recovered.found.length, 1, String(n));
+    const want = new Set(raw.map((item) => Buffer.from(item).toString("hex")));
+    const got = [];
+    for (const channel of recovered.found[0].channels) got.push(...(await decode(channel)));
+    const seen = new Set(got.map((item) => Buffer.from(item).toString("hex")));
+    for (const item of want) assert.ok(seen.has(item), `${n} ${ecc}`);
+    assert.equal(seen.size, 3);
+  }
+});
+
 test("ZXing reads each color channel as its own payload", async () => {
   const payloads = [bytes(40, 3), bytes(40, 8), bytes(40, 13)];
   const encoded = encodePayloads(payloads, "L", "rgb3", "rgb", 4);

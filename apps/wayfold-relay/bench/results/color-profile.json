@@ -1,0 +1,247 @@
+{
+  "measuredAt": "2026-11-28T08:04:21.759Z",
+  "host": "12th Gen Intel(R) Core(TM) i7-12650H / node v24.14.1",
+  "kind": "synthetic",
+  "camera": false,
+  "mainThread": [
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "located": 1,
+      "processed": 1,
+      "locateMs": 15.07,
+      "calMs": 0.56,
+      "splitMs": 2.01,
+      "renderMs": 0.87,
+      "allocBytes": 326019,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 18.52
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "located": 1,
+      "processed": 1,
+      "locateMs": 22.75,
+      "calMs": 0.08,
+      "splitMs": 5.08,
+      "renderMs": 1.04,
+      "allocBytes": 1404987,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 28.95
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "located": 1,
+      "processed": 1,
+      "locateMs": 29.52,
+      "calMs": 0.04,
+      "splitMs": 7.75,
+      "renderMs": 1.82,
+      "allocBytes": 2663931,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 39.13
+    },
+    {
+      "bytes": 1200,
+      "ecc": "M",
+      "located": 1,
+      "processed": 1,
+      "locateMs": 42.1,
+      "calMs": 0.03,
+      "splitMs": 10.16,
+      "renderMs": 1.87,
+      "allocBytes": 3870219,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 54.16
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "located": 1,
+      "processed": 1,
+      "locateMs": 26.21,
+      "calMs": 0.03,
+      "splitMs": 14.48,
+      "renderMs": 2.78,
+      "allocBytes": 5561475,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 43.5
+    },
+    {
+      "bytes": 2331,
+      "ecc": "M",
+      "located": 2,
+      "processed": 2,
+      "locateMs": 23.72,
+      "calMs": 0.03,
+      "splitMs": 14.76,
+      "renderMs": 2.99,
+      "allocBytes": 6665187,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "mainThreadMs": 41.5
+    }
+  ],
+  "workers": [
+    {
+      "bytes": 48,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 3.1,
+      "workers2Ms": 3,
+      "workers4Ms": 2.6,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 54366,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    },
+    {
+      "bytes": 400,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 7.7,
+      "workers2Ms": 6.2,
+      "workers4Ms": 3.5,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 338295,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    },
+    {
+      "bytes": 800,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 9.5,
+      "workers2Ms": 7.2,
+      "workers4Ms": 5.3,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 452813,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    },
+    {
+      "bytes": 1200,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 20.5,
+      "workers2Ms": 15,
+      "workers4Ms": 8.8,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 407033,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    },
+    {
+      "bytes": 1850,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 26.5,
+      "workers2Ms": 22.1,
+      "workers4Ms": 11.4,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 487274,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    },
+    {
+      "bytes": 2331,
+      "ecc": "M",
+      "channels": 3,
+      "ber": [
+        0,
+        0,
+        0
+      ],
+      "zxingIntact": true,
+      "sequentialMs": 30.6,
+      "workers2Ms": 23.8,
+      "workers4Ms": 13.7,
+      "nominalWindowBps": 96000,
+      "opticalGoodputBps": 511498,
+      "fountainGoodputBps": null,
+      "note": "opticalGoodputBps is decoded payload bytes over the measured worker wall time. It is not fountain or application goodput, and it is not channels x payload x fps."
+    }
+  ],
+  "arq": {
+    "channels": 3,
+    "unitsSent": 36,
+    "repeats": 6,
+    "duplicates": 0,
+    "retransmits": 6,
+    "prematureRepeats": 6,
+    "lossRepeats": 0,
+    "idlePicks": 48,
+    "delivered": 36,
+    "deliveredBytes": 43200,
+    "seconds": 1.98,
+    "appGoodputBps": 21818.18181818182,
+    "capacityBps": 46451.6129032258,
+    "maxOutstanding": 12,
+    "meanOutstanding": 2.2,
+    "saturatedSteps": 2,
+    "saturation": "arq",
+    "opticalBer": null,
+    "workerLimit": null,
+    "forwardMs": 80,
+    "returnMs": 200,
+    "ackGenMs": 30,
+    "paintMs": 66,
+    "ackPaintMs": 66,
+    "note": "Model with separate forward, ACK generation and return. prematureRepeats are hold-timer repeats, not losses. Protocol unchanged."
+  }
+}

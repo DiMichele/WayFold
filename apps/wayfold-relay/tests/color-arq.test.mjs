@@ -127,3 +127,24 @@ test("a color composite fills the window without touching workers or optical BER
   assert.ok(lost.duplicates >= 0);
   assert.ok(lost.maxOutstanding <= 12);
 });
+
+test("with no losses, repeats start before the ACK can return", () => {
+  const run = observeColorArq({
+    channels: 2,
+    count: 40,
+    steps: 40,
+    paintMs: 40,
+    forwardMs: 80,
+    ackGenMs: 20,
+    returnMs: 220,
+    ackPaintMs: 40,
+    mtu: 200,
+    payloadBytes: 200,
+  });
+  assert.equal(run.lossRepeats, 0);
+  assert.ok(run.prematureRepeats > 0);
+  assert.ok(run.idlePicks > 0);
+  assert.ok(run.maxOutstanding <= 12);
+  assert.ok(run.appGoodputBps <= run.capacityBps * 1.25);
+  assert.equal(run.forwardMs + run.ackGenMs + run.returnMs, 320);
+});

@@ -4,6 +4,7 @@ import { alignMatrices } from "../color/matrices.ts";
 import { distortColors, paintGrid, paintMatrices } from "../color/composite.ts";
 import { encodePayloads, recoverRaster, scheduleRecovered } from "../color/engine.ts";
 import { bindProfile, compareProfiles, parseProfile, windowCapacityBitrate } from "../color/profile.ts";
+import { colorSearchRect, noteLocatedGeometry } from "../color/live.ts";
 import { scheduleSymbols } from "../color/schedule.ts";
 import { videoBatchKind } from "../color/video-plan.ts";
 import { optTrace } from "../shared/opt-trace.ts";
@@ -103,8 +104,11 @@ test("a tight frame budget splits one composite and rotates the next frame", asy
   const grid = paintGrid(cells, palette, 2, 2);
   const first = recoverRaster(grid, "color2", "hybrid", "module", "rb", cells, { budgetMs: 0, phase: 0 });
   const later = recoverRaster(grid, "color2", "hybrid", "module", "rb", cells, { budgetMs: 0, phase: 1 });
+  assert.equal(first.geometry.length, 4);
   assert.equal(first.found.length, 1);
   assert.equal(first.unsplit, 3);
+  const xs = first.geometry.map((cell) => cell.bounds.x);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 20);
   assert.equal(later.found.length, 1);
   assert.notEqual(first.found[0].index, later.found[0].index);
   assert.ok(first.found[0].split.ber.every((v) => v === 0));
@@ -242,6 +246,8 @@ test("the perf HUD and JSON expose the color schedule", () => {
   optTrace.noteColor({
     profile: "rgb3",
     grid: 4,
+    located: 4,
+    processed: 2,
     channels: 3,
     candidates: 12,
     scheduled: 8,
@@ -265,10 +271,38 @@ test("the perf HUD and JSON expose the color schedule", () => {
   assert.equal(snap.color.decodeMs, 20);
   const text = hudLines(snap).join("\n");
   assert.match(text, /rgb3/);
+  assert.match(text, /geometria 4/);
+  assert.match(text, /elaborati 2/);
   assert.match(text, /sched 8/);
   assert.match(text, /scartati 4/);
   assert.match(text, /saturazione budget/);
   assert.match(JSON.stringify(snap), /"scheduled":8/);
   optTrace.reset();
   assert.equal(optTrace.snapshot().color, null);
+});
+
+test("a budget crop keeps every located cell and a full frame is searched again", () => {
+  const full = { x: 0, y: 0, w: 400, h: 400 };
+  const cells = [
+    { x: 10, y: 10, w: 80, h: 80 },
+    { x: 200, y: 10, w: 80, h: 80 },
+    { x: 10, y: 200, w: 80, h: 80 },
+    { x: 200, y: 200, w: 80, h: 80 },
+  ];
+  const splitOnly = cells[0];
+  const tight = colorSearchRect(full, splitOnly, 0, 1, false);
+  assert.equal(tight.fullFrame, false);
+  assert.ok(cells[3].x > tight.rect.x + tight.rect.w);
+  const seen = noteLocatedGeometry(0, 4);
+  assert.equal(seen.updateCrop, true);
+  assert.equal(seen.seen, 4);
+  const lost = noteLocatedGeometry(seen.seen, 1);
+  assert.equal(lost.updateCrop, false);
+  assert.equal(lost.forceFull, true);
+  assert.equal(lost.seen, 4);
+  const again = colorSearchRect(full, cells[0], 0, 3, lost.forceFull);
+  assert.equal(again.fullFrame, true);
+  assert.equal(again.rect.w, 400);
+  const periodic = colorSearchRect(full, cells[0], 0, 12, false);
+  assert.equal(periodic.fullFrame, true);
 });

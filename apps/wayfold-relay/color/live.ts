@@ -52,10 +52,48 @@ export function setColorHint(hintId: string, text: string | null): void {
 
 export interface ColorCapture {
   found: RecoveredComposite[];
+  /** Every composite whose frame was found, including those not separated this frame. */
+  geometry: { index: number; bounds: { x: number; y: number; w: number; h: number } }[];
   plan: SchedulePlan<Raster>;
   monoLike: boolean;
-  /** Crop for the next frame, in the same coordinates as the raster that was searched. */
+  /** Crop for the next frame. Union of the located geometry, not of the separated cells. */
   bounds: { x: number; y: number; w: number; h: number } | null;
+}
+
+export interface ColorRect {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Full-frame search interval. A tight crop must not be the only look at the grid. */
+export const COLOR_FULL_EVERY = 12;
+
+export function colorSearchRect(
+  full: ColorRect,
+  crop: ColorRect | null,
+  misses: number,
+  captureIndex: number,
+  forceFull = false,
+): { rect: ColorRect; fullFrame: boolean } {
+  if (forceFull || !crop || misses >= 2 || captureIndex % COLOR_FULL_EVERY === 0) {
+    return { rect: full, fullFrame: true };
+  }
+  return { rect: crop, fullFrame: false };
+}
+
+/**
+ * A drop in the number of located frames keeps the previous crop and asks for
+ * a full frame next time, so a cell skipped by the budget is not cropped away.
+ */
+export function noteLocatedGeometry(
+  seen: number,
+  located: number,
+): { seen: number; forceFull: boolean; updateCrop: boolean } {
+  if (located >= seen && located > 0) return { seen: located, forceFull: false, updateCrop: true };
+  if (seen > 0 && located < seen) return { seen, forceFull: true, updateCrop: false };
+  return { seen, forceFull: false, updateCrop: located > 0 };
 }
 
 /**
@@ -77,8 +115,8 @@ export function captureColor(
     symbolMs: optTrace.colorSymbolMs(),
     budgetMs,
   });
-  const bounds = recovered.found.length
-    ? unionBounds(recovered.found.map((cell) => cell.bounds))
+  const bounds = recovered.geometry.length
+    ? unionBounds(recovered.geometry.map((cell) => cell.bounds))
     : null;
   const calMs = recovered.found.reduce((n, cell) => n + cell.split.calMs, 0);
   const splitMs = recovered.found.reduce((n, cell) => n + cell.split.splitMs, 0);
@@ -92,7 +130,9 @@ export function captureColor(
   const limit = plan.dropped > 0 || unsplitSymbols > 0 ? (mode === "budget" ? "budget" : "slots") : "none";
   optTrace.noteColor({
     profile,
-    grid: recovered.found.length,
+    grid: recovered.geometry.length,
+    located: recovered.geometry.length,
+    processed: recovered.found.length,
     channels: channelCount,
     candidates: plan.candidates + unsplitSymbols,
     scheduled: plan.scheduled,
@@ -109,7 +149,7 @@ export function captureColor(
     condition,
     quality: recovered.monoLike ? "mono-like" : recovered.found.length ? "ok" : "none",
   });
-  return { found: recovered.found, plan, monoLike: recovered.monoLike, bounds };
+  return { found: recovered.found, geometry: recovered.geometry, plan, monoLike: recovered.monoLike, bounds };
 }
 
 function unionBounds(boxes: { x: number; y: number; w: number; h: number }[]) {

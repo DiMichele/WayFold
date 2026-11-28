@@ -13,6 +13,12 @@ export interface ArqObservation {
   repeats: number;
   duplicates: number;
   retransmits: number;
+  /** Resends while the segment was not dropped and its ACK could not have returned yet. */
+  prematureRepeats: number;
+  /** Resends of a segment the receiver never got. */
+  lossRepeats: number;
+  /** Picks that sent nothing because the window was full and the repeat timer had not elapsed. */
+  idlePicks: number;
   delivered: number;
   deliveredBytes: number;
   seconds: number;
@@ -27,6 +33,11 @@ export interface ArqObservation {
   saturation: "arq" | "none";
   opticalBer: null;
   workerLimit: null;
+  forwardMs: number;
+  returnMs: number;
+  ackGenMs: number;
+  paintMs: number;
+  ackPaintMs: number;
 }
 
 export function observeColorArq(options: {
@@ -35,6 +46,11 @@ export function observeColorArq(options: {
   steps?: number;
   rttMs?: number;
   stepMs?: number;
+  forwardMs?: number;
+  returnMs?: number;
+  ackGenMs?: number;
+  paintMs?: number;
+  ackPaintMs?: number;
   mtu?: number;
   payloadBytes?: number;
   drop?: (step: number, channel: number) => boolean;
@@ -42,8 +58,13 @@ export function observeColorArq(options: {
   const channels = options.channels;
   const mtu = options.mtu ?? 32;
   const payloadBytes = options.payloadBytes ?? mtu;
-  const stepMs = options.stepMs ?? 40;
+  const stepMs = options.stepMs ?? options.paintMs ?? 40;
   const rttMs = options.rttMs ?? 120;
+  const forwardMs = options.forwardMs ?? rttMs * 0.4;
+  const ackGenMs = options.ackGenMs ?? rttMs * 0.1;
+  const returnMs = options.returnMs ?? Math.max(0, rttMs - forwardMs - ackGenMs);
+  const paintMs = options.paintMs ?? stepMs;
+  const ackPaintMs = options.ackPaintMs ?? paintMs;
   const steps = options.steps ?? 40;
   const queue: Uint8Array[] = [];
   for (let i = 0; i < (options.count ?? 24); i++) {
@@ -55,14 +76,20 @@ export function observeColorArq(options: {
   const rx = new ArqReceiver();
   let unitsSent = 0;
   let repeats = 0;
+  let prematureRepeats = 0;
+  let lossRepeats = 0;
+  let idlePicks = 0;
   let delivered = 0;
   let deliveredBytes = 0;
   let outstandingSum = 0;
   let maxOutstanding = 0;
   let saturatedSteps = 0;
   let t = 0;
+  const flight = new Map<number, { dropped: boolean; ackAt: number }>();
   const arriving: { at: number; no: number; data: Uint8Array }[] = [];
+  const nextPaint = (time: number, period: number) => (period <= 0 ? time : Math.ceil((time + 1e-6) / period) * period);
   const deliver = (now: number) => {
+    arriving.sort((a, b) => a.at - b.at);
     while (arriving.length && arriving[0]!.at <= now) {
       const item = arriving.shift()!;
       for (const chunk of rx.onSegment(item.no, item.data)) {
@@ -71,29 +98,45 @@ export function observeColorArq(options: {
       }
     }
   };
+  const ackIfDue = (now: number) => {
+    for (const item of flight.values()) {
+      if (item.ackAt > now) continue;
+      const sack = rx.sack();
+      tx.onAck(rx.nextExpected, sack.lo, sack.hi);
+      return;
+    }
+  };
   for (let step = 0; step < steps; step++) {
-    t += stepMs;
+    t += paintMs;
     deliver(t);
+    ackIfDue(t);
     outstandingSum += tx.outstanding;
     if (tx.outstanding > maxOutstanding) maxOutstanding = tx.outstanding;
     if (tx.outstanding >= WINDOW) saturatedSteps++;
     for (let c = 0; c < channels; c++) {
       const before = tx.retransmits;
       const seg = tx.pick(mtu, t);
-      if (!seg) continue;
-      if (tx.retransmits > before) repeats++;
-      else unitsSent++;
-      if (options.drop?.(step, c)) continue;
-      arriving.push({ at: t + rttMs, no: seg.no, data: seg.data });
-      arriving.sort((a, b) => a.at - b.at);
-    }
-    if (step % Math.max(1, Math.round(rttMs / stepMs)) === 0) {
-      const sack = rx.sack();
-      tx.onAck(rx.nextExpected, sack.lo, sack.hi);
+      if (!seg) {
+        idlePicks++;
+        continue;
+      }
+      if (tx.retransmits > before) {
+        repeats++;
+        const known = flight.get(seg.no);
+        if (known?.dropped) lossRepeats++;
+        else if (known && t < known.ackAt) prematureRepeats++;
+      } else {
+        unitsSent++;
+        const dropped = options.drop?.(step, c) ?? false;
+        const arrives = t + forwardMs;
+        const ackAt = dropped ? Number.POSITIVE_INFINITY : nextPaint(arrives + ackGenMs, ackPaintMs) + returnMs;
+        flight.set(seg.no, { dropped, ackAt });
+        if (!dropped) arriving.push({ at: arrives, no: seg.no, data: seg.data });
+      }
     }
   }
-  const sack = rx.sack();
-  tx.onAck(rx.nextExpected, sack.lo, sack.hi);
+  deliver(t);
+  ackIfDue(t);
   const seconds = t / 1000;
   return {
     channels,
@@ -101,16 +144,24 @@ export function observeColorArq(options: {
     repeats,
     duplicates: rx.duplicates,
     retransmits: tx.retransmits,
+    prematureRepeats,
+    lossRepeats,
+    idlePicks,
     delivered,
     deliveredBytes,
     seconds,
     appGoodputBps: seconds > 0 ? deliveredBytes / seconds : 0,
-    capacityBps: windowCapacityBitrate(WINDOW, mtu, rttMs / 1000) / 8,
+    capacityBps: windowCapacityBitrate(WINDOW, mtu, (forwardMs + ackGenMs + returnMs) / 1000) / 8,
     maxOutstanding,
     meanOutstanding: steps > 0 ? outstandingSum / steps : 0,
     saturatedSteps,
     saturation: saturatedSteps > 0 ? "arq" : "none",
     opticalBer: null,
     workerLimit: null,
+    forwardMs,
+    returnMs,
+    ackGenMs,
+    paintMs,
+    ackPaintMs,
   };
 }

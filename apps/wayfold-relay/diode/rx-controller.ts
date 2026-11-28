@@ -20,7 +20,7 @@ import {
   type QrTrackCapabilities,
 } from "../receive/camera.ts";
 import { readVideoRegion } from "../receive/frame-grab.ts";
-import { captureColor, lockProfileSelect, lockedProfile, setColorHint, unlockProfileSelect } from "../color/live.ts";
+import { captureColor, colorSearchRect, lockProfileSelect, lockedProfile, noteLocatedGeometry, setColorHint, unlockProfileSelect } from "../color/live.ts";
 import { noteDecodedGeometry, noteOpticsFrame } from "../receive/optics-metrics.ts";
 import { workerPlanFields } from "../receive/worker-plan.ts";
 import { jobLocalRects, RoiSession } from "../receive/roi.ts";
@@ -64,6 +64,9 @@ let grabGen = 0;
 const slotGrab: { gen: number; ox: number; oy: number; color?: boolean }[] = [];
 let colorRect: { x: number; y: number; w: number; h: number } | null = null;
 let colorMisses = 0;
+let colorCaptures = 0;
+let colorSeen = 0;
+let colorForceFull = false;
 let colorPhase = 0;
 const open = new Map<string, OpenSession>();
 const finished: string[] = [];
@@ -384,7 +387,9 @@ function captureDiodeColor(video: HTMLVideoElement, vw: number, vh: number): voi
     optTrace.noteColorPoolSkip(busy.length, lockedProfile("dx-color"));
     return;
   }
-  const source = colorRect && colorMisses < 2 ? colorRect : { x: 0, y: 0, w: vw, h: vh };
+  const search = colorSearchRect({ x: 0, y: 0, w: vw, h: vh }, colorRect, colorMisses, ++colorCaptures, colorForceFull);
+  if (search.fullFrame) colorForceFull = false;
+  const source = search.rect;
   const img = readVideoRegion(grab, video, source);
   const captured = captureColor(img, lockedProfile("dx-color"), free.length, "budget", colorPhase, busy.length);
   colorPhase = captured.plan.nextPhase;
@@ -398,7 +403,10 @@ function captureDiodeColor(video: HTMLVideoElement, vw: number, vh: number): voi
   }
   colorMisses = 0;
   setColorHint("color-hint-diode", null);
-  if (captured.bounds) {
+  const geo = noteLocatedGeometry(colorSeen, captured.geometry.length);
+  colorSeen = geo.seen;
+  if (geo.forceFull) colorForceFull = true;
+  if (geo.updateCrop && captured.bounds) {
     colorRect = {
       x: source.x + captured.bounds.x,
       y: source.y + captured.bounds.y,
@@ -535,6 +543,9 @@ async function start(): Promise<void> {
   lockProfileSelect("dx-color");
   colorRect = null;
   colorMisses = 0;
+  colorCaptures = 0;
+  colorSeen = 0;
+  colorForceFull = false;
   colorPhase = 0;
   suspended = false;
   resetVideoPlayback();
@@ -575,6 +586,9 @@ export function stopRx(log = true): void {
   if (!running) return;
   unlockProfileSelect("dx-color");
   colorRect = null;
+  colorCaptures = 0;
+  colorSeen = 0;
+  colorForceFull = false;
   running = false;
   suspended = false;
   captureGen++;

@@ -68,7 +68,7 @@ export function hudLines(s: OptSnapshot, unit: "kB" | "bit" = "kB", profile: Hud
     const residual = c.residual == null ? "n/d" : c.residual.toFixed(2);
     lines.push(
       `colore ${c.profile} · griglia ${c.grid} · canali ${c.channels} · qualità ${c.quality}`,
-      `candidati ${c.candidates} · sched ${c.scheduled} · scartati ${c.dropped} · decodificati ${c.decoded}`,
+      `geometria ${c.located} · elaborati ${c.processed} · sched ${c.scheduled} · scartati ${c.dropped} · decodificati ${c.decoded}`,
       `worker liberi ${c.workersFree}/${c.workers} · saturazione ${c.limit} · skip ${c.poolSkips}`,
       `loc ${c.locateMs.toFixed(1)} · cal ${c.calMs.toFixed(1)} · sep ${c.splitMs.toFixed(1)} · decode ${c.decodeMs == null ? "n/d" : c.decodeMs.toFixed(1)} ms · residuo ${residual} · cond ${cond}`,
     );

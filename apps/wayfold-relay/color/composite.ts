@@ -2,6 +2,7 @@ import { QR_MARGIN } from "../shared/optical.ts";
 import { classifySample, fitAffine, type AffineFit, type FitSample } from "./fit.ts";
 import { nearestState, saturation, stateColor, type Palette, type Rgb } from "./palette.ts";
 import type { SampleMode, SeparateMethod } from "./profile.ts";
+import { convexHull, quadCorners, refineQuad, type Pt } from "./quad.ts";
 
 /** Modules of frame outside the QR cell, on every side. Quiet zone stays inside the cell. */
 export const FRAME = 4;
@@ -27,6 +28,10 @@ export interface SplitTimings {
   method: SeparateMethod;
   residual: number;
   condition: number | null;
+  /** Time spent building the binary channel images handed to the decoder. */
+  renderMs: number;
+  /** Bytes of the bit planes plus the rendered channel images. */
+  allocBytes: number;
   /** Fraction of QR modules whose bit differs from the source. Empty when the source is unknown. */
   ber: number[];
   monoLike: boolean;
@@ -177,28 +182,46 @@ export function locateComposites(raster: Raster): { found: LocatedComposite[]; m
     const one = locateBox(raster, box);
     if (one) found.push(one);
   }
-  found.sort((a, b) => a.bounds.y - b.bounds.y || a.bounds.x - b.bounds.x);
-  return { found, monoLike: found.length === 0 && lowSaturation(raster) };
+  const outer = found.filter((item, index) => !found.some((other, otherIndex) => {
+    if (otherIndex === index) return false;
+    const pad = 3;
+    const inside =
+      item.bounds.x >= other.bounds.x - pad &&
+      item.bounds.y >= other.bounds.y - pad &&
+      item.bounds.x + item.bounds.w <= other.bounds.x + other.bounds.w + pad &&
+      item.bounds.y + item.bounds.h <= other.bounds.y + other.bounds.h + pad;
+    return inside && other.bounds.w * other.bounds.h > item.bounds.w * item.bounds.h * 1.2;
+  }));
+  outer.sort((a, b) => a.bounds.y - b.bounds.y || a.bounds.x - b.bounds.x);
+  return { found: outer, monoLike: outer.length === 0 && lowSaturation(raster) };
 }
 
 function locateBox(raster: Raster, box: Box): LocatedComposite | null {
-  const ppm = borderPpm(raster, box);
+  const edge = darkBoundary(raster, box);
+  if (edge.length < 16) return null;
+  const hull = convexHull(edge);
+  const rough = quadCorners(hull);
+  if (!rough) return null;
+  const refined = refineQuad(hull, rough);
+  const corners = refined && Math.abs(meanSide(refined) - meanSide(rough)) < meanSide(rough) * 0.04 ? refined : rough;
+  if (!quadSane(corners)) return null;
+  const ppm = borderThickness(raster, corners);
   if (!(ppm >= 1)) return null;
-  if (!innerRimLight(raster, box, ppm)) return null;
-  const span = Math.round(box.w / ppm);
+  const fitted = bestFrame(raster, corners, ppm);
+  if (!fitted) return null;
+  const span = fitted.span;
   const qrSize = span - 2 * QR_MARGIN - 2 * FRAME;
-  if (qrSize < 21 || (qrSize - 17) % 4 !== 0 || Math.abs(box.w - span * ppm) > ppm) return null;
-  const notch = notchSide(raster, box, ppm);
-  const corners = orientedCorners(box, ppm, notch);
+  const ordered = fitted.corners;
   const ideal = [
-    { x: 0.5, y: 0.5 },
-    { x: span - 0.5, y: 0.5 },
-    { x: span - 0.5, y: span - 0.5 },
-    { x: 0.5, y: span - 0.5 },
+    { x: 0, y: 0 },
+    { x: span, y: 0 },
+    { x: span, y: span },
+    { x: 0, y: span },
   ];
-  const homography = homographyFrom(ideal, corners);
+  const homography = homographyFrom(ideal, ordered);
   if (!homography) return null;
-  return { homography, span, qrSize, ppm, bounds: { x: box.x, y: box.y, w: box.w, h: box.h }, monoLike: false };
+  const bounds = aabbOf(ordered);
+  return { homography, span, qrSize, ppm, bounds, monoLike: false };
 }
 
 export function splitComposite(
@@ -238,6 +261,8 @@ export function splitComposite(
     method,
     residual: fit?.residual ?? swatchResidual(palette, samples),
     condition: fit?.condition ?? null,
+    renderMs: 0,
+    allocBytes: channels * qrSize * qrSize,
     ber,
     monoLike: false,
     bits,
@@ -357,65 +382,202 @@ function componentBoxes(raster: Raster): Box[] {
     }
     const bw = (maxX - minX + 1) * step;
     const bh = (maxY - minY + 1) * step;
-    if (area > 20 && bw > 16 && bh > 16 && Math.abs(bw - bh) < Math.max(bw, bh) * 0.35) {
+    if (area > 20 && bw > 16 && bh > 16 && Math.abs(bw - bh) < Math.max(bw, bh) * 0.55) {
       boxes.push({ x: minX * step, y: minY * step, w: bw, h: bh });
     }
   }
   return boxes;
 }
 
-/** The module inside the black ring is white, so a QR blob is not a second composite. */
-function innerRimLight(raster: Raster, box: Box, ppm: number): boolean {
-  const points = [
-    { x: box.x + ppm * 1.5, y: box.y + box.h / 2 },
-    { x: box.x + box.w - ppm * 1.5, y: box.y + box.h / 2 },
-    { x: box.x + box.w / 2, y: box.y + ppm * 1.5 },
-    { x: box.x + box.w / 2, y: box.y + box.h - ppm * 1.5 },
-  ];
-  return points.every((point) => {
-    const color = sample(raster, point.x, point.y);
-    return (color.r + color.g + color.b) / 3 > 170;
-  });
+const DARK_LUMA = 160;
+
+function lumaAt(raster: Raster, x: number, y: number): number {
+  if (x < 0 || y < 0 || x >= raster.width || y >= raster.height) return 255;
+  const i = (Math.floor(y) * raster.width + Math.floor(x)) * 4;
+  return (raster.data[i]! + raster.data[i + 1]! + raster.data[i + 2]!) / 3;
 }
 
-function borderPpm(raster: Raster, box: Box): number {
-  const y = Math.min(raster.height - 1, box.y + Math.floor(box.h / 2));
-  let run = 0;
-  for (let x = box.x; x < box.x + box.w && x < raster.width; x++) {
-    const i = (y * raster.width + x) * 4;
-    if (raster.data[i]! > 40) break;
-    run++;
+function darkBoundary(raster: Raster, box: Box): Pt[] {
+  const x0 = Math.max(0, box.x);
+  const y0 = Math.max(0, box.y);
+  const x1 = Math.min(raster.width - 1, box.x + box.w - 1);
+  const y1 = Math.min(raster.height - 1, box.y + box.h - 1);
+  const step = Math.min(box.w, box.h) > 700 ? 2 : 1;
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  const pts: Pt[] = [];
+  for (let y = y0; y <= y1; y += step) {
+    for (let x = x0; x <= x1; x += step) {
+      if (lumaAt(raster, x, y) >= DARK_LUMA) continue;
+      const inside =
+        lumaAt(raster, x - step, y) < DARK_LUMA &&
+        lumaAt(raster, x + step, y) < DARK_LUMA &&
+        lumaAt(raster, x, y - step) < DARK_LUMA &&
+        lumaAt(raster, x, y + step) < DARK_LUMA;
+      if (inside) continue;
+      pts.push({
+        x: x + (x + 0.5 >= cx ? 1 : 0),
+        y: y + (y + 0.5 >= cy ? 1 : 0),
+      });
+    }
   }
-  return run;
+  return pts;
 }
 
-function notchSide(raster: Raster, box: Box, ppm: number): number {
-  const sides = [
-    { x: box.x + NOTCH * ppm + ppm / 2, y: box.y + ppm / 2 },
-    { x: box.x + box.w - ppm / 2, y: box.y + NOTCH * ppm + ppm / 2 },
-    { x: box.x + box.w - NOTCH * ppm - ppm / 2, y: box.y + box.h - ppm / 2 },
-    { x: box.x + ppm / 2, y: box.y + box.h - NOTCH * ppm - ppm / 2 },
-  ];
-  let best = 0;
-  let bestL = -1;
-  for (let i = 0; i < sides.length; i++) {
-    const s = sample(raster, sides[i]!.x, sides[i]!.y);
-    const luma = s.r + s.g + s.b;
-    if (luma > bestL) {
-      bestL = luma;
-      best = i;
+function quadSane(corners: Pt[]): boolean {
+  const lens = [0, 1, 2, 3].map((i) => Math.hypot(corners[(i + 1) % 4]!.x - corners[i]!.x, corners[(i + 1) % 4]!.y - corners[i]!.y));
+  const max = Math.max(...lens);
+  const min = Math.min(...lens);
+  return min > 12 && min >= max * 0.45;
+}
+
+function meanSide(corners: Pt[]): number {
+  let sum = 0;
+  for (let i = 0; i < 4; i++) {
+    sum += Math.hypot(corners[(i + 1) % 4]!.x - corners[i]!.x, corners[(i + 1) % 4]!.y - corners[i]!.y);
+  }
+  return sum / 4;
+}
+
+function bestFrame(raster: Raster, corners: Pt[], ppm: number): { span: number; corners: Pt[] } | null {
+  const side = meanSide(corners);
+  const guess = side / Math.max(ppm, 1);
+  const tight: number[] = [];
+  const wide: number[] = [];
+  const maxSpan = 21 + 4 * 39 + 2 * QR_MARGIN + 2 * FRAME;
+  for (let span = 37; span <= maxSpan; span += 4) {
+    const implied = side / span;
+    if (Math.abs(span - guess) <= Math.max(6, guess * 0.12)) tight.push(span);
+    else if (implied >= Math.max(1, ppm * 0.4) && implied <= ppm * 2.6) wide.push(span);
+  }
+  wide.sort((a, b) => Math.abs(a - guess) - Math.abs(b - guess));
+  return pickSpan(raster, corners, ppm, guess, tight) ?? (side >= 100 ? pickSpan(raster, corners, ppm, guess, wide.slice(0, 6)) : null);
+}
+
+function pickSpan(
+  raster: Raster,
+  corners: Pt[],
+  ppm: number,
+  guess: number,
+  spans: number[],
+): { span: number; corners: Pt[] } | null {
+  let best: { score: number; err: number; span: number; corners: Pt[] } | null = null;
+  for (const span of spans) {
+    const forward = scoreFrame(raster, corners, span, ppm);
+    const backward = scoreFrame(raster, [corners[0]!, corners[3]!, corners[2]!, corners[1]!], span, ppm);
+    const item = forward.score >= backward.score ? forward : backward;
+    const notchOk = item.notch > item.ring + 40 && item.notch > 160 && item.ring < 80;
+    const insideOk = item.inner > item.ring + 30 || notchOk;
+    if (!(notchOk && insideOk && item.ringFrac >= 0.55)) continue;
+    const quality = item.ringFrac * 100 + (item.notch - item.ring) / 25;
+    const err = Math.abs(span - guess);
+    if (!best || quality > best.score + 0.5 || (quality >= best.score - 0.5 && err < best.err)) {
+      best = { score: quality, err, span, corners: item.corners };
     }
   }
   return best;
 }
 
-function orientedCorners(box: Box, ppm: number, notch: number): { x: number; y: number }[] {
-  const tl = { x: box.x + ppm / 2, y: box.y + ppm / 2 };
-  const tr = { x: box.x + box.w - ppm / 2, y: box.y + ppm / 2 };
-  const br = { x: box.x + box.w - ppm / 2, y: box.y + box.h - ppm / 2 };
-  const bl = { x: box.x + ppm / 2, y: box.y + box.h - ppm / 2 };
-  const ring = [tl, tr, br, bl];
-  return [0, 1, 2, 3].map((i) => ring[(i + notch) % 4]!);
+function borderThickness(raster: Raster, corners: Pt[]): number {
+  const center = centroid(corners);
+  const runs: number[] = [];
+  for (let i = 0; i < 4; i++) {
+    const a = corners[i]!;
+    const b = corners[(i + 1) % 4]!;
+    for (const t of [0.4, 0.55, 0.72]) {
+      const mid = { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
+      const dx = mid.x - center.x;
+      const dy = mid.y - center.y;
+      const reach = Math.hypot(dx, dy) + 6;
+      const ux = dx / (reach - 6 || 1);
+      const uy = dy / (reach - 6 || 1);
+      let outer = -1;
+      for (let s = 0; s < reach; s++) {
+        if (lumaAt(raster, center.x + ux * s, center.y + uy * s) < DARK_LUMA) outer = s;
+      }
+      if (outer < 0) continue;
+      let run = 0;
+      for (let s = outer; s >= 0 && run < reach; s--) {
+        if (lumaAt(raster, center.x + ux * s, center.y + uy * s) >= DARK_LUMA) break;
+        run++;
+      }
+      if (run > 0 && run < reach / 8) runs.push(run);
+    }
+  }
+  if (!runs.length) return 0;
+  runs.sort((p, q) => p - q);
+  return runs[Math.floor(runs.length / 2)]!;
+}
+
+function centroid(corners: Pt[]): Pt {
+  return {
+    x: corners.reduce((s, p) => s + p.x, 0) / corners.length,
+    y: corners.reduce((s, p) => s + p.y, 0) / corners.length,
+  };
+}
+
+function scoreFrame(raster: Raster, corners: Pt[], span: number, ppm: number): { score: number; notch: number; ring: number; inner: number; ringFrac: number; corners: Pt[] } {
+  let bestI = 0;
+  let bestNotch = -1;
+  const center = centroid(corners);
+  for (let i = 0; i < 4; i++) {
+    const a = corners[i]!;
+    const b = corners[(i + 1) % 4]!;
+    const luma = sideLuma(raster, a, b, 6.5 / span, ppm * 0.45, center);
+    if (luma > bestNotch) {
+      bestNotch = luma;
+      bestI = i;
+    }
+  }
+  const ordered = [0, 1, 2, 3].map((k) => corners[(bestI + k) % 4]!);
+  const ideal = [
+    { x: 0, y: 0 },
+    { x: span, y: 0 },
+    { x: span, y: span },
+    { x: 0, y: span },
+  ];
+  const homography = homographyFrom(ideal, ordered);
+  if (!homography) return { score: -1, notch: 0, ring: 255, inner: 0, ringFrac: 0, corners: ordered };
+  const notch = lumaAt(raster, ...point(project(homography, 6.5, 0.5)));
+  const ring = lumaAt(raster, ...point(project(homography, span / 2, 0.5)));
+  const inner = lumaAt(raster, ...point(project(homography, span / 2, 1.5)));
+  let dark = 0;
+  let samples = 0;
+  for (let m = 1.5; m < span - 1; m += Math.max(1, span / 10)) {
+    if (Math.abs(m - 6.5) < 1.4) continue;
+    samples++;
+    if (lumaAt(raster, ...point(project(homography, m, 0.5))) < 100) dark++;
+  }
+  const ringFrac = samples ? dark / samples : 0;
+  return { score: notch + inner - ring + ringFrac * 100, notch, ring, inner, ringFrac, corners: ordered };
+}
+
+function point(p: { x: number; y: number }): [number, number] {
+  return [p.x, p.y];
+}
+
+function sideLuma(raster: Raster, a: Pt, b: Pt, along: number, inset: number, center: Pt): number {
+  const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+  let nx = -(b.y - a.y) / len;
+  let ny = (b.x - a.x) / len;
+  const mid = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+  if (nx * (center.x - mid.x) + ny * (center.y - mid.y) < 0) {
+    nx = -nx;
+    ny = -ny;
+  }
+  const x = a.x + (b.x - a.x) * along + nx * inset;
+  const y = a.y + (b.y - a.y) * along + ny * inset;
+  return lumaAt(raster, x, y);
+}
+
+function aabbOf(corners: Pt[]): { x: number; y: number; w: number; h: number } {
+  const xs = corners.map((p) => p.x);
+  const ys = corners.map((p) => p.y);
+  const x = Math.floor(Math.min(...xs));
+  const y = Math.floor(Math.min(...ys));
+  const x1 = Math.ceil(Math.max(...xs));
+  const y1 = Math.ceil(Math.max(...ys));
+  return { x, y, w: Math.max(1, x1 - x), h: Math.max(1, y1 - y) };
 }
 
 function lowSaturation(raster: Raster): boolean {

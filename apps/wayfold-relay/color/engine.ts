@@ -29,6 +29,11 @@ export interface RecoveredComposite {
   bounds: { x: number; y: number; w: number; h: number };
 }
 
+export interface LocatedGeometry {
+  index: number;
+  bounds: { x: number; y: number; w: number; h: number };
+}
+
 /** Mono does not enter this function. Callers keep the existing black-and-white path. */
 export function encodePayloads(
   payloads: Uint8Array[],
@@ -76,9 +81,15 @@ export function recoverRaster(
   paletteId?: string,
   source?: Uint8Array[][],
   splitBudget?: { budgetMs: number; phase: number },
-): { found: RecoveredComposite[]; monoLike: boolean; locateMs: number; unsplit: number } {
+): {
+  found: RecoveredComposite[];
+  geometry: LocatedGeometry[];
+  monoLike: boolean;
+  locateMs: number;
+  unsplit: number;
+} {
   const spec = opticalProfile(profile, paletteId);
-  if (spec.channels === 1) return { found: [], monoLike: false, locateMs: 0, unsplit: 0 };
+  if (spec.channels === 1) return { found: [], geometry: [], monoLike: false, locateMs: 0, unsplit: 0 };
   const palette = paletteById(spec.paletteId);
   const tLocate = performance.now();
   const located = locateComposites(raster);
@@ -88,6 +99,7 @@ export function recoverRaster(
     const start = ((splitBudget.phase % order.length) + order.length) % order.length;
     order.push(...order.splice(0, start));
   }
+  const geometry: LocatedGeometry[] = located.found.map((item, index) => ({ index, bounds: item.bounds }));
   const found: RecoveredComposite[] = [];
   let spent = locateMs;
   for (let n = 0; n < order.length; n++) {
@@ -95,13 +107,19 @@ export function recoverRaster(
     const started = performance.now();
     const { item, index } = order[n]!;
     const split = splitComposite(raster, item, palette, method, sample, source?.[index]);
-    const channels = split.bits
-      .map((bits) => (bits.some((v) => v) ? renderChannel(bits, item.qrSize) : null))
-      .filter((img): img is Raster => !!img);
+    const channels: Raster[] = [];
+    for (const bits of split.bits) {
+      if (!bits.some((v) => v)) continue;
+      const tRender = performance.now();
+      const image = renderChannel(bits, item.qrSize);
+      split.renderMs += performance.now() - tRender;
+      split.allocBytes += image.width * image.height * 4;
+      channels.push(image);
+    }
     found.push({ index, split, channels, bounds: item.bounds });
     spent += performance.now() - started;
   }
-  return { found, monoLike: located.monoLike, locateMs, unsplit: located.found.length - found.length };
+  return { found, geometry, monoLike: located.monoLike, locateMs, unsplit: geometry.length - found.length };
 }
 
 export function scheduleRecovered(

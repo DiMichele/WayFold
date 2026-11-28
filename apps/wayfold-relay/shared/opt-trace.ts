@@ -149,6 +149,10 @@ export interface OptSnapshot {
 export interface ColorTelemetry {
   profile: string;
   grid: number;
+  /** Frames whose quadrilateral was found. */
+  located: number;
+  /** Frames separated on this capture. */
+  processed: number;
   channels: number;
   candidates: number;
   scheduled: number;
@@ -316,6 +320,8 @@ class OptTrace {
       this.color = {
         profile,
         grid: 0,
+        located: 0,
+        processed: 0,
         channels: 0,
         candidates: 0,
         scheduled: 0,
