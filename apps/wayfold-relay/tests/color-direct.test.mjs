@@ -4,6 +4,7 @@ import test from "node:test";
 import { readBarcodes } from "zxing-wasm/reader";
 import { directChannelImages } from "../color/direct.ts";
 import { encodePayloads } from "../color/engine.ts";
+import { colorFrameBytes } from "../shared/optical.ts";
 
 function bytes(n, seed) {
   const out = new Uint8Array(n);
@@ -80,6 +81,41 @@ test("a camera-style split lets ZXing read Color 2 and RGB 3 without the frame l
   await roundtrip("color2", color2, dim(painted2));
   await roundtrip("rgb3", rgb3, keystone(painted3));
   await roundtrip("color2", color2, cameraTint(painted2));
+});
+
+test("a phone-sized color code still reads after camera blur", async () => {
+  const n = colorFrameBytes(1850, 360, "M");
+  assert.ok(n < 400, String(n));
+  const payloads = [bytes(n, 4), bytes(n, 9)];
+  const painted = cameraTint(encodePayloads(payloads, "M", "color2"));
+  const cam = 420;
+  const data = new Uint8ClampedArray(cam * cam * 4);
+  const scale = (painted.width - 1) / cam;
+  for (let y = 0; y < cam; y++) {
+    for (let x = 0; x < cam; x++) {
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      let count = 0;
+      for (let dy = -1; dy <= 1; dy++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const sx = Math.max(0, Math.min(painted.width - 1, Math.round((x + dx + 0.5) * scale)));
+          const sy = Math.max(0, Math.min(painted.height - 1, Math.round((y + dy + 0.5) * scale)));
+          const p = (sy * painted.width + sx) * 4;
+          r += painted.data[p];
+          g += painted.data[p + 1];
+          b += painted.data[p + 2];
+          count++;
+        }
+      }
+      const d = (y * cam + x) * 4;
+      data[d] = r / count;
+      data[d + 1] = g / count;
+      data[d + 2] = b / count;
+      data[d + 3] = 255;
+    }
+  }
+  await roundtrip("color2", payloads, { data, width: cam, height: cam });
 });
 
 function cameraTint(src) {

@@ -9,6 +9,7 @@ import {
   PassCosts,
   legacyDecode,
   plannedDecode,
+  COLOR_READ_OPTS,
   type Hit,
   type PlanOutput,
   type Quad,
@@ -66,6 +67,7 @@ type WorkerReq = {
   rects?: Rect[] | null;
   budgetMs?: number;
   extras?: { buf: ArrayBuffer; w: number; h: number }[];
+  color?: boolean;
 };
 
 ctx.onmessage = async (e: MessageEvent) => {
@@ -110,10 +112,16 @@ ctx.onmessage = async (e: MessageEvent) => {
       passes = out.passes;
       skipped = out.skipped;
     } else {
-      symbols = await legacyDecode(read, pixels, w, h);
+      symbols = await legacyDecode(read, pixels, w, h, req.color ? COLOR_READ_OPTS : undefined);
     }
     for (const extra of req.extras ?? []) {
-      const more = await legacyDecode(read, new Uint8ClampedArray(extra.buf), extra.w, extra.h);
+      const more = await legacyDecode(
+        read,
+        new Uint8ClampedArray(extra.buf),
+        extra.w,
+        extra.h,
+        req.color ? COLOR_READ_OPTS : undefined,
+      );
       symbols.push(...more);
     }
 

@@ -800,7 +800,13 @@ function scheduleFrame(gen: number): void {
   const next = (_now?: number, meta?: { presentedFrames?: number; mediaTime?: number }) => {
     if (done || gen !== captureGen || !running) return;
     optTrace.noteVideoMeta(meta);
-    if (!paused) captureFrame();
+    if (!paused) {
+      try {
+        captureFrame();
+      } catch {
+        /* One bad frame must not stop the camera loop. */
+      }
+    }
     scheduleFrame(gen);
   };
   if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
@@ -837,7 +843,7 @@ function postColorBatch(
   busy[slot] = true;
   slotGrab[slot] = { gen, ox: 0, oy: 0, color: true };
   workers[slot]!.postMessage(
-    { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, postedAt: wallNow() },
+    { id: gen, buf: first.data.buffer, w: first.width, h: first.height, extras, color: true, postedAt: wallNow() },
     transfers,
   );
 }

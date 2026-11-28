@@ -36,6 +36,7 @@ export interface ReadOpts {
   tryRotate?: boolean;
   tryInvert?: boolean;
   tryDownscale?: boolean;
+  binarizer?: "LocalAverage" | "GlobalHistogram" | "FixedThreshold" | "BoolCast";
 }
 
 export interface Hit {
@@ -61,6 +62,16 @@ export const READ_OPTS: ReadOpts = {
   maxNumberOfSymbols: 4,
   tryHarder: true,
   tryRotate: true,
+};
+
+/** Color planes are already black and white, and a camera frame is large. Downscaling them erases the modules. */
+export const COLOR_READ_OPTS: ReadOpts = {
+  formats: ["QRCode"],
+  maxNumberOfSymbols: 4,
+  tryHarder: true,
+  tryRotate: true,
+  tryDownscale: false,
+  binarizer: "BoolCast",
 };
 
 /** Extra passes skip rotation and invert. The full frame already tried those. */
@@ -173,21 +184,28 @@ async function decodeRects(
   return symbols;
 }
 
-export async function legacyDecode(read: ReadFn, pixels: Uint8ClampedArray, w: number, h: number): Promise<Uint8Array[]> {
-  let symbols = await decodeQr(read, toImageData(pixels, w, h));
+export async function legacyDecode(
+  read: ReadFn,
+  pixels: Uint8ClampedArray,
+  w: number,
+  h: number,
+  opts: ReadOpts = READ_OPTS,
+): Promise<Uint8Array[]> {
+  const tiles = opts === READ_OPTS ? TILE_OPTS : opts;
+  let symbols = await decodeQr(read, toImageData(pixels, w, h), opts);
   if (symbols.length === 0 && w >= 80 && h >= 80) {
     const wide = cropRgbaCenter(pixels, w, h, 0.8);
-    symbols = await decodeQr(read, toImageData(wide.data, wide.width, wide.height));
+    symbols = await decodeQr(read, toImageData(wide.data, wide.width, wide.height), opts);
   }
   if (symbols.length === 0 && w >= 96 && h >= 96) {
-    symbols = await decodeRects(read, pixels, w, h, centerTileRects(w, h), TILE_OPTS);
+    symbols = await decodeRects(read, pixels, w, h, centerTileRects(w, h), tiles);
   }
   if (symbols.length === 0 && w >= 80 && h >= 80) {
     const crop = cropRgbaCenter(pixels, w, h, 0.58);
-    symbols = await decodeQr(read, toImageData(crop.data, crop.width, crop.height));
+    symbols = await decodeQr(read, toImageData(crop.data, crop.width, crop.height), opts);
   }
   if (symbols.length === 0 && w >= 96 && h >= 96) {
-    symbols = await decodeRects(read, pixels, w, h, gridSliceRects(w, h), TILE_OPTS);
+    symbols = await decodeRects(read, pixels, w, h, gridSliceRects(w, h), tiles);
   }
   return symbols;
 }

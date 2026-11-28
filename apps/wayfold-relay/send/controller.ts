@@ -14,10 +14,12 @@ import {
   DEFAULT_TX_FPS,
   QR_MARGIN,
   frameBytesForGrid,
+  colorFrameBytes,
   gridDims,
   gridHoldMs,
   normalizeGrid,
   rasterizeQr,
+  type EccLevel,
 } from "../shared/optical.ts";
 import { encodePayloads } from "../color/engine.ts";
 import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
@@ -319,22 +321,30 @@ async function startStream(): Promise<void> {
   if (gen !== generation) return;
   const payload = packed.bytes;
   const txFps = Number(cfgFps.value) || DEFAULT_TX_FPS;
-  const ecc = cfgEcc.value as "L" | "M" | "Q" | "H";
+  const ecc = cfgEcc.value as EccLevel;
   const displayPx = Number(cfgSize.value);
   const colorProfile: OpticalProfileId = lockProfileSelect("cfg-color");
   const colorChannels = profileChannels(colorProfile);
+  const colorEcc: EccLevel = colorChannels > 1 && ecc === "L" ? "M" : ecc;
   const gridCodes = normalizeGrid(Number((document.getElementById("cfg-grid") as HTMLSelectElement | null)?.value));
-  const singleBudget = Math.min(displayPx, 0.9 * Math.min(window.innerWidth, window.innerHeight), 360);
+  const viewport = Math.min(window.innerWidth, window.innerHeight);
+  const singleBudget = colorChannels > 1
+    ? Math.min(Math.max(displayPx, 360), viewport * 0.92)
+    : Math.min(displayPx, viewport * 0.9, 360);
   const fitW = gridCodes > 1 ? Math.min(displayPx, 0.96 * window.innerWidth) : singleBudget;
   const fitH = gridCodes > 1 ? Math.min(displayPx, 0.8 * window.innerHeight) : singleBudget;
   const { cols: gridCols, rows: gridRows } = gridDims(gridCodes, fitW >= fitH);
-  const frameBytes = frameBytesForGrid(
+  let frameBytes = frameBytesForGrid(
     Number(cfgBytes.value),
     gridCodes,
     fitW,
     fitH,
     window.devicePixelRatio || 1,
   );
+  if (colorChannels > 1) {
+    const cell = Math.min(fitW / gridCols, fitH / gridRows);
+    frameBytes = colorFrameBytes(frameBytes, cell, colorEcc);
+  }
 
   const sessionId = createSessionId();
   const blockLen = frameBytes - HEADER_LEN;
@@ -436,7 +446,7 @@ async function startStream(): Promise<void> {
         payloads.push(packFrame({ ...header, seq: nextSeq }, encoder.encode(nextSeq)));
         nextSeq++;
       }
-      const encoded = encodePayloads(payloads, ecc, colorProfile);
+      const encoded = encodePayloads(payloads, colorEcc, colorProfile);
       noteGeometry(encoded.aligned.version, encoded.qrSize, encoded.modules);
       return new ImageData(new Uint8ClampedArray(encoded.data), encoded.width, encoded.height);
     }

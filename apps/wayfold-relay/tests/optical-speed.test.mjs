@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { isPrecompressedType, packEnvelope, parseEnvelope } from "../shared/envelope.ts";
 import { LTDecoder, LTEncoder, frameComposition } from "../shared/fountain.ts";
-import { frameBytesForGrid, gridDims, gridHoldMs, normalizeGrid, symbolsFromWorker } from "../shared/optical.ts";
+import { frameBytesForGrid, colorFrameBytes, gridDims, gridHoldMs, normalizeGrid, symbolsFromWorker } from "../shared/optical.ts";
 
 test("a clean sweep finishes in exactly k systematic frames", () => {
   const payload = new Uint8Array(5000);
@@ -49,6 +49,9 @@ test("grid choices stay on the layouts the receiver can scan", () => {
   assert.equal(frameBytesForGrid(1850, 2, 1000, 640), 1850);
   assert.equal(frameBytesForGrid(100, 4, 900), 100);
   assert.equal(frameBytesForGrid(1850, 4, 100), 32);
+  assert.equal(colorFrameBytes(1850, 360, "M"), 251);
+  assert.equal(colorFrameBytes(1850, 1000, "M"), 412);
+  assert.equal(colorFrameBytes(100, 360, "M"), 100);
   const four = frameBytesForGrid(1850, 4, 1000, 720);
   assert.ok((4 * four) / gridHoldMs(24, 4) > 1850 / gridHoldMs(24, 1));
 });

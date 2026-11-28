@@ -23,6 +23,33 @@ const GRID_BYTE_CAPACITY = [
 
 export const DEFAULT_ECC = "L" as const;
 
+/**
+ * CSS pixels per module for a color code. Below this, a phone camera mixes
+ * neighboring red and blue modules and ECC L cannot repair the QR.
+ */
+export const COLOR_MODULE_CSS = 4.5;
+
+/** Matches the black ring painted around a color composite. */
+const COLOR_FRAME = 4;
+
+/** Largest color version. Bigger codes become unreadably fine on a phone screen. */
+const COLOR_MAX_VERSION = 15;
+
+const BYTE_CAPACITY_M = [
+  0, 14, 26, 42, 62, 84, 106, 122, 152, 180, 213, 251, 287, 331, 362, 412, 450, 504, 560, 624, 666,
+  711, 779, 857, 911, 997, 1059, 1125, 1190, 1264, 1370, 1452, 1538, 1628, 1722, 1809, 1911, 1989,
+  2099, 2213, 2331,
+];
+const BYTE_CAPACITY_Q = [
+  0, 11, 20, 32, 46, 60, 74, 86, 108, 130, 151, 177, 203, 241, 258, 292, 322, 364, 394, 442, 482,
+  509, 565, 611, 661, 715, 751, 805, 868, 908, 982, 1030, 1112, 1168, 1228, 1283, 1351, 1423, 1499,
+  1579, 1663,
+];
+const BYTE_CAPACITY_H = [
+  0, 7, 14, 24, 34, 44, 58, 64, 84, 98, 119, 137, 155, 177, 194, 220, 250, 280, 310, 338, 382, 403,
+  439, 461, 511, 535, 593, 625, 658, 698, 742, 790, 842, 898, 958, 983, 1051, 1093, 1139, 1219, 1273,
+];
+
 export type EccLevel = "L" | "M" | "Q" | "H";
 
 /** 1, 2 or 4. Anything else falls back to a single code. */
@@ -86,6 +113,21 @@ export function frameBytesForGrid(
     if (scale >= 1 && scale / pixels >= GRID_MODULE_PX) bytes = payload;
   }
   return bytes;
+}
+
+/**
+ * Bytes that still leave a color module large enough for a phone camera.
+ * The requested size is kept when the code is already coarse enough.
+ */
+export function colorFrameBytes(requested: number, cellCss: number, ecc: EccLevel = "L"): number {
+  const css = Math.max(160, Number.isFinite(cellCss) ? cellCss : 360);
+  const maxSpan = Math.max(37, Math.floor(css / COLOR_MODULE_CSS));
+  const maxQr = maxSpan - 2 * QR_MARGIN - 2 * COLOR_FRAME;
+  const maxVersion = Math.max(4, Math.min(COLOR_MAX_VERSION, Math.floor((maxQr - 17) / 4)));
+  const table = ecc === "H" ? BYTE_CAPACITY_H : ecc === "Q" ? BYTE_CAPACITY_Q : ecc === "M" ? BYTE_CAPACITY_M : GRID_BYTE_CAPACITY;
+  const cap = table[maxVersion] ?? 78;
+  const asked = Number.isFinite(requested) && requested > 0 ? requested : cap;
+  return Math.max(21, Math.min(asked, cap));
 }
 
 /** One QR matrix, quiet zone included, black modules on white. */
