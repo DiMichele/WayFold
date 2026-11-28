@@ -22,7 +22,7 @@ import {
   type EccLevel,
 } from "../shared/optical.ts";
 import { encodePayloads } from "../color/engine.ts";
-import { lockProfileSelect, profileChannels, unlockProfileSelect } from "../color/live.ts";
+import { lockProfileSelect, profileChannels, readProfileSelect, unlockProfileSelect } from "../color/live.ts";
 import type { OpticalProfileId } from "../color/profile.ts";
 import { getOptFlags } from "../shared/opt-flags.ts";
 import { optTrace } from "../shared/opt-trace.ts";
@@ -110,6 +110,25 @@ function setStreamingUi(active: boolean): void {
 
 function setWorkspaceXfer(active: boolean): void {
   document.querySelector("#view-send .workspace")?.classList.toggle("is-xfer", active);
+}
+
+function setQrFill(on: boolean): void {
+  document.body.classList.toggle("qr-fill", on);
+}
+
+function colorShownSide(): number {
+  if (document.fullscreenElement?.id === "qr-stage") {
+    return Math.max(320, Math.min(window.innerWidth, window.innerHeight));
+  }
+  return Math.max(320, Math.min(window.innerWidth * 0.96, window.innerHeight * 0.92));
+}
+
+function enterQrFullscreen(): void {
+  setQrFill(true);
+  const stage = el("qr-stage");
+  if (!stage || document.fullscreenElement) return;
+  setStreamingUi(true);
+  void stage.requestFullscreen?.().catch(() => undefined);
 }
 
 function setXferChrome(visible: boolean): void {
@@ -235,6 +254,7 @@ function cancelStream(): void {
   generation++;
   navSuspended = false;
   pausedBeforeNav = false;
+  setQrFill(false);
   unlockProfileSelect("cfg-color");
   endOptSession();
   removeOptHud(el("send-xfer"));
@@ -250,6 +270,8 @@ async function startStream(): Promise<void> {
   navSuspended = false;
   pausedBeforeNav = false;
   setXferChrome(false);
+  if (readProfileSelect("cfg-color") !== "mono") enterQrFullscreen();
+  else setQrFill(false);
 
   const canvas = el<HTMLCanvasElement>("qr");
   const cfgPayload = el<HTMLInputElement>("cfg-payload");
@@ -327,16 +349,9 @@ async function startStream(): Promise<void> {
   const colorChannels = profileChannels(colorProfile);
   const gridCodes = normalizeGrid(Number((document.getElementById("cfg-grid") as HTMLSelectElement | null)?.value));
   const viewport = Math.min(window.innerWidth, window.innerHeight);
-  const fullSide = Math.max(320, viewport);
-  const singleBudget = colorChannels > 1 ? fullSide : Math.min(displayPx, viewport * 0.9, 360);
+  const singleBudget = colorChannels > 1 ? colorShownSide() : Math.min(displayPx, viewport * 0.9, 360);
   const fitW = gridCodes > 1 ? Math.min(displayPx, 0.96 * window.innerWidth) : singleBudget;
   const fitH = gridCodes > 1 ? Math.min(displayPx, 0.8 * window.innerHeight) : singleBudget;
-  if (colorChannels > 1) {
-    const stage = el("qr-stage");
-    setStreamingUi(true);
-    void stage?.requestFullscreen?.().catch(() => undefined);
-  }
-
   const { cols: gridCols, rows: gridRows } = gridDims(gridCodes, fitW >= fitH);
   let frameBytes = frameBytesForGrid(
     Number(cfgBytes.value),

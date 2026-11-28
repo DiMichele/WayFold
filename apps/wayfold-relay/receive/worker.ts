@@ -9,6 +9,7 @@ import {
   PassCosts,
   legacyDecode,
   plannedDecode,
+  readSymbols,
   COLOR_READ_OPTS,
   type Hit,
   type PlanOutput,
@@ -111,17 +112,18 @@ ctx.onmessage = async (e: MessageEvent) => {
       modules = out.modules;
       passes = out.passes;
       skipped = out.skipped;
+    } else if (req.color) {
+      const fast = { ...COLOR_READ_OPTS, tryHarder: false };
+      symbols = await readSymbols(read, pixels, w, h, fast);
+      if (!symbols.length) symbols = await readSymbols(read, pixels, w, h, COLOR_READ_OPTS);
     } else {
-      symbols = await legacyDecode(read, pixels, w, h, req.color ? COLOR_READ_OPTS : undefined);
+      symbols = await legacyDecode(read, pixels, w, h);
     }
     for (const extra of req.extras ?? []) {
-      const more = await legacyDecode(
-        read,
-        new Uint8ClampedArray(extra.buf),
-        extra.w,
-        extra.h,
-        req.color ? COLOR_READ_OPTS : undefined,
-      );
+      const view = new Uint8ClampedArray(extra.buf);
+      const more = req.color
+        ? await readSymbols(read, view, extra.w, extra.h, COLOR_READ_OPTS)
+        : await legacyDecode(read, view, extra.w, extra.h);
       symbols.push(...more);
     }
 

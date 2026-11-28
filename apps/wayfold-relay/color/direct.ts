@@ -11,13 +11,14 @@ import { opticalProfile, type OpticalProfileId } from "./profile.ts";
 export function directChannelImages(raster: Raster, profile: OpticalProfileId, paletteId?: string): Raster[] {
   const spec = opticalProfile(profile, paletteId);
   if (spec.channels < 2) return [];
-  const source = cropToColor(raster);
+  const small = boxDown(raster, 960);
+  const source = cropToColor(small);
   const { width, height } = source;
   const planes = Array.from({ length: spec.channels }, () => new Uint8ClampedArray(width * height * 4));
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
-      const from = ((source.y + y) * raster.width + (source.x + x)) * 4;
-      const bits = inkBits(raster.data[from]!, raster.data[from + 1]!, raster.data[from + 2]!, spec.channels, spec.paletteId);
+      const from = ((source.y + y) * small.width + (source.x + x)) * 4;
+      const bits = inkBits(small.data[from]!, small.data[from + 1]!, small.data[from + 2]!, spec.channels, spec.paletteId);
       const pixel = (y * width + x) * 4;
       for (let c = 0; c < spec.channels; c++) {
         const plane = planes[c]!;
@@ -29,26 +30,37 @@ export function directChannelImages(raster: Raster, profile: OpticalProfileId, p
       }
     }
   }
-  return planes.map((plane) => fitForDecode({ data: plane, width, height }));
+  return planes.map((plane) => ({ data: plane, width, height }));
 }
 
-/** ZXing gets slow on a full camera frame, and a blind downscale erases a dense code. */
-function fitForDecode(plane: { data: Uint8ClampedArray; width: number; height: number }) {
-  const side = Math.max(plane.width, plane.height);
-  if (side <= 760) return plane;
-  const scale = 760 / side;
-  const width = Math.max(1, Math.round(plane.width * scale));
-  const height = Math.max(1, Math.round(plane.height * scale));
+/** Average the camera picture down before classifying, so a phone frame stays fast and less noisy. */
+function boxDown(raster: Raster, maxSide: number): Raster {
+  const side = Math.max(raster.width, raster.height);
+  if (side <= maxSide) return raster;
+  const factor = Math.max(2, Math.ceil(side / maxSide));
+  const width = Math.max(1, Math.floor(raster.width / factor));
+  const height = Math.max(1, Math.floor(raster.height / factor));
   const data = new Uint8ClampedArray(width * height * 4);
+  const area = factor * factor;
   for (let y = 0; y < height; y++) {
-    const sy = Math.min(plane.height - 1, Math.floor(y / scale));
+    const y0 = y * factor;
     for (let x = 0; x < width; x++) {
-      const sx = Math.min(plane.width - 1, Math.floor(x / scale));
-      const s = (sy * plane.width + sx) * 4;
+      let r = 0;
+      let g = 0;
+      let b = 0;
+      const x0 = x * factor;
+      for (let dy = 0; dy < factor; dy++) {
+        for (let dx = 0; dx < factor; dx++) {
+          const p = ((y0 + dy) * raster.width + (x0 + dx)) * 4;
+          r += raster.data[p]!;
+          g += raster.data[p + 1]!;
+          b += raster.data[p + 2]!;
+        }
+      }
       const d = (y * width + x) * 4;
-      data[d] = plane.data[s]!;
-      data[d + 1] = plane.data[s + 1]!;
-      data[d + 2] = plane.data[s + 2]!;
+      data[d] = r / area;
+      data[d + 1] = g / area;
+      data[d + 2] = b / area;
       data[d + 3] = 255;
     }
   }

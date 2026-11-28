@@ -184,6 +184,16 @@ async function decodeRects(
   return symbols;
 }
 
+export async function readSymbols(
+  read: ReadFn,
+  pixels: Uint8ClampedArray,
+  w: number,
+  h: number,
+  opts: ReadOpts = READ_OPTS,
+): Promise<Uint8Array[]> {
+  return decodeQr(read, toImageData(pixels, w, h), opts);
+}
+
 export async function legacyDecode(
   read: ReadFn,
   pixels: Uint8ClampedArray,
